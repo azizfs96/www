@@ -21,5 +21,10 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // إضافة أحداث WAF وهمية
+        $this->call([
+            WafEventsSeeder::class,
+        ]);
     }
 }

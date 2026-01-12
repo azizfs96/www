@@ -1,212 +1,300 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="utf-8">
-    <title>إدارة عناوين IP (Whitelist / Blacklist)</title>
-    <style>
-        body {
-            background: radial-gradient(circle at top, #0f172a 0, #020617 50%);
-            color: #e5e7eb;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            min-height: 100vh;
-        }
-        .page {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 24px 16px 40px;
-        }
-        a {
-            color: #60a5fa;
-            text-decoration: none;
-            font-size: 12px;
-        }
-        a:hover { text-decoration: underline; }
+@extends('layouts.waf')
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 12px;
-        }
-        .header h1 { font-size: 20px; }
+@section('title', 'إدارة عناوين IP')
 
-        .subtitle {
-            font-size: 12px;
-            color: #9ca3af;
-            margin-bottom: 16px;
-        }
+@section('styles')
+<style>
+    /* Clean Dark Design - IP Rules Page */
+    :root {
+        --bg-dark: #1A1A1A;
+        --bg-card: #1E1E1E;
+        --bg-hover: #2A2A2A;
+        --border: #333333;
+        --border-light: #404040;
+        --text-primary: #E5E5E5;
+        --text-secondary: #B3B3B3;
+        --text-muted: #808080;
+        --primary: #9D4EDD;
+        --primary-hover: #B06FE8;
+        --success: #4ADE80;
+        --error: #F87171;
+    }
 
-        .card {
-            background: rgba(15,23,42,0.9);
-            border-radius: 12px;
-            border: 1px solid #1f2937;
-            padding: 14px 16px;
-            margin-bottom: 16px;
-        }
+    .page-header {
+        margin-bottom: 32px;
+    }
 
-        label {
-            font-size: 12px;
-            color: #9ca3af;
-        }
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
 
-        input, select {
-            background: #020617;
-            border-radius: 999px;
-            border: 1px solid #1f2937;
-            color: #e5e7eb;
-            font-size: 12px;
-            padding: 6px 10px;
-            margin-top: 4px;
-            min-width: 160px;
-        }
+    .page-subtitle {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
 
-        button {
-            border-radius: 999px;
-            border: none;
-            font-size: 12px;
-            padding: 7px 14px;
-            cursor: pointer;
-        }
+    .alert {
+        background: rgba(74, 222, 128, 0.1);
+        border: 1px solid rgba(74, 222, 128, 0.3);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        color: var(--success);
+        font-size: 13px;
+    }
 
-        .btn-primary {
-            background: #22c55e;
-            color: #022c22;
-        }
+    .card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
 
-        .btn-danger {
-            background: #ef4444;
-            color: #fee2e2;
-        }
+    .form-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            margin-top: 8px;
-        }
-        th, td {
-            padding: 7px 8px;
-            text-align: right;
-        }
-        th {
-            color: #9ca3af;
-            border-bottom: 1px solid #1f2937;
-        }
-        td {
-            border-top: 1px solid rgba(15,23,42,0.9);
-        }
-        tbody tr:nth-child(even) {
-            background: rgba(15,23,42,0.8);
-        }
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 11px;
-        }
-        .pill-allow {
-            background: rgba(34,197,94,0.16);
-            color: #4ade80;
-        }
-        .pill-block {
-            background: rgba(248,113,113,0.16);
-            color: #fca5a5;
-        }
-        .status {
-            font-size: 11px;
-            color: #9ca3af;
-            margin-bottom: 8px;
-        }
-    </style>
-</head>
-<body>
-<div class="page">
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+        min-width: 200px;
+    }
 
-    <div class="header">
-        <h1>إدارة عناوين IP</h1>
-        <a href="/waf">العودة للوحة WAF</a>
-    </div>
+    .form-group label {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
 
-    <p class="subtitle">
+    .form-group input,
+    .form-group select {
+        background: var(--bg-dark);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        font-size: 13px;
+        padding: 10px 14px;
+        transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: var(--bg-hover);
+    }
+
+    .error-message {
+        color: var(--error);
+        font-size: 11px;
+        margin-top: 4px;
+    }
+
+    .btn {
+        border-radius: 8px;
+        border: none;
+        font-size: 13px;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+        border: 1px solid var(--primary);
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+    .btn-danger {
+        background: var(--error);
+        color: white;
+        border: 1px solid var(--error);
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .btn-danger:hover {
+        background: #DC2626;
+        transform: translateY(-1px);
+    }
+
+    .table-container {
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    th, td {
+        padding: 14px 20px;
+        text-align: right;
+    }
+
+    th {
+        color: var(--text-muted);
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: var(--bg-card);
+    }
+
+    td {
+        border-top: 1px solid var(--border);
+        color: var(--text-primary);
+    }
+
+    tbody tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.01);
+    }
+
+    tbody tr:hover {
+        background: var(--bg-hover);
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 500;
+        border: 1px solid;
+    }
+
+    .pill-allow {
+        background: rgba(74, 222, 128, 0.1);
+        color: var(--success);
+        border-color: rgba(74, 222, 128, 0.2);
+    }
+
+    .pill-block {
+        background: rgba(248, 113, 113, 0.1);
+        color: var(--error);
+        border-color: rgba(248, 113, 113, 0.2);
+    }
+
+    .text-muted {
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+</style>
+@endsection
+
+@section('content')
+<div class="page-header">
+    <h1>إدارة عناوين IP</h1>
+    <p class="page-subtitle">
         من هنا يمكنك إضافة عناوين IP إلى قائمة السماح (Whitelist) أو الحظر (Blacklist). أي تعديل يتم
         مزامنته تلقائياً مع ModSecurity وإعادة تحميل Nginx.
     </p>
-
-    @if (session('status'))
-        <div class="status">{{ session('status') }}</div>
-    @endif
-
-    <div class="card">
-        <form method="POST" action="{{ route('ip-rules.store') }}">
-            @csrf
-            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-                <div style="display:flex; flex-direction:column;">
-                    <label>عنوان IP</label>
-                    <input type="text" name="ip" placeholder="مثال: 137.59.230.231" required>
-                    @error('ip')
-                        <span style="color:#f97316; font-size:11px;">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div style="display:flex; flex-direction:column;">
-                    <label>النوع</label>
-                    <select name="type" required>
-                        <option value="allow">Whitelist (سماح)</option>
-                        <option value="block">Blacklist (حظر)</option>
-                    </select>
-                    @error('type')
-                        <span style="color:#f97316; font-size:11px;">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div>
-                    <button type="submit" class="btn-primary">إضافة القاعدة</button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <div class="card">
-        <table>
-            <thead>
-                <tr>
-                    <th>IP</th>
-                    <th>النوع</th>
-                    <th>أضيف في</th>
-                    <th>إجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-            @forelse ($rules as $rule)
-                <tr>
-                    <td>{{ $rule->ip }}</td>
-                    <td>
-                        @if ($rule->type === 'allow')
-                            <span class="pill pill-allow">Whitelist</span>
-                        @else
-                            <span class="pill pill-block">Blacklist</span>
-                        @endif
-                    </td>
-                    <td class="muted">{{ $rule->created_at }}</td>
-                    <td>
-                        <form method="POST" action="{{ route('ip-rules.destroy', $rule) }}"
-                              onsubmit="return confirm('هل أنت متأكد من حذف هذه القاعدة؟');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn-danger">حذف</button>
-                        </form>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="4" style="text-align:center; color:#9ca3af;">
-                        لا توجد قواعد حالياً. يمكنك إضافة IP أعلاه.
-                    </td>
-                </tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-
 </div>
-</body>
-</html>
+
+@if (session('status'))
+    <div class="alert">
+        {{ session('status') }}
+    </div>
+@endif
+
+<div class="card">
+    <form method="POST" action="{{ route('ip-rules.store') }}">
+        @csrf
+        <div class="form-row">
+            <div class="form-group">
+                <label>عنوان IP</label>
+                <input type="text" name="ip" placeholder="مثال: 137.59.230.231" required>
+                @error('ip')
+                    <span class="error-message">{{ $message }}</span>
+                @enderror
+            </div>
+            <div class="form-group">
+                <label>النوع</label>
+                <select name="type" required>
+                    <option value="allow">Whitelist (سماح)</option>
+                    <option value="block">Blacklist (حظر)</option>
+                </select>
+                @error('type')
+                    <span class="error-message">{{ $message }}</span>
+                @enderror
+            </div>
+            <div class="form-group" style="flex: 0 0 auto;">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-primary">إضافة القاعدة</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>IP</th>
+                <th>النوع</th>
+                <th>أضيف في</th>
+                <th>إجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+        @forelse ($rules as $rule)
+            <tr>
+                <td><strong>{{ $rule->ip }}</strong></td>
+                <td>
+                    @if ($rule->type === 'allow')
+                        <span class="pill pill-allow">Whitelist</span>
+                    @else
+                        <span class="pill pill-block">Blacklist</span>
+                    @endif
+                </td>
+                <td class="text-muted">{{ $rule->created_at->format('Y-m-d H:i') }}</td>
+                <td>
+                    <form method="POST" action="{{ route('ip-rules.destroy', $rule) }}"
+                          onsubmit="return confirm('هل أنت متأكد من حذف هذه القاعدة؟');" style="display:inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">حذف</button>
+                    </form>
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="4" class="empty-state">
+                    لا توجد قواعد حالياً. يمكنك إضافة IP أعلاه.
+                </td>
+            </tr>
+        @endforelse
+        </tbody>
+    </table>
+</div>
+@endsection

@@ -36,7 +36,8 @@ Route::get('/waf', function () {
 });
 
 Route::get('/waf/events', function (Request $request) {
-    $query = WafEvent::query()->orderByDesc('event_time');
+    $baseQuery = WafEvent::query()->orderByDesc('event_time');
+    $query = clone $baseQuery;
 
     // فلتر بالحالة (status)
     if ($request->filled('status')) {
@@ -58,7 +59,100 @@ Route::get('/waf/events', function (Request $request) {
         $query->whereDate('event_time', '<=', $request->date_to);
     }
 
-    $events = $query->limit(100)->get();
+    // بحث نصي
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('client_ip', 'like', '%'.$search.'%')
+              ->orWhere('host', 'like', '%'.$search.'%')
+              ->orWhere('uri', 'like', '%'.$search.'%')
+              ->orWhere('message', 'like', '%'.$search.'%')
+              ->orWhere('rule_id', 'like', '%'.$search.'%');
+        });
+    }
+
+    // Export CSV
+    if ($request->format === 'csv') {
+        $events = $query->get();
+        $filename = 'waf_events_' . date('Y-m-d_His') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($events) {
+            $file = fopen('php://output', 'w');
+            
+            // BOM for Excel UTF-8 support
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Headers
+            fputcsv($file, [
+                'التاريخ',
+                'IP',
+                'Host',
+                'Method',
+                'URI',
+                'Status',
+                'Rule ID',
+                'Severity',
+                'Message'
+            ]);
+
+            foreach ($events as $event) {
+                fputcsv($file, [
+                    $event->event_time ? $event->event_time->format('Y-m-d H:i:s') : '',
+                    $event->client_ip ?? '',
+                    $event->host ?? '',
+                    $event->method ?? '',
+                    $event->uri ?? '',
+                    $event->status ?? '',
+                    $event->rule_id ?? '',
+                    $event->severity ?? '',
+                    $event->message ?? ''
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    // Pagination
+    $perPage = $request->get('per_page', 25);
+    $events = $query->paginate($perPage)->withQueryString();
+    
+    // إحصائيات سريعة (باستخدام base query للفلاتر فقط)
+    $statsQuery = clone $baseQuery;
+    if ($request->filled('status')) {
+        $statsQuery->where('status', $request->status);
+    }
+    if ($request->filled('ip')) {
+        $statsQuery->where('client_ip', 'like', '%'.$request->ip.'%');
+    }
+    if ($request->filled('date_from')) {
+        $statsQuery->whereDate('event_time', '>=', $request->date_from);
+    }
+    if ($request->filled('date_to')) {
+        $statsQuery->whereDate('event_time', '<=', $request->date_to);
+    }
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $statsQuery->where(function($q) use ($search) {
+            $q->where('client_ip', 'like', '%'.$search.'%')
+              ->orWhere('host', 'like', '%'.$search.'%')
+              ->orWhere('uri', 'like', '%'.$search.'%')
+              ->orWhere('message', 'like', '%'.$search.'%')
+              ->orWhere('rule_id', 'like', '%'.$search.'%');
+        });
+    }
+    
+    $totalEvents = $statsQuery->count();
+    $blockedCount = (clone $statsQuery)->where('status', 403)->count();
+    $allowedCount = (clone $statsQuery)->where('status', 200)->count();
+    $uniqueIps = $statsQuery->distinct('client_ip')->count('client_ip');
 
     // توصيف لبعض Rule IDs المعروفة (تقدر توسّعها)
     $ruleDescriptions = [
@@ -68,6 +162,9 @@ Route::get('/waf/events', function (Request $request) {
         '930100' => 'Path traversal attack',
         '931100' => 'Remote command execution attempt',
         '932100' => 'Remote file inclusion attempt',
+        '941100' => 'XSS Attack Detected',
+        '942200' => 'SQL Injection bypass attempt',
+        '932160' => 'Remote Code Execution attempt',
     ];
 
 
@@ -78,8 +175,15 @@ Route::get('/waf/events', function (Request $request) {
             'ip'        => $request->ip,
             'date_from' => $request->date_from,
             'date_to'   => $request->date_to,
+            'search'    => $request->search,
         ],
         'ruleDescriptions' => $ruleDescriptions,
+        'stats' => [
+            'total' => $totalEvents,
+            'blocked' => $blockedCount,
+            'allowed' => $allowedCount,
+            'unique_ips' => $uniqueIps,
+        ],
     ]);
 });
 Route::get('/waf/ip-rules', [IpRuleController::class, 'index'])->name('ip-rules.index');

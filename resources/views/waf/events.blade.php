@@ -1,405 +1,988 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="utf-8">
-    <title>أحداث WAF</title>
-    <style>
-        :root {
-            --bg: #020617;
-            --bg-soft: #020617;
-            --panel: #020617;
-            --border: #1f2937;
-            --text: #e5e7eb;
-            --muted: #9ca3af;
-            --danger: #ef4444;
-            --ok: #22c55e;
-            --warning: #f97316;
-        }
+@extends('layouts.waf')
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
+@section('title', 'WAF Event Logs')
 
-        body {
-            background: radial-gradient(circle at top, #0f172a 0, #020617 50%);
-            color: var(--text);
-            min-height: 100vh;
-        }
+@section('styles')
+<style>
+    /* Enhanced Game-style Event Log Design */
+    :root {
+        --bg-dark: #1A1A1A;
+        --bg-card: #242424;
+        --bg-hover: #2A2A2A;
+        --bg-details: rgba(0, 0, 0, 0.25);
+        --border: #333333;
+        --border-light: #404040;
+        --text-primary: #E5E5E5;
+        --text-secondary: #B3B3B3;
+        --text-muted: #808080;
+        --primary: #9D4EDD;
+        --success: #4ADE80;
+        --error: #F87171;
+        --warning: #FBBF24;
+        --info: #60A5FA;
+    }
 
-        .page {
-            max-width: 1150px;
-            margin: 0 auto;
-            padding: 24px 16px 40px;
-        }
+    .page-header {
+        margin-bottom: 32px;
+        direction: ltr;
+        text-align: left;
+    }
 
-        .header {
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        letter-spacing: -0.5px;
+    }
 
-        .header h1 {
-            font-size: 22px;
-            font-weight: 600;
-        }
+    .page-subtitle {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.7;
+    }
 
-        .header a {
-            font-size: 12px;
-            color: #60a5fa;
-            text-decoration: none;
-        }
+    .filters-container {
+        background: #1E1E1E;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        padding: 24px;
+        margin-bottom: 28px;
+        direction: ltr;
+    }
 
-        .header a:hover {
-            text-decoration: underline;
-        }
+    .filters {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
 
-        .subtitle {
-            font-size: 12px;
-            color: var(--muted);
-            margin-bottom: 14px;
-        }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
 
-        .filters {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-            padding: 10px;
-            background: rgba(15,23,42,0.9);
-            border-radius: 10px;
-            border: 1px solid var(--border);
-        }
+    .filter-group label {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
-        .filters label {
-            font-size: 11px;
-            color: var(--muted);
-        }
+    .filter-group input,
+    .filter-group select {
+        background: var(--bg-dark);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        font-size: 13px;
+        padding: 11px 16px;
+        min-width: 160px;
+        transition: all 0.2s;
+    }
 
-        .filters-group {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: var(--bg-hover);
+        box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.1);
+    }
 
-        .filters input,
-        .filters select {
-            background: #020617;
-            border-radius: 999px;
-            border: 1px solid var(--border);
-            color: var(--text);
-            font-size: 12px;
-            padding: 6px 10px;
-            min-width: 120px;
-        }
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+        margin-left: auto;
+    }
 
-        .filters button {
-            border-radius: 999px;
-            border: none;
-            font-size: 12px;
-            padding: 7px 14px;
-            cursor: pointer;
-        }
+    .btn {
+        border-radius: 8px;
+        border: none;
+        font-size: 13px;
+        padding: 11px 20px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
 
-        .filters .btn-primary {
-            background: #22c55e;
-            color: #022c22;
-        }
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 2px 8px rgba(157, 78, 221, 0.3);
+    }
 
-        .filters .btn-reset {
-            background: transparent;
-            color: var(--muted);
-            border: 1px solid var(--border);
-        }
+    .btn-primary:hover {
+        background: #8B3ACC;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(157, 78, 221, 0.4);
+    }
 
-        .filters-actions {
-            display: flex;
-            gap: 6px;
-        }
+    .btn-secondary {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+    }
 
-        .filters .btn-export {
-            background: #0ea5e9;
-            color: #022c22;
-        }
+    .btn-secondary:hover {
+        background: var(--bg-hover);
+        border-color: var(--border-light);
+        color: var(--text-primary);
+    }
 
-        .table-wrapper {
-            margin-top: 6px;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            background: rgba(15,23,42,0.9);
-        }
+    .btn-export {
+        background: #3B82F6;
+        color: white;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
-        }
+    .btn-export:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
 
-        thead {
-            background: #020617;
-        }
+    /* Events List Container */
+    .events-list {
+        background: #1E1E1E;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
 
-        th, td {
-            padding: 7px 8px;
-            text-align: right;
-            white-space: nowrap;
-        }
+    .event-item {
+        background: #1E1E1E;
+        border-bottom: 1px solid var(--border);
+        transition: all 0.2s ease;
+        position: relative;
+    }
 
-        th {
-            color: var(--muted);
-            font-weight: 500;
-            border-bottom: 1px solid var(--border);
-        }
+    .event-item:last-child {
+        border-bottom: none;
+    }
 
-        td {
-            border-top: 1px solid rgba(15,23,42,0.9);
-        }
+    .event-item:hover {
+        background: var(--bg-hover);
+    }
 
-        tbody tr:nth-child(even) {
-            background: rgba(15,23,42,0.8);
-        }
+    .event-item:hover .event-icon {
+        transform: scale(1.1);
+    }
 
-        tbody tr:nth-child(odd) {
-            background: rgba(15,23,42,0.6);
-        }
+    /* Main Event Row */
+    .event-main-row {
+        display: grid;
+        grid-template-columns: 100px 45px minmax(0, 1fr) 140px;
+        gap: 20px;
+        align-items: center;
+        padding: 16px 24px;
+        cursor: pointer;
+    }
 
-        tbody tr:hover {
-            background: rgba(15,23,42,1);
-        }
+    .event-time {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 130px;
+        max-width: 140px;
+        text-align: right;
+    }
 
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 2px 8px;
-            border-radius: 999px;
+    .event-duration {
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+    }
+
+    .event-timestamp {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-family: 'Courier New', monospace;
+    }
+
+    .event-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(248, 113, 113, 0.2);
+        border: 2px solid rgba(248, 113, 113, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+        position: relative;
+        margin: 0 auto;
+    }
+
+    .event-icon.status-403 {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .no-symbol {
+        position: relative;
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+    }
+
+    .no-symbol::before {
+        content: '';
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #EF4444;
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .no-symbol::after {
+        content: '';
+        position: absolute;
+        width: 2px;
+        height: 18px;
+        background: #EF4444;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+        border-radius: 1px;
+    }
+
+    .event-icon.status-200 {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .event-icon.status-404 {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+
+    .event-info {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 60px minmax(0, 1fr) auto auto 100px;
+        gap: 16px;
+        align-items: center;
+        min-width: 0;
+        overflow: hidden;
+        direction: ltr;
+        padding: 0 8px;
+    }
+
+    .event-info > * {
+        min-width: 0;
+    }
+
+    .event-host {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+
+    .event-info strong {
+        white-space: nowrap;
+    }
+
+    .event-source {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-primary);
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .event-source strong {
+        font-family: 'Courier New', monospace;
+        color: var(--text-primary);
+    }
+
+    .event-host {
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 400;
+    }
+
+    .event-separator {
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+    .event-target {
+        font-size: 12px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .event-method-badge {
+        font-family: 'Courier New', monospace;
+        color: var(--text-primary);
+        font-size: 11px;
+        background: rgba(157, 78, 221, 0.15);
+        border: 1px solid rgba(157, 78, 221, 0.3);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        width: 50px;
+        text-align: center;
+        flex-shrink: 0;
+        display: inline-block;
+    }
+
+    .event-uri {
+        direction: ltr;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .event-ip {
+        font-family: 'Courier New', monospace;
+        color: var(--text-primary);
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .event-value {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #EF4444;
+        font-family: 'Courier New', monospace;
+        white-space: nowrap;
+        width: 90px;
+        flex-shrink: 0;
+        justify-content: flex-start;
+    }
+
+    .event-arrow {
+        font-size: 14px;
+        color: #EF4444;
+        opacity: 0.8;
+    }
+
+    .event-status {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: 1px solid;
+        min-width: 80px;
+        max-width: 100px;
+        text-align: center;
+        justify-self: start;
+    }
+
+    .event-status.blocked {
+        background: rgba(239, 68, 68, 0.2);
+        color: #EF4444;
+        border-color: rgba(239, 68, 68, 0.5);
+        box-shadow: none;
+    }
+
+    .event-status.allowed {
+        background: rgba(74, 222, 128, 0.15);
+        color: var(--success);
+        border-color: rgba(74, 222, 128, 0.4);
+        box-shadow: none;
+    }
+
+    .event-status.other {
+        background: rgba(179, 179, 179, 0.15);
+        color: var(--text-secondary);
+        border-color: rgba(179, 179, 179, 0.3);
+    }
+
+    /* Event Details Row (Sub-row) */
+    .event-details-row {
+        padding: 16px 24px 20px 24px;
+        background: var(--bg-details);
+        border-top: 1px solid var(--border);
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 20px;
+        align-items: start;
+        padding-right: 200px;
+    }
+
+    .event-details-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        min-width: 110px;
+        font-weight: 700;
+        padding-top: 2px;
+    }
+
+    .event-details-content {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        align-items: center;
+    }
+
+    .event-detail-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 10px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .event-detail-label {
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .event-detail-value {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+    }
+
+    .event-detail-value.highlight {
+        color: #EF4444;
+        background: rgba(239, 68, 68, 0.15);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+    }
+
+    .event-detail-value.severity {
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+    }
+
+    .event-detail-value.severity-CRITICAL {
+        background: rgba(248, 113, 113, 0.2);
+        color: var(--error);
+    }
+
+    .event-detail-value.severity-HIGH {
+        background: rgba(251, 191, 36, 0.2);
+        color: var(--warning);
+    }
+
+    .event-detail-value.severity-MEDIUM {
+        background: rgba(96, 165, 250, 0.2);
+        color: var(--info);
+    }
+
+    .event-detail-value.severity-LOW {
+        background: rgba(179, 179, 179, 0.2);
+        color: var(--text-secondary);
+    }
+
+    .event-message {
+        flex-basis: 100%;
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 6px;
+        border-right: 3px solid var(--primary);
+        direction: ltr;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    .empty-state {
+        padding: 80px 24px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    .footer-note {
+        margin-top: 24px;
+        font-size: 12px;
+        color: var(--text-muted);
+        text-align: center;
+        padding: 16px;
+        background: #1E1E1E;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+    }
+
+    /* Statistics Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        background: #1E1E1E;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        padding: 20px;
+        transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+        border-color: var(--border-light);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-family: 'Courier New', monospace;
+    }
+
+    .stat-card.total .stat-value {
+        color: var(--info);
+    }
+
+    .stat-card.blocked .stat-value {
+        color: var(--error);
+    }
+
+    .stat-card.allowed .stat-value {
+        color: var(--success);
+    }
+
+    .stat-card.ips .stat-value {
+        color: var(--primary);
+    }
+
+    /* Collapsible Details */
+    .event-details-row {
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .event-details-row.expanded {
+        display: grid;
+        max-height: 1000px;
+        padding: 16px 24px 20px 24px;
+    }
+
+    .event-item.expanded .event-main-row::after {
+        content: '▼';
+        position: absolute;
+        left: 24px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 12px;
+    }
+
+
+    /* Search Box */
+    .filter-group.search-group {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .filter-group.search-group input {
+        width: 100%;
+    }
+
+    /* Pagination Styles */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 24px 0;
+    }
+
+    .pagination a,
+    .pagination span {
+        display: inline-block;
+        padding: 8px 14px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-primary);
+        text-decoration: none;
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+
+    .pagination a:hover {
+        background: var(--bg-hover);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .pagination .active span {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+
+    .pagination .disabled span {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @media (max-width: 1400px) {
+        .event-details-row {
+            padding-right: 24px;
+        }
+    }
+
+    @media (max-width: 1200px) {
+        .event-main-row {
+            grid-template-columns: 90px 40px minmax(0, 1fr) 130px;
+            gap: 16px;
+        }
+        
+        .event-info {
+            gap: 12px;
+        }
+        
+        .event-info .event-value {
+            display: none;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .event-main-row {
+            grid-template-columns: auto minmax(0, 1fr) 90px;
+            gap: 10px;
+            padding: 14px 16px;
+        }
+        
+        .event-time {
+            min-width: 85px;
+            max-width: 90px;
+        }
+        
+        .event-icon {
+            display: none;
+        }
+        
+        .event-status {
             font-size: 10px;
+            padding: 5px 8px;
         }
-
-        .pill-red {
-            background: rgba(248,113,113,0.16);
-            color: var(--danger);
+        
+        .event-info {
+            grid-template-columns: 50px minmax(0, 1fr) auto auto;
+            gap: 8px;
         }
-
-        .pill-green {
-            background: rgba(34,197,94,0.14);
-            color: var(--ok);
+        
+        .event-info .event-value {
+            display: none;
         }
-
-        .pill-gray {
-            background: rgba(148,163,184,0.14);
-            color: var(--muted);
+        
+        .event-details-row {
+            grid-template-columns: 1fr;
+            padding-right: 24px;
         }
-
-        .pill-attack {
-            background: rgba(59,130,246,0.18);
-            color: #bfdbfe;
+        
+        .event-details-label {
+            min-width: auto;
+            margin-bottom: 8px;
         }
+    }
 
-        .dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 999px;
+    @media (max-width: 768px) {
+        .event-main-row {
+            grid-template-columns: 1fr;
+            gap: 12px;
+            padding: 12px 16px;
         }
-
-        .dot-red { background: var(--danger); }
-        .dot-green { background: var(--ok); }
-        .dot-gray { background: var(--muted); }
-
-        .uri {
-            max-width: 260px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            direction: ltr;
+        
+        .event-time {
+            flex-direction: row;
+            gap: 12px;
+            align-items: center;
+            max-width: 100%;
+            justify-content: flex-start;
         }
-
-        .host {
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            direction: ltr;
+        
+        .event-info {
+            grid-template-columns: 50px minmax(0, 1fr) auto;
+            gap: 8px;
         }
-
-        .msg {
-            max-width: 260px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            direction: ltr;
+        
+        .event-info .event-value {
+            display: none;
         }
-
-        .muted {
-            color: var(--muted);
+        
+        .event-status {
+            justify-self: start;
         }
-
-        .footer-note {
-            margin-top: 8px;
-            font-size: 11px;
-            color: var(--muted);
+        
+        .event-icon {
+            display: none;
         }
+    }
+</style>
+@endsection
 
-        @media (max-width: 900px) {
-            .uri, .msg {
-                max-width: 160px;
-            }
-        }
+@section('content')
+<div class="page-header">
+    <h1>WAF Event Logs</h1>
+</div>
 
-        @media (max-width: 700px) {
-            th:nth-child(2), td:nth-child(2), /* IP */
-            th:nth-child(3), td:nth-child(3)  /* Host */ {
-                display: none;
-            }
-        }
-    </style>
-</head>
-<body>
-<div class="page">
-
-    <div class="header">
-        <h1>سجل أحداث جدار الحماية للتطبيقات</h1>
-        <a href="/waf">العودة للوحة المراقبة</a>
+{{-- Statistics Cards --}}
+@if(isset($stats))
+<div class="stats-grid">
+    <div class="stat-card total">
+        <div class="stat-label">Total Events</div>
+        <div class="stat-value">{{ number_format($stats['total'] ?? 0) }}</div>
     </div>
+    <div class="stat-card blocked">
+        <div class="stat-label">Blocked (403)</div>
+        <div class="stat-value">{{ number_format($stats['blocked'] ?? 0) }}</div>
+    </div>
+    <div class="stat-card allowed">
+        <div class="stat-label">Allowed (200)</div>
+        <div class="stat-value">{{ number_format($stats['allowed'] ?? 0) }}</div>
+    </div>
+    <div class="stat-card ips">
+        <div class="stat-label">Unique IPs</div>
+        <div class="stat-value">{{ number_format($stats['unique_ips'] ?? 0) }}</div>
+    </div>
+</div>
+@endif
 
-    <p class="subtitle">
-        أحدث الطلبات التي مرّت عبر WAF، مع تصنيف حسب الحالة ونوع الهجوم (إن وُجدت قاعدة مفعّلة).
-    </p>
+{{-- Filters --}}
+<div class="filters-container">
+    <form method="GET" action="/waf/events" class="filters" id="filtersForm">
+        <div class="filter-group search-group">
+            <label>Text Search</label>
+            <input type="text" name="search" placeholder="Search in IP, URI, Host, or Message..."
+                   value="{{ $filters['search'] ?? '' }}">
+        </div>
 
-    {{-- Filters --}}
-    <form method="GET" action="/waf/events" class="filters">
-        <div class="filters-group">
-            <label>حالة HTTP</label>
+        <div class="filter-group">
+            <label>HTTP Status</label>
             <select name="status">
-                <option value="">الكل</option>
-                <option value="403" {{ ($filters['status'] ?? '') == '403' ? 'selected' : '' }}>403 (محجوبة)</option>
-                <option value="200" {{ ($filters['status'] ?? '') == '200' ? 'selected' : '' }}>200 (مسموح بها)</option>
-                <option value="404" {{ ($filters['status'] ?? '') == '404' ? 'selected' : '' }}>404 (غير موجود)</option>
+                <option value="">All</option>
+                <option value="403" {{ ($filters['status'] ?? '') == '403' ? 'selected' : '' }}>403 (Blocked)</option>
+                <option value="200" {{ ($filters['status'] ?? '') == '200' ? 'selected' : '' }}>200 (Allowed)</option>
+                <option value="404" {{ ($filters['status'] ?? '') == '404' ? 'selected' : '' }}>404 (Not Found)</option>
             </select>
         </div>
 
-        <div class="filters-group">
-            <label>عنوان IP</label>
-            <input type="text" name="ip" placeholder="مثال: 137.59.230.231"
+        <div class="filter-group">
+            <label>IP Address</label>
+            <input type="text" name="ip" placeholder="e.g., 137.59.230.231"
                    value="{{ $filters['ip'] ?? '' }}">
         </div>
 
-        <div class="filters-group">
-            <label>من تاريخ</label>
+        <div class="filter-group">
+            <label>From Date</label>
             <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}">
         </div>
 
-        <div class="filters-group">
-            <label>إلى تاريخ</label>
+        <div class="filter-group">
+            <label>To Date</label>
             <input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}">
         </div>
 
-        <div class="filters-group" style="justify-content:flex-end;">
-            <label>&nbsp;</label>
-            <div class="filters-actions">
-                <button type="submit" class="btn-primary">تطبيق الفلتر</button>
-                <a href="/waf/events">
-                    <button type="button" class="btn-reset">إعادة الضبط</button>
-                </a>
-                {{-- زر تصدير CSV: يعيد نفس الفلاتر مع format=csv --}}
-                <button type="submit" name="format" value="csv" class="btn-export">
-                    تصدير CSV
-                </button>
-            </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="/waf/events">
+                <button type="button" class="btn btn-secondary">Reset</button>
+            </a>
+            <button type="submit" name="format" value="csv" class="btn btn-export">
+                Export CSV
+            </button>
         </div>
     </form>
-
-    {{-- Table --}}
-    <div class="table-wrapper">
-        <table>
-            <thead>
-            <tr>
-                <th>الوقت</th>
-                <th>IP</th>
-                <th>Host</th>
-                <th>المسار / URI</th>
-                <th>الحالة</th>
-                <th>Rule ID</th>
-                <th>نوع الهجوم</th>
-                <th>الرسالة</th>
-            </tr>
-            </thead>
-            <tbody>
-            @forelse ($events as $event)
-                @php
-                    $status = (int) $event->status;
-                    $rule  = $event->rule_id;
-                    $desc  = $rule ? ($ruleDescriptions[$rule] ?? null) : null;
-                @endphp
-                <tr>
-                    <td class="muted">{{ $event->event_time }}</td>
-                    <td>{{ $event->client_ip }}</td>
-                    <td class="host">{{ $event->host }}</td>
-                    <td class="uri">{{ $event->uri }}</td>
-                    <td>
-                        @if ($status === 403)
-                            <span class="pill pill-red">
-                                <span class="dot dot-red"></span>
-                                403 · محجوبة
-                            </span>
-                        @elseif ($status === 200)
-                            <span class="pill pill-green">
-                                <span class="dot dot-green"></span>
-                                200 · مسموح
-                            </span>
-                        @elseif ($status === 404)
-                            <span class="pill pill-gray">
-                                <span class="dot dot-gray"></span>
-                                404 · غير موجود
-                            </span>
-                        @else
-                            <span class="pill pill-gray">
-                                <span class="dot dot-gray"></span>
-                                {{ $status }}
-                            </span>
-                        @endif
-                    </td>
-                    <td>
-                        @if ($rule)
-                            <span class="pill pill-gray">{{ $rule }}</span>
-                        @else
-                            <span class="muted">-</span>
-                        @endif
-                    </td>
-                    <td>
-                        @if ($desc)
-                            <span class="pill pill-attack">{{ $desc }}</span>
-                        @else
-                            <span class="muted">غير مصنّف</span>
-                        @endif
-                    </td>
-                    <td class="msg">
-                        @if ($event->message)
-                            {{ $event->message }}
-                        @else
-                            <span class="muted">لا توجد رسالة من القاعدة</span>
-                        @endif
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="8" class="muted" style="text-align:center; padding:12px;">
-                        لا توجد أحداث مسجلة وفق الفلاتر الحالية.
-                    </td>
-                </tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    <div class="footer-note">
-        يتم عرض آخر 100 طلب فقط لأغراض المراقبة اللحظية. يمكنك توسيع المنظومة لاحقاً لدعم التصفية بالتاريخ
-        مع pagination وتنبيهات فورية عند هجمات معينة.
-    </div>
-
 </div>
-</body>
-</html>
+
+{{-- Events List --}}
+<div class="events-list">
+    @forelse ($events as $event)
+        @php
+            $status = (int) $event->status;
+            $rule = $event->rule_id;
+            $desc = $rule ? ($ruleDescriptions[$rule] ?? null) : null;
+            $timeAgo = $event->event_time ? $event->event_time->diffForHumans() : '';
+        @endphp
+        
+        <div class="event-item" data-event-id="{{ $event->id ?? '' }}">
+            {{-- Main Row --}}
+            <div class="event-main-row" onclick="toggleEventDetails(this)">
+                <div class="event-status {{ $status === 403 ? 'blocked' : ($status === 200 ? 'allowed' : 'other') }}" style="min-width: fit-content;">
+                    @if ($status === 403)
+                        Blocked
+                    @elseif ($status === 200)
+                        Allowed
+                    @else
+                        {{ $status }}
+                    @endif
+                </div>
+                
+                <div class="event-icon status-{{ $status }}">
+                    @if ($status === 403)
+                        <span class="no-symbol"></span>
+                    @elseif ($status === 200)
+                        <span style="display: inline-block; width: 14px; height: 14px; background: #4ADE80; border-radius: 50%;"></span>
+                    @elseif ($status === 404)
+                        <span style="color: #B3B3B3; font-size: 14px; font-weight: bold;">ℹ</span>
+                    @else
+                        <span style="color: #9D4EDD; font-size: 14px; font-weight: bold;">●</span>
+                    @endif
+                </div>
+                
+                <div class="event-info">
+                    <span class="event-method-badge">{{ $event->method ?? 'GET' }}</span>
+                    @if ($event->uri)
+                        <span class="event-uri">{{ $event->uri }}</span>
+                    @else
+                        <span></span>
+                    @endif
+                    @if ($event->host)
+                        <span class="event-host">{{ Str::limit($event->host, 30) }}</span>
+                    @else
+                        <span></span>
+                    @endif
+                    <strong class="event-ip">{{ $event->client_ip }}</strong>
+                    @if ($rule || $status === 403)
+                        <div class="event-value">
+                            {{ $rule ?: 'WAF' }}
+                            <span class="event-arrow">→</span>
+                        </div>
+                    @else
+                        <div class="event-value" style="visibility: hidden;">
+                            &nbsp;
+                        </div>
+                    @endif
+                </div>
+                
+                <div class="event-time">
+                    <div class="event-duration">{{ $timeAgo }}</div>
+                    <div class="event-timestamp">{{ $event->event_time ? $event->event_time->format('Y-m-d H:i:s') : '' }}</div>
+                </div>
+            </div>
+            
+            {{-- Details Row (Sub-row) --}}
+            <div class="event-details-row" id="details-{{ $event->id ?? '' }}">
+                <div class="event-details-label">Attack Details</div>
+                <div class="event-details-content">
+                    @if ($desc)
+                        <div class="event-detail-item">
+                            <span class="event-detail-label">Type:</span>
+                            <span class="event-detail-value">{{ $desc }}</span>
+                        </div>
+                    @endif
+                    @if ($rule)
+                        <div class="event-detail-item">
+                            <span class="event-detail-label">Rule ID:</span>
+                            <span class="event-detail-value highlight">{{ $rule }}</span>
+                        </div>
+                    @endif
+                    @if ($event->method)
+                        <div class="event-detail-item">
+                            <span class="event-detail-label">Method:</span>
+                            <span class="event-detail-value">{{ $event->method }}</span>
+                        </div>
+                    @endif
+                    @if ($event->severity)
+                        <div class="event-detail-item">
+                            <span class="event-detail-label">Severity:</span>
+                            <span class="event-detail-value severity severity-{{ $event->severity }}">{{ $event->severity }}</span>
+                        </div>
+                    @endif
+                    @if ($event->message)
+                        <div class="event-message">
+                            <strong style="color: var(--text-muted);">Message:</strong> {{ Str::limit($event->message, 150) }}
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @empty
+        <div class="empty-state">
+            No events found matching the current filters.
+        </div>
+    @endforelse
+</div>
+
+{{-- Pagination --}}
+@if(isset($events) && method_exists($events, 'links'))
+<div style="margin-top: 24px; display: flex; justify-content: center;">
+    {{ $events->links() }}
+</div>
+@endif
+
+<div class="footer-note">
+    Results are displayed according to the selected filters. Click on any event to show/hide details.
+</div>
+
+<script>
+// Toggle event details
+function toggleEventDetails(element) {
+    const eventItem = element.closest('.event-item');
+    const detailsRow = eventItem.querySelector('.event-details-row');
+    
+    if (detailsRow.classList.contains('expanded')) {
+        detailsRow.classList.remove('expanded');
+        eventItem.classList.remove('expanded');
+    } else {
+        // Close all other expanded items
+        document.querySelectorAll('.event-item.expanded').forEach(item => {
+            item.classList.remove('expanded');
+            item.querySelector('.event-details-row').classList.remove('expanded');
+        });
+        
+        detailsRow.classList.add('expanded');
+        eventItem.classList.add('expanded');
+    }
+}
+
+</script>
+@endsection
