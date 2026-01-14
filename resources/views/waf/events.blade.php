@@ -378,6 +378,51 @@
         font-family: 'Courier New', monospace;
         margin-left: 8px;
         white-space: nowrap;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+    }
+
+    .event-country:hover {
+        background: rgba(96, 165, 250, 0.25);
+        border-color: rgba(96, 165, 250, 0.5);
+        transform: scale(1.05);
+    }
+
+    .country-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-8px);
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: var(--text-primary);
+        white-space: nowrap;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s, transform 0.2s;
+        margin-bottom: 4px;
+    }
+
+    .country-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: var(--bg-card);
+    }
+
+    .country-tooltip.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(-50%) translateY(-12px);
     }
 
     .event-value {
@@ -908,7 +953,12 @@
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <strong class="event-ip">{{ $event->client_ip }}</strong>
                         @if($event->country)
-                            <span class="event-country">{{ $event->country }}</span>
+                            <span class="event-country" 
+                                  data-country-code="{{ $event->country }}"
+                                  onclick="showCountryTooltip(this, event)">
+                                {{ $event->country }}
+                                <span class="country-tooltip" id="tooltip-{{ $event->id }}"></span>
+                            </span>
                         @endif
                     </div>
                     @if ($rule || $status === 403)
@@ -958,9 +1008,88 @@
                         </div>
                     @endif
                     @if ($event->country)
+                        @php
+                            $countryNames = [
+                                'US' => 'United States',
+                                'SA' => 'Saudi Arabia',
+                                'GB' => 'United Kingdom',
+                                'DE' => 'Germany',
+                                'FR' => 'France',
+                                'CN' => 'China',
+                                'JP' => 'Japan',
+                                'IN' => 'India',
+                                'BR' => 'Brazil',
+                                'RU' => 'Russia',
+                                'CA' => 'Canada',
+                                'AU' => 'Australia',
+                                'IT' => 'Italy',
+                                'ES' => 'Spain',
+                                'NL' => 'Netherlands',
+                                'SE' => 'Sweden',
+                                'NO' => 'Norway',
+                                'DK' => 'Denmark',
+                                'FI' => 'Finland',
+                                'PL' => 'Poland',
+                                'KR' => 'South Korea',
+                                'MX' => 'Mexico',
+                                'AR' => 'Argentina',
+                                'ZA' => 'South Africa',
+                                'EG' => 'Egypt',
+                                'AE' => 'United Arab Emirates',
+                                'TR' => 'Turkey',
+                                'ID' => 'Indonesia',
+                                'TH' => 'Thailand',
+                                'VN' => 'Vietnam',
+                                'PH' => 'Philippines',
+                                'MY' => 'Malaysia',
+                                'SG' => 'Singapore',
+                                'NZ' => 'New Zealand',
+                                'IE' => 'Ireland',
+                                'CH' => 'Switzerland',
+                                'AT' => 'Austria',
+                                'BE' => 'Belgium',
+                                'PT' => 'Portugal',
+                                'GR' => 'Greece',
+                                'CZ' => 'Czech Republic',
+                                'HU' => 'Hungary',
+                                'RO' => 'Romania',
+                                'BG' => 'Bulgaria',
+                                'HR' => 'Croatia',
+                                'SK' => 'Slovakia',
+                                'SI' => 'Slovenia',
+                                'LT' => 'Lithuania',
+                                'LV' => 'Latvia',
+                                'EE' => 'Estonia',
+                                'IS' => 'Iceland',
+                                'LU' => 'Luxembourg',
+                                'MT' => 'Malta',
+                                'CY' => 'Cyprus',
+                                'KW' => 'Kuwait',
+                                'QA' => 'Qatar',
+                                'BH' => 'Bahrain',
+                                'OM' => 'Oman',
+                                'JO' => 'Jordan',
+                                'LB' => 'Lebanon',
+                                'IQ' => 'Iraq',
+                                'SY' => 'Syria',
+                                'YE' => 'Yemen',
+                                'PK' => 'Pakistan',
+                                'BD' => 'Bangladesh',
+                                'LK' => 'Sri Lanka',
+                                'NP' => 'Nepal',
+                                'AF' => 'Afghanistan',
+                                'IR' => 'Iran',
+                                'IL' => 'Israel',
+                                'PS' => 'Palestine',
+                                'LOCAL' => 'Local Network',
+                                'PRIVATE' => 'Private Network',
+                                'UNKNOWN' => 'Unknown Country',
+                            ];
+                            $countryName = $countryNames[strtoupper($event->country)] ?? $event->country;
+                        @endphp
                         <div class="event-detail-item">
                             <span class="event-detail-label">Country:</span>
-                            <span class="event-detail-value">{{ $event->country }}</span>
+                            <span class="event-detail-value">{{ $countryName }}</span>
                         </div>
                     @endif
                     @if ($event->message)
@@ -990,6 +1119,105 @@
 </div>
 
 <script>
+// Country code to country name mapping
+const countryNames = {
+    'US': 'United States',
+    'SA': 'Saudi Arabia',
+    'GB': 'United Kingdom',
+    'DE': 'Germany',
+    'FR': 'France',
+    'CN': 'China',
+    'JP': 'Japan',
+    'IN': 'India',
+    'BR': 'Brazil',
+    'RU': 'Russia',
+    'CA': 'Canada',
+    'AU': 'Australia',
+    'IT': 'Italy',
+    'ES': 'Spain',
+    'NL': 'Netherlands',
+    'SE': 'Sweden',
+    'NO': 'Norway',
+    'DK': 'Denmark',
+    'FI': 'Finland',
+    'PL': 'Poland',
+    'KR': 'South Korea',
+    'MX': 'Mexico',
+    'AR': 'Argentina',
+    'ZA': 'South Africa',
+    'EG': 'Egypt',
+    'AE': 'United Arab Emirates',
+    'TR': 'Turkey',
+    'ID': 'Indonesia',
+    'TH': 'Thailand',
+    'VN': 'Vietnam',
+    'PH': 'Philippines',
+    'MY': 'Malaysia',
+    'SG': 'Singapore',
+    'NZ': 'New Zealand',
+    'IE': 'Ireland',
+    'CH': 'Switzerland',
+    'AT': 'Austria',
+    'BE': 'Belgium',
+    'PT': 'Portugal',
+    'GR': 'Greece',
+    'CZ': 'Czech Republic',
+    'HU': 'Hungary',
+    'RO': 'Romania',
+    'BG': 'Bulgaria',
+    'HR': 'Croatia',
+    'SK': 'Slovakia',
+    'SI': 'Slovenia',
+    'LT': 'Lithuania',
+    'LV': 'Latvia',
+    'EE': 'Estonia',
+    'IS': 'Iceland',
+    'LU': 'Luxembourg',
+    'MT': 'Malta',
+    'CY': 'Cyprus',
+    'LOCAL': 'Local Network',
+    'PRIVATE': 'Private Network',
+    'UNKNOWN': 'Unknown Country'
+};
+
+// Show country tooltip
+function showCountryTooltip(element, event) {
+    event.stopPropagation(); // Prevent event details toggle
+    
+    const countryCode = element.getAttribute('data-country-code');
+    const tooltip = element.querySelector('.country-tooltip');
+    
+    if (!tooltip) return;
+    
+    const countryName = countryNames[countryCode] || countryCode;
+    
+    // Close all other tooltips
+    document.querySelectorAll('.country-tooltip.show').forEach(t => {
+        if (t !== tooltip) {
+            t.classList.remove('show');
+        }
+    });
+    
+    // Toggle current tooltip
+    if (tooltip.classList.contains('show')) {
+        tooltip.classList.remove('show');
+    } else {
+        tooltip.textContent = countryName;
+        tooltip.classList.add('show');
+        
+        // Close on outside click
+        setTimeout(() => {
+            const closeTooltip = (e) => {
+                if (!element.contains(e.target)) {
+                    tooltip.classList.remove('show');
+                    document.removeEventListener('click', closeTooltip);
+                }
+            };
+            document.addEventListener('click', closeTooltip);
+        }, 100);
+    }
+}
+
 // Toggle event details
 function toggleEventDetails(element) {
     const eventItem = element.closest('.event-item');

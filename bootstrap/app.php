@@ -11,7 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // تطبيق حظر الدول على جميع الطلبات باستخدام GeoIpService
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckCountryBlock::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

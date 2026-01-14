@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\WafEvent;
 use App\Http\Controllers\IpRuleController;
 use App\Http\Controllers\UrlRuleController;
+use App\Http\Controllers\CountryRuleController;
 
 // اختياري: خله يحول الصفحة الرئيسية للوحة WAF
 Route::get('/', function () {
@@ -292,3 +293,7 @@ Route::get('/waf/url-rules', [UrlRuleController::class, 'index'])->name('url-rul
 Route::get('/waf/url-rules/create', [UrlRuleController::class, 'create'])->name('url-rules.create');
 Route::post('/waf/url-rules', [UrlRuleController::class, 'store'])->name('url-rules.store');
 Route::delete('/waf/url-rules/{urlRule}', [UrlRuleController::class, 'destroy'])->name('url-rules.destroy');
+
+Route::get('/waf/country-rules', [CountryRuleController::class, 'index'])->name('country-rules.index');
+Route::post('/waf/country-rules', [CountryRuleController::class, 'store'])->name('country-rules.store');
+Route::delete('/waf/country-rules/{countryRule}', [CountryRuleController::class, 'destroy'])->name('country-rules.destroy');

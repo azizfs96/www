@@ -424,6 +424,10 @@
                         <span class="nav-item-icon">▫</span>
                         <span>URL Rules</span>
                     </a>
+                    <a href="/waf/country-rules" class="nav-item {{ request()->is('waf/country-rules*') ? 'active' : '' }}">
+                        <span class="nav-item-icon">▫</span>
+                        <span>Country Rules</span>
+                    </a>
                 </div>
             </nav>
         </div>
