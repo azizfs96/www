@@ -190,6 +190,7 @@ Route::get('/waf/ip-rules', [IpRuleController::class, 'index'])->name('ip-rules.
 Route::post('/waf/ip-rules', [IpRuleController::class, 'store'])->name('ip-rules.store');
 Route::delete('/waf/ip-rules/{ipRule}', [IpRuleController::class, 'destroy'])->name('ip-rules.destroy');
 
-Route::get('/waf/url-rules', [UrlRuleController::class, 'index']);
-Route::get('/waf/url-rules/create', [UrlRuleController::class, 'create']);
-Route::post('/waf/url-rules', [UrlRuleController::class, 'store']);
+Route::get('/waf/url-rules', [UrlRuleController::class, 'index'])->name('url-rules.index');
+Route::get('/waf/url-rules/create', [UrlRuleController::class, 'create'])->name('url-rules.create');
+Route::post('/waf/url-rules', [UrlRuleController::class, 'store'])->name('url-rules.store');
+Route::delete('/waf/url-rules/{urlRule}', [UrlRuleController::class, 'destroy'])->name('url-rules.destroy');

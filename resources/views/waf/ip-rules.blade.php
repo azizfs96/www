@@ -1,6 +1,6 @@
 @extends('layouts.waf')
 
-@section('title', 'إدارة عناوين IP')
+@section('title', 'IP Rules Management')
 
 @section('styles')
 <style>
@@ -18,23 +18,29 @@
         --primary-hover: #B06FE8;
         --success: #4ADE80;
         --error: #F87171;
+        --warning: #FBBF24;
+        --info: #60A5FA;
     }
 
     .page-header {
         margin-bottom: 32px;
+        direction: ltr;
+        text-align: left;
     }
 
     .page-header h1 {
-        font-size: 28px;
+        font-size: 32px;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 12px;
+        letter-spacing: -0.5px;
     }
 
     .page-subtitle {
         font-size: 14px;
         color: var(--text-secondary);
         line-height: 1.6;
+        max-width: 700px;
     }
 
     .alert {
@@ -73,7 +79,9 @@
     .form-group label {
         font-size: 12px;
         color: var(--text-muted);
-        font-weight: 500;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .form-group input,
@@ -83,7 +91,7 @@
         border: 1px solid var(--border);
         color: var(--text-primary);
         font-size: 13px;
-        padding: 10px 14px;
+        padding: 11px 16px;
         transition: all 0.2s;
     }
 
@@ -92,6 +100,7 @@
         outline: none;
         border-color: var(--primary);
         background: var(--bg-hover);
+        box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.1);
     }
 
     .error-message {
@@ -104,9 +113,9 @@
         border-radius: 8px;
         border: none;
         font-size: 13px;
-        padding: 10px 20px;
+        padding: 11px 20px;
         cursor: pointer;
-        font-weight: 500;
+        font-weight: 600;
         transition: all 0.2s;
         white-space: nowrap;
     }
@@ -114,12 +123,13 @@
     .btn-primary {
         background: var(--primary);
         color: white;
-        border: 1px solid var(--primary);
+        box-shadow: 0 2px 8px rgba(157, 78, 221, 0.3);
     }
 
     .btn-primary:hover {
-        background: var(--primary-hover);
-        transform: translateY(-1px);
+        background: #8B3ACC;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(157, 78, 221, 0.4);
     }
 
     .btn-danger {
@@ -148,38 +158,45 @@
         font-size: 13px;
     }
 
-    th, td {
-        padding: 14px 20px;
-        text-align: right;
+    thead {
+        background: #1E1E1E;
     }
 
     th {
-        color: var(--text-muted);
-        font-weight: 600;
-        border-bottom: 1px solid var(--border);
+        padding: 12px 20px;
+        text-align: left;
         font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        background: var(--bg-card);
+        border-bottom: 1px solid var(--border);
     }
 
-    td {
-        border-top: 1px solid var(--border);
-        color: var(--text-primary);
-    }
-
-    tbody tr:nth-child(even) {
-        background: rgba(255, 255, 255, 0.01);
+    tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background-color 0.15s ease;
     }
 
     tbody tr:hover {
         background: var(--bg-hover);
     }
 
+    tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    td {
+        padding: 14px 20px;
+        text-align: left;
+        color: var(--text-primary);
+        font-size: 13px;
+    }
+
     .pill {
         display: inline-flex;
         align-items: center;
-        padding: 5px 12px;
+        padding: 4px 10px;
         border-radius: 6px;
         font-size: 11px;
         font-weight: 500;
@@ -187,20 +204,21 @@
     }
 
     .pill-allow {
-        background: rgba(74, 222, 128, 0.1);
+        background: rgba(74, 222, 128, 0.15);
         color: var(--success);
-        border-color: rgba(74, 222, 128, 0.2);
+        border-color: rgba(74, 222, 128, 0.3);
     }
 
     .pill-block {
-        background: rgba(248, 113, 113, 0.1);
+        background: rgba(248, 113, 113, 0.15);
         color: var(--error);
-        border-color: rgba(248, 113, 113, 0.2);
+        border-color: rgba(248, 113, 113, 0.3);
     }
 
     .text-muted {
         color: var(--text-muted);
         font-size: 12px;
+        font-family: 'Courier New', monospace;
     }
 
     .empty-state {
@@ -209,15 +227,20 @@
         color: var(--text-muted);
         font-size: 13px;
     }
+
+    td strong {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: 'Courier New', monospace;
+    }
 </style>
 @endsection
 
 @section('content')
 <div class="page-header">
-    <h1>إدارة عناوين IP</h1>
+    <h1>IP Rules Management</h1>
     <p class="page-subtitle">
-        من هنا يمكنك إضافة عناوين IP إلى قائمة السماح (Whitelist) أو الحظر (Blacklist). أي تعديل يتم
-        مزامنته تلقائياً مع ModSecurity وإعادة تحميل Nginx.
+        Manage IP addresses in your whitelist or blacklist. Any changes are automatically synchronized with ModSecurity and Nginx will be reloaded.
     </p>
 </div>
 
@@ -232,17 +255,17 @@
         @csrf
         <div class="form-row">
             <div class="form-group">
-                <label>عنوان IP</label>
-                <input type="text" name="ip" placeholder="مثال: 137.59.230.231" required>
+                <label>IP Address</label>
+                <input type="text" name="ip" placeholder="e.g., 137.59.230.231" required>
                 @error('ip')
                     <span class="error-message">{{ $message }}</span>
                 @enderror
             </div>
             <div class="form-group">
-                <label>النوع</label>
+                <label>Type</label>
                 <select name="type" required>
-                    <option value="allow">Whitelist (سماح)</option>
-                    <option value="block">Blacklist (حظر)</option>
+                    <option value="allow">Whitelist (Allow)</option>
+                    <option value="block">Blacklist (Block)</option>
                 </select>
                 @error('type')
                     <span class="error-message">{{ $message }}</span>
@@ -250,7 +273,7 @@
             </div>
             <div class="form-group" style="flex: 0 0 auto;">
                 <label>&nbsp;</label>
-                <button type="submit" class="btn btn-primary">إضافة القاعدة</button>
+                <button type="submit" class="btn btn-primary">Add Rule</button>
             </div>
         </div>
     </form>
@@ -260,10 +283,10 @@
     <table>
         <thead>
             <tr>
-                <th>IP</th>
-                <th>النوع</th>
-                <th>أضيف في</th>
-                <th>إجراءات</th>
+                <th>IP Address</th>
+                <th>Type</th>
+                <th>Created At</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -277,20 +300,20 @@
                         <span class="pill pill-block">Blacklist</span>
                     @endif
                 </td>
-                <td class="text-muted">{{ $rule->created_at->format('Y-m-d H:i') }}</td>
+                <td class="text-muted">{{ $rule->created_at->format('Y-m-d H:i:s') }}</td>
                 <td>
                     <form method="POST" action="{{ route('ip-rules.destroy', $rule) }}"
-                          onsubmit="return confirm('هل أنت متأكد من حذف هذه القاعدة؟');" style="display:inline;">
+                          onsubmit="return confirm('Are you sure you want to delete this rule?');" style="display:inline;">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger">حذف</button>
+                        <button type="submit" class="btn btn-danger">Delete</button>
                     </form>
                 </td>
             </tr>
         @empty
             <tr>
                 <td colspan="4" class="empty-state">
-                    لا توجد قواعد حالياً. يمكنك إضافة IP أعلاه.
+                    No rules currently. You can add an IP address above.
                 </td>
             </tr>
         @endforelse

@@ -420,13 +420,9 @@
                         <span class="nav-item-icon">▫</span>
                         <span>IP Rules</span>
                     </a>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Settings</div>
                     <a href="/waf/url-rules" class="nav-item {{ request()->is('waf/url-rules*') ? 'active' : '' }}">
                         <span class="nav-item-icon">▫</span>
-                        <span>IP Rules</span>
+                        <span>URL Rules</span>
                     </a>
                 </div>
             </nav>

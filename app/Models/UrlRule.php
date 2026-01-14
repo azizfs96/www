@@ -8,6 +8,7 @@ class UrlRule extends Model
 {
     protected $fillable = [
         'name',
+        'host',
         'path',
         'allowed_ips',
         'enabled',

@@ -40,17 +40,36 @@ class SyncUrlRules extends Command
             $baseId = 500000;
             $ruleId = $baseId + $rule->id;
             $msg    = addslashes($rule->name ?: "Restricted URL {$path}");
+            
+            $host = trim($rule->host ?? '');
 
             // نكوّن النص سطر بسطر (بدون Heredoc عشان ما نتلخبط)
-            $content .= "SecRule REQUEST_URI \"@beginsWith {$path}\" \\\n";
-            $content .= "    \"id:{$ruleId},\\\n";
-            $content .= "    phase:1,\\\n";
-            $content .= "    log,\\\n";
-            $content .= "    deny,\\\n";
-            $content .= "    status:403,\\\n";
-            $content .= "    chain,\\\n";
-            $content .= "    msg:'{$msg}'\"\n";
-            $content .= "    SecRule REMOTE_ADDR \"!@ipMatch {$ipList}\"\n\n";
+            // إذا كان هناك host محدد، نضيف شرط للـ host أولاً
+            if ($host !== '') {
+                // Chain rule: نتحقق من الـ host أولاً، ثم الـ path، ثم IP
+                $content .= "SecRule REQUEST_HEADERS:Host \"@streq {$host}\" \\\n";
+                $content .= "    \"id:{$ruleId},\\\n";
+                $content .= "    phase:1,\\\n";
+                $content .= "    log,\\\n";
+                $content .= "    deny,\\\n";
+                $content .= "    status:403,\\\n";
+                $content .= "    chain,\\\n";
+                $content .= "    msg:'{$msg}'\"\n";
+                $content .= "    SecRule REQUEST_URI \"@beginsWith {$path}\" \\\n";
+                $content .= "        \"chain\"\n";
+                $content .= "    SecRule REMOTE_ADDR \"!@ipMatch {$ipList}\"\n\n";
+            } else {
+                // بدون host: نطبق على كل المواقع
+                $content .= "SecRule REQUEST_URI \"@beginsWith {$path}\" \\\n";
+                $content .= "    \"id:{$ruleId},\\\n";
+                $content .= "    phase:1,\\\n";
+                $content .= "    log,\\\n";
+                $content .= "    deny,\\\n";
+                $content .= "    status:403,\\\n";
+                $content .= "    chain,\\\n";
+                $content .= "    msg:'{$msg}'\"\n";
+                $content .= "    SecRule REMOTE_ADDR \"!@ipMatch {$ipList}\"\n\n";
+            }
         }
 
         if (false === @file_put_contents($file, $content)) {

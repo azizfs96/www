@@ -23,6 +23,7 @@ class UrlRuleController extends Controller
     {
         $data = $request->validate([
             'name'        => 'nullable|string|max:255',
+            'host'        => 'nullable|string|max:255',
             'path'        => 'required|string|max:255',
             'allowed_ips' => 'required|string',
         ]);
@@ -32,5 +33,12 @@ class UrlRuleController extends Controller
         UrlRule::create($data);
 
         return redirect('/waf/url-rules')->with('status', 'تم إضافة القاعدة بنجاح، لا تنسَ مزامنة القواعد مع Nginx.');
+    }
+
+    public function destroy(UrlRule $urlRule)
+    {
+        $urlRule->delete();
+
+        return redirect('/waf/url-rules')->with('status', 'تم حذف القاعدة بنجاح.');
     }
 }
