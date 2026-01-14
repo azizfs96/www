@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use App\Models\WafEvent;
+use App\Services\GeoIpService;
 
 class ImportWafLogs extends Command
 {
@@ -93,9 +94,16 @@ public function handle(): int
             ? date('Y-m-d H:i:s', strtotime($tx['time_stamp']))
             : now();
 
+        $clientIp = $tx['client_ip'] ?? null;
+        
+        // Get country from IP using GeoIP service
+        $geoIpService = app(GeoIpService::class);
+        $country = $geoIpService->getCountryFromIp($clientIp);
+
         WafEvent::create([
             'event_time' => $eventTime,
-            'client_ip'  => $tx['client_ip'] ?? null,
+            'client_ip'  => $clientIp,
+            'country'    => $country,
             'host'       => $req['headers']['Host'] ?? null,
             'uri'        => $req['uri'] ?? null,
             'method'     => $req['method'] ?? null,

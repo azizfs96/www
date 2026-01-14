@@ -421,6 +421,65 @@
         flex-wrap: wrap;
     }
 
+    .status-filters {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .status-filter-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: var(--bg-dark);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 12px;
+    }
+
+    .status-filter-item:hover {
+        border-color: var(--border-light);
+        background: var(--bg-hover);
+    }
+
+    .status-filter-item.active {
+        border-color: var(--primary);
+        background: rgba(157, 78, 221, 0.1);
+    }
+
+    .status-filter-item input[type="checkbox"] {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+        accent-color: var(--primary);
+    }
+
+    .status-filter-item label {
+        cursor: pointer;
+        color: var(--text-primary);
+        font-weight: 500;
+        user-select: none;
+    }
+
+    .status-filter-item.allowed.active {
+        border-color: var(--success);
+        background: rgba(74, 222, 128, 0.1);
+    }
+
+    .status-filter-item.blocked.active {
+        border-color: var(--error);
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    .status-filter-item.notfound.active {
+        border-color: var(--text-muted);
+        background: rgba(179, 179, 179, 0.1);
+    }
+
     .chart-select,
     .chart-input {
         background: var(--bg-dark);
@@ -475,6 +534,13 @@ function loadChartData(host = '') {
     const loadingEl = document.getElementById('chartLoading');
     const canvasEl = document.getElementById('chartCanvas');
     
+    // Get selected status filters
+    const statusFilters = {
+        200: document.getElementById('filter200')?.checked ?? true,
+        403: document.getElementById('filter403')?.checked ?? true,
+        404: document.getElementById('filter404')?.checked ?? true,
+    };
+    
     if (loadingEl) loadingEl.style.display = 'flex';
     if (canvasEl) canvasEl.style.display = 'none';
     
@@ -484,6 +550,19 @@ function loadChartData(host = '') {
             if (loadingEl) loadingEl.style.display = 'none';
             if (canvasEl) canvasEl.style.display = 'block';
             
+            // Filter datasets based on selected status
+            const filteredDatasets = data.datasets.filter((dataset, index) => {
+                if (index === 0) return statusFilters[200]; // Allowed
+                if (index === 1) return statusFilters[403]; // Blocked
+                if (index === 2) return statusFilters[404]; // Not Found
+                return true;
+            });
+            
+            const filteredData = {
+                labels: data.labels,
+                datasets: filteredDatasets
+            };
+            
             const ctx = document.getElementById('chartCanvas').getContext('2d');
             
             if (chartInstance) {
@@ -492,7 +571,7 @@ function loadChartData(host = '') {
             
             chartInstance = new Chart(ctx, {
                 type: 'line',
-                data: data,
+                data: filteredData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -600,6 +679,38 @@ document.addEventListener('DOMContentLoaded', function() {
     if (applyBtn) {
         applyBtn.addEventListener('click', applyDomain);
     }
+    
+    // Handle status filter checkboxes
+    const statusFilters = document.querySelectorAll('.status-filter-item input[type="checkbox"]');
+    statusFilters.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const item = this.closest('.status-filter-item');
+            if (this.checked) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+            // Reload chart with current domain
+            const domain = domainInput && domainInput.value.trim() 
+                ? domainInput.value.trim() 
+                : (domainSelect ? domainSelect.value : '');
+            loadChartData(domain);
+        });
+    });
+    
+    // Handle status filter item clicks
+    const statusFilterItems = document.querySelectorAll('.status-filter-item');
+    statusFilterItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+    });
     
     function applyDomain() {
         const domain = domainInput ? domainInput.value.trim() : '';
@@ -721,6 +832,20 @@ document.addEventListener('DOMContentLoaded', function() {
             >
                 Apply
             </button>
+        </div>
+        <div class="status-filters" style="margin-top: 16px;">
+            <div class="status-filter-item allowed active" data-status="200">
+                <input type="checkbox" id="filter200" checked>
+                <label for="filter200">Allowed (200)</label>
+            </div>
+            <div class="status-filter-item blocked active" data-status="403">
+                <input type="checkbox" id="filter403" checked>
+                <label for="filter403">Blocked (403)</label>
+            </div>
+            <div class="status-filter-item notfound active" data-status="404">
+                <input type="checkbox" id="filter404" checked>
+                <label for="filter404">Not Found (404)</label>
+            </div>
         </div>
     </div>
     <div class="chart-container">

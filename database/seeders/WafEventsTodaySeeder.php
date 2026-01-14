@@ -169,10 +169,18 @@ class WafEventsTodaySeeder extends Seeder
 
             // زيادة احتمالية rabbitclean.sa
             $host = rand(1, 100) <= 40 ? 'rabbitclean.sa' : $hosts[array_rand($hosts)];
+            
+            $clientIp = $ipAddresses[array_rand($ipAddresses)];
+            
+            // Get country from IP (with caching)
+            // Note: For seeder, we'll use random countries to avoid API calls
+            $countries = ['US', 'SA', 'GB', 'DE', 'FR', 'CN', 'JP', 'IN', 'BR', 'RU', 'CA', 'AU', 'IT', 'ES', 'NL', 'SE', 'NO', 'DK', 'FI', 'PL'];
+            $country = $countries[array_rand($countries)];
 
             WafEvent::create([
                 'event_time' => $eventTime,
-                'client_ip' => $ipAddresses[array_rand($ipAddresses)],
+                'client_ip' => $clientIp,
+                'country' => $country,
                 'host' => $host,
                 'uri' => $uris[array_rand($uris)],
                 'method' => $methods[array_rand($methods)],

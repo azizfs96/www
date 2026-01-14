@@ -9,6 +9,7 @@ class WafEvent extends Model
     protected $fillable = [
         'event_time',
         'client_ip',
+        'country',
         'host',
         'uri',
         'method',

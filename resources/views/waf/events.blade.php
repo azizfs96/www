@@ -365,6 +365,21 @@
         white-space: nowrap;
     }
 
+    .event-country {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        background: rgba(96, 165, 250, 0.15);
+        border: 1px solid rgba(96, 165, 250, 0.3);
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--info);
+        font-family: 'Courier New', monospace;
+        margin-left: 8px;
+        white-space: nowrap;
+    }
+
     .event-value {
         display: flex;
         align-items: center;
@@ -890,7 +905,12 @@
                     @else
                         <span></span>
                     @endif
-                    <strong class="event-ip">{{ $event->client_ip }}</strong>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <strong class="event-ip">{{ $event->client_ip }}</strong>
+                        @if($event->country)
+                            <span class="event-country">{{ $event->country }}</span>
+                        @endif
+                    </div>
                     @if ($rule || $status === 403)
                         <div class="event-value">
                             {{ $rule ?: 'WAF' }}
@@ -935,6 +955,12 @@
                         <div class="event-detail-item">
                             <span class="event-detail-label">Severity:</span>
                             <span class="event-detail-value severity severity-{{ $event->severity }}">{{ $event->severity }}</span>
+                        </div>
+                    @endif
+                    @if ($event->country)
+                        <div class="event-detail-item">
+                            <span class="event-detail-label">Country:</span>
+                            <span class="event-detail-value">{{ $event->country }}</span>
                         </div>
                     @endif
                     @if ($event->message)
