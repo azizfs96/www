@@ -383,7 +383,238 @@
         font-weight: 600;
         color: var(--text-primary);
     }
+
+    /* Chart Panel */
+    .chart-panel {
+        background: #1E1E1E;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 40px;
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .chart-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .chart-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .chart-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .chart-select,
+    .chart-input {
+        background: var(--bg-dark);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 13px;
+        padding: 8px 12px;
+        min-width: 200px;
+        transition: all 0.2s;
+    }
+
+    .chart-select:focus,
+    .chart-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: var(--bg-hover);
+        box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.1);
+    }
+
+    .chart-input {
+        font-family: 'Courier New', monospace;
+    }
+
+    .chart-input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+
+    .chart-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 400px;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
 </style>
+@endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let chartInstance = null;
+
+function loadChartData(host = '') {
+    const loadingEl = document.getElementById('chartLoading');
+    const canvasEl = document.getElementById('chartCanvas');
+    
+    if (loadingEl) loadingEl.style.display = 'flex';
+    if (canvasEl) canvasEl.style.display = 'none';
+    
+    fetch(`/waf/api/chart-data?host=${encodeURIComponent(host)}&hours=24`)
+        .then(response => response.json())
+        .then(data => {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (canvasEl) canvasEl.style.display = 'block';
+            
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#B3B3B3',
+                                font: {
+                                    size: 12,
+                                    family: 'system-ui, sans-serif'
+                                },
+                                padding: 15,
+                                usePointStyle: true,
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                            titleColor: '#E5E5E5',
+                            bodyColor: '#B3B3B3',
+                            borderColor: '#333333',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(51, 51, 51, 0.5)',
+                                borderColor: '#333333',
+                            },
+                            ticks: {
+                                color: '#808080',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(51, 51, 51, 0.5)',
+                                borderColor: '#333333',
+                            },
+                            ticks: {
+                                color: '#808080',
+                                font: {
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading chart data:', error);
+            if (loadingEl) {
+                loadingEl.textContent = 'Error loading chart data';
+                loadingEl.style.color = '#F87171';
+            }
+        });
+}
+
+// Load chart on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadChartData();
+    
+    const domainSelect = document.getElementById('domainSelect');
+    const domainInput = document.getElementById('domainInput');
+    const applyBtn = document.getElementById('applyDomainBtn');
+    
+    // Handle domain selection change
+    if (domainSelect) {
+        domainSelect.addEventListener('change', function() {
+            if (this.value) {
+                // Clear input when selecting from dropdown
+                if (domainInput) domainInput.value = '';
+                loadChartData(this.value);
+            } else {
+                loadChartData('');
+            }
+        });
+    }
+    
+    // Handle manual domain input
+    if (domainInput) {
+        domainInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyDomain();
+            }
+        });
+    }
+    
+    // Handle apply button
+    if (applyBtn) {
+        applyBtn.addEventListener('click', applyDomain);
+    }
+    
+    function applyDomain() {
+        const domain = domainInput ? domainInput.value.trim() : '';
+        if (domain) {
+            // Clear dropdown selection
+            if (domainSelect) domainSelect.value = '';
+            loadChartData(domain);
+        } else {
+            // If input is empty, load all domains
+            if (domainSelect) domainSelect.value = '';
+            loadChartData('');
+        }
+    }
+});
+</script>
 @endsection
 
 @section('content')
@@ -459,6 +690,42 @@
         <div class="stat-description">
             IP address with the highest number of suspicious access attempts and potential attacks today.
         </div>
+    </div>
+</div>
+
+{{-- Chart Panel --}}
+<div class="chart-panel">
+    <div class="chart-header">
+        <div>
+            <div class="chart-title">Connection Statistics</div>
+            <div class="chart-subtitle">Request status codes over time (Last 24 hours)</div>
+        </div>
+        <div class="chart-controls">
+            <select id="domainSelect" class="chart-select">
+                <option value="">All Domains</option>
+                @foreach($hosts ?? [] as $host)
+                    <option value="{{ $host }}">{{ $host }}</option>
+                @endforeach
+            </select>
+            <input 
+                type="text" 
+                id="domainInput" 
+                class="chart-input" 
+                placeholder="Or enter domain manually (e.g., rabbitclean.sa)"
+                style="min-width: 300px;"
+            >
+            <button 
+                id="applyDomainBtn" 
+                class="btn btn-primary"
+                style="padding: 8px 16px; font-size: 13px;"
+            >
+                Apply
+            </button>
+        </div>
+    </div>
+    <div class="chart-container">
+        <div id="chartLoading" class="chart-loading">Loading chart data...</div>
+        <canvas id="chartCanvas" style="display: none;"></canvas>
     </div>
 </div>
 

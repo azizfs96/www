@@ -14,6 +14,14 @@ Route::get('/', function () {
 Route::get('/waf', function () {
     $today = WafEvent::whereDate('event_time', today());
 
+    // Get unique hosts for dropdown
+    $hosts = WafEvent::whereNotNull('host')
+        ->distinct()
+        ->orderBy('host')
+        ->pluck('host')
+        ->unique()
+        ->values();
+
     return view('waf.dashboard', [
         'total'   => $today->count(),
         'blocked' => (clone $today)->where('status', 403)->count(),
@@ -32,6 +40,96 @@ Route::get('/waf', function () {
             ->orderByDesc('cnt')
             ->limit(5)
             ->get(),
+
+        'hosts' => $hosts,
+    ]);
+});
+
+// API route for chart data
+Route::get('/waf/api/chart-data', function (Request $request) {
+    $host = $request->get('host');
+    $hours = (int) $request->get('hours', 24); // Default 24 hours
+    
+    $query = WafEvent::where('event_time', '>=', now()->subHours($hours));
+    
+    if ($host) {
+        $query->where('host', $host);
+    }
+    
+    // Get all events and group them
+    $events = $query->get();
+    
+    // Create hourly buckets
+    $buckets = [];
+    $now = now();
+    
+    for ($i = $hours - 1; $i >= 0; $i--) {
+        $hour = $now->copy()->subHours($i)->startOfHour();
+        $hourKey = $hour->format('Y-m-d H:00:00');
+        $buckets[$hourKey] = [
+            'label' => $hour->format('H:i'),
+            'allowed' => 0,
+            'blocked' => 0,
+            'notFound' => 0,
+        ];
+    }
+    
+    // Group events by hour and status
+    foreach ($events as $event) {
+        $hourKey = $event->event_time->startOfHour()->format('Y-m-d H:00:00');
+        
+        if (isset($buckets[$hourKey])) {
+            if ($event->status == 200) {
+                $buckets[$hourKey]['allowed']++;
+            } elseif ($event->status == 403) {
+                $buckets[$hourKey]['blocked']++;
+            } elseif ($event->status == 404) {
+                $buckets[$hourKey]['notFound']++;
+            }
+        }
+    }
+    
+    // Extract data for chart
+    $labels = [];
+    $allowed = [];
+    $blocked = [];
+    $notFound = [];
+    
+    foreach ($buckets as $bucket) {
+        $labels[] = $bucket['label'];
+        $allowed[] = $bucket['allowed'];
+        $blocked[] = $bucket['blocked'];
+        $notFound[] = $bucket['notFound'];
+    }
+    
+    return response()->json([
+        'labels' => $labels,
+        'datasets' => [
+            [
+                'label' => 'Allowed (200)',
+                'data' => $allowed,
+                'backgroundColor' => 'rgba(74, 222, 128, 0.3)',
+                'borderColor' => 'rgba(74, 222, 128, 1)',
+                'borderWidth' => 2,
+                'tension' => 0.4,
+            ],
+            [
+                'label' => 'Blocked (403)',
+                'data' => $blocked,
+                'backgroundColor' => 'rgba(239, 68, 68, 0.3)',
+                'borderColor' => 'rgba(239, 68, 68, 1)',
+                'borderWidth' => 2,
+                'tension' => 0.4,
+            ],
+            [
+                'label' => 'Not Found (404)',
+                'data' => $notFound,
+                'backgroundColor' => 'rgba(179, 179, 179, 0.3)',
+                'borderColor' => 'rgba(179, 179, 179, 1)',
+                'borderWidth' => 2,
+                'tension' => 0.4,
+            ],
+        ],
     ]);
 });
 
