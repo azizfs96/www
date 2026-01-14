@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Models\WafEvent;
 use App\Http\Controllers\IpRuleController;
-
+use App\Http\Controllers\UrlRuleController;
 
 // اختياري: خله يحول الصفحة الرئيسية للوحة WAF
 Route::get('/', function () {
@@ -190,3 +190,6 @@ Route::get('/waf/ip-rules', [IpRuleController::class, 'index'])->name('ip-rules.
 Route::post('/waf/ip-rules', [IpRuleController::class, 'store'])->name('ip-rules.store');
 Route::delete('/waf/ip-rules/{ipRule}', [IpRuleController::class, 'destroy'])->name('ip-rules.destroy');
 
+Route::get('/waf/url-rules', [UrlRuleController::class, 'index']);
+Route::get('/waf/url-rules/create', [UrlRuleController::class, 'create']);
+Route::post('/waf/url-rules', [UrlRuleController::class, 'store']);
