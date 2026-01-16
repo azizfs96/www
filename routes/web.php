@@ -6,6 +6,8 @@ use App\Models\WafEvent;
 use App\Http\Controllers\IpRuleController;
 use App\Http\Controllers\UrlRuleController;
 use App\Http\Controllers\CountryRuleController;
+use App\Http\Controllers\SiteController;
+use App\Http\Controllers\SitePolicyController;
 
 // اختياري: خله يحول الصفحة الرئيسية للوحة WAF
 Route::get('/', function () {
@@ -297,3 +299,15 @@ Route::delete('/waf/url-rules/{urlRule}', [UrlRuleController::class, 'destroy'])
 Route::get('/waf/country-rules', [CountryRuleController::class, 'index'])->name('country-rules.index');
 Route::post('/waf/country-rules', [CountryRuleController::class, 'store'])->name('country-rules.store');
 Route::delete('/waf/country-rules/{countryRule}', [CountryRuleController::class, 'destroy'])->name('country-rules.destroy');
+
+// إدارة المواقع (Sites Management)
+Route::get('/waf/sites', [SiteController::class, 'index'])->name('sites.index');
+Route::get('/waf/sites/create', [SiteController::class, 'create'])->name('sites.create');
+Route::post('/waf/sites', [SiteController::class, 'store'])->name('sites.store');
+Route::delete('/waf/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
+Route::patch('/waf/sites/{site}/toggle', [SiteController::class, 'toggle'])->name('sites.toggle');
+Route::post('/waf/sites/regenerate', [SiteController::class, 'regenerateAll'])->name('sites.regenerate');
+
+// إعدادات WAF لكل موقع (Site Policies)
+Route::get('/waf/sites/{site}/policy', [SitePolicyController::class, 'edit'])->name('sites.policy.edit');
+Route::put('/waf/sites/{site}/policy', [SitePolicyController::class, 'update'])->name('sites.policy.update');

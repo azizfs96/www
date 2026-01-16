@@ -251,9 +251,40 @@
 @endif
 
 <div class="card">
+    <div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{{ route('ip-rules.index', ['site_id' => 'global']) }}" 
+           class="btn {{ $siteId === 'global' ? 'btn-primary' : 'btn-secondary' }}">
+            🌍 Global Rules
+        </a>
+        <a href="{{ route('ip-rules.index', ['site_id' => 'all']) }}" 
+           class="btn {{ $siteId === 'all' ? 'btn-primary' : 'btn-secondary' }}">
+            📋 All Rules
+        </a>
+        @foreach($sites as $s)
+            <a href="{{ route('ip-rules.index', ['site_id' => $s->id]) }}" 
+               class="btn {{ $siteId == $s->id ? 'btn-primary' : 'btn-secondary' }}">
+                🌐 {{ $s->name }}
+            </a>
+        @endforeach
+    </div>
+
     <form method="POST" action="{{ route('ip-rules.store') }}">
         @csrf
+        <input type="hidden" name="site_id" value="{{ $siteId !== 'global' && $siteId !== 'all' ? $siteId : '' }}">
         <div class="form-row">
+            @if($siteId === 'global' || $siteId === 'all')
+            <div class="form-group">
+                <label>Site (Domain)</label>
+                <select name="site_id">
+                    <option value="">🌍 Global (All Sites)</option>
+                    @foreach($sites as $site)
+                        <option value="{{ $site->id }}">{{ $site->name }} ({{ $site->server_name }})</option>
+                    @endforeach
+                </select>
+                <small style="color: var(--text-muted); font-size: 11px;">اختر موقع معين أو اتركه عام</small>
+            </div>
+            @endif
+
             <div class="form-group">
                 <label>IP Address</label>
                 <input type="text" name="ip" placeholder="e.g., 137.59.230.231" required>
@@ -283,6 +314,7 @@
     <table>
         <thead>
             <tr>
+                <th>Site</th>
                 <th>IP Address</th>
                 <th>Type</th>
                 <th>Created At</th>
@@ -292,6 +324,13 @@
         <tbody>
         @forelse ($rules as $rule)
             <tr>
+                <td>
+                    @if($rule->site_id)
+                        <span class="badge badge-info">🌐 {{ $rule->site->name }}</span>
+                    @else
+                        <span class="badge badge-secondary">🌍 Global</span>
+                    @endif
+                </td>
                 <td><strong>{{ $rule->ip }}</strong></td>
                 <td>
                     @if ($rule->type === 'allow')
