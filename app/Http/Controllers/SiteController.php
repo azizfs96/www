@@ -160,7 +160,7 @@ class SiteController extends Controller
         if ($policy && $policy->waf_enabled) {
             $content .= "    # ModSecurity WAF - Enabled\n";
             $content .= "    modsecurity on;\n";
-            $content .= "    modsecurity_rules_file /etc/nginx/modsec/{$site->server_name}.conf;\n\n";
+            $content .= "    modsecurity_rules_file /etc/nginx/modsec/main.conf;\n\n";
             
             // Rate Limiting
             if ($policy->rate_limiting_enabled && $policy->requests_per_minute) {
@@ -204,11 +204,9 @@ class SiteController extends Controller
             $content .= "}\n";
         }
 
-        // توليد ملف ModSecurity خاص بالموقع
-        if ($policy && $policy->waf_enabled) {
-            $this->generateModSecurityConfig($site, $policy);
-        }
-
+        // ملاحظة: نستخدم main.conf المشترك لجميع المواقع
+        // يمكن لاحقاً إضافة قواعد خاصة بكل موقع إذا لزم الأمر
+        
         return $content;
     }
 
@@ -222,9 +220,30 @@ class SiteController extends Controller
         $content = "# ModSecurity Configuration for {$site->name}\n";
         $content .= "# Generated at: " . now()->format('Y-m-d H:i:s') . "\n\n";
 
-        // تضمين القواعد الأساسية
+        // تضمين القواعد الأساسية (إن وجدت)
         $content .= "# Include base configuration\n";
-        $content .= "Include /etc/nginx/modsec/modsecurity.conf\n\n";
+        if (file_exists('/etc/nginx/modsec/main.conf')) {
+            $content .= "Include /etc/nginx/modsec/main.conf\n\n";
+        } elseif (file_exists('/etc/nginx/modsec/modsecurity.conf')) {
+            $content .= "Include /etc/nginx/modsec/modsecurity.conf\n\n";
+        } else {
+            // إعدادات أساسية بديلة
+            $content .= "SecRuleEngine On\n";
+            $content .= "SecRequestBodyAccess On\n";
+            $content .= "SecResponseBodyAccess Off\n";
+            $content .= "SecRequestBodyLimit 13107200\n";
+            $content .= "SecRequestBodyNoFilesLimit 131072\n";
+            $content .= "SecRequestBodyInMemoryLimit 131072\n";
+            $content .= "SecAuditEngine RelevantOnly\n";
+            $content .= "SecAuditLogRelevantStatus \"^(?:5|4(?!04))\"\n";
+            $content .= "SecAuditLogParts ABIJDEFHZ\n";
+            $content .= "SecAuditLogType Serial\n";
+            $content .= "SecAuditLog /var/log/modsec_audit.log\n";
+            $content .= "SecArgumentSeparator &\n";
+            $content .= "SecCookieFormat 0\n";
+            $content .= "SecTmpDir /tmp/\n";
+            $content .= "SecDataDir /tmp/\n\n";
+        }
 
         // إعدادات مستوى الصرامة
         $content .= "# Paranoia Level\n";
@@ -237,33 +256,42 @@ class SiteController extends Controller
         // القواعد العامة إذا كانت وراثة القواعد مفعلة
         if ($policy->inherit_global_rules) {
             $content .= "# Global Rules\n";
-            $content .= "Include /etc/nginx/modsec/global-rules.conf\n\n";
+            if (file_exists('/etc/nginx/modsec/global-rules.conf')) {
+                $content .= "Include /etc/nginx/modsec/global-rules.conf\n\n";
+            } else {
+                $content .= "# Global rules file not found\n\n";
+            }
         }
 
-        // قواعد OWASP CRS
-        if ($policy->block_sql_injection) {
-            $content .= "# OWASP CRS - SQL Injection\n";
-            $content .= "Include /etc/nginx/modsec/owasp-crs/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf\n\n";
-        }
+        // قواعد OWASP CRS (فقط إذا كانت مثبتة)
+        $owaspPath = '/etc/nginx/modsec/owasp-crs/rules';
+        if (is_dir($owaspPath)) {
+            if ($policy->block_sql_injection && file_exists("$owaspPath/REQUEST-942-APPLICATION-ATTACK-SQLI.conf")) {
+                $content .= "# OWASP CRS - SQL Injection\n";
+                $content .= "Include $owaspPath/REQUEST-942-APPLICATION-ATTACK-SQLI.conf\n\n";
+            }
 
-        if ($policy->block_xss) {
-            $content .= "# OWASP CRS - XSS\n";
-            $content .= "Include /etc/nginx/modsec/owasp-crs/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf\n\n";
-        }
+            if ($policy->block_xss && file_exists("$owaspPath/REQUEST-941-APPLICATION-ATTACK-XSS.conf")) {
+                $content .= "# OWASP CRS - XSS\n";
+                $content .= "Include $owaspPath/REQUEST-941-APPLICATION-ATTACK-XSS.conf\n\n";
+            }
 
-        if ($policy->block_rce) {
-            $content .= "# OWASP CRS - RCE\n";
-            $content .= "Include /etc/nginx/modsec/owasp-crs/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf\n\n";
-        }
+            if ($policy->block_rce && file_exists("$owaspPath/REQUEST-932-APPLICATION-ATTACK-RCE.conf")) {
+                $content .= "# OWASP CRS - RCE\n";
+                $content .= "Include $owaspPath/REQUEST-932-APPLICATION-ATTACK-RCE.conf\n\n";
+            }
 
-        if ($policy->block_lfi) {
-            $content .= "# OWASP CRS - LFI\n";
-            $content .= "Include /etc/nginx/modsec/owasp-crs/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf\n\n";
-        }
+            if ($policy->block_lfi && file_exists("$owaspPath/REQUEST-930-APPLICATION-ATTACK-LFI.conf")) {
+                $content .= "# OWASP CRS - LFI\n";
+                $content .= "Include $owaspPath/REQUEST-930-APPLICATION-ATTACK-LFI.conf\n\n";
+            }
 
-        if ($policy->block_rfi) {
-            $content .= "# OWASP CRS - RFI\n";
-            $content .= "Include /etc/nginx/modsec/owasp-crs/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf\n\n";
+            if ($policy->block_rfi && file_exists("$owaspPath/REQUEST-931-APPLICATION-ATTACK-RFI.conf")) {
+                $content .= "# OWASP CRS - RFI\n";
+                $content .= "Include $owaspPath/REQUEST-931-APPLICATION-ATTACK-RFI.conf\n\n";
+            }
+        } else {
+            $content .= "# OWASP CRS not installed - using basic rules only\n\n";
         }
 
         // استثناءات URLs
@@ -298,8 +326,29 @@ class SiteController extends Controller
 
         // قواعد IP الخاصة بالموقع
         $content .= "# Site-specific IP Rules\n";
-        $content .= "Include /etc/nginx/modsec/sites/{$site->server_name}-whitelist.txt\n";
-        $content .= "Include /etc/nginx/modsec/sites/{$site->server_name}-blacklist.txt\n";
+        
+        // إنشاء ملفات IP Rules إذا لم تكن موجودة
+        $sitesDir = '/etc/nginx/modsec/sites';
+        if (!is_dir($sitesDir)) {
+            @mkdir($sitesDir, 0755, true);
+        }
+        
+        $whitelistFile = "$sitesDir/{$site->server_name}-whitelist.txt";
+        $blacklistFile = "$sitesDir/{$site->server_name}-blacklist.txt";
+        
+        if (!file_exists($whitelistFile)) {
+            @file_put_contents($whitelistFile, "# Whitelist for {$site->name}\n");
+        }
+        if (!file_exists($blacklistFile)) {
+            @file_put_contents($blacklistFile, "# Blacklist for {$site->name}\n");
+        }
+        
+        if (file_exists($whitelistFile)) {
+            $content .= "Include $whitelistFile\n";
+        }
+        if (file_exists($blacklistFile)) {
+            $content .= "Include $blacklistFile\n";
+        }
 
         @file_put_contents($configFile, $content);
     }
