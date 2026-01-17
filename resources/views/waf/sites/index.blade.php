@@ -297,6 +297,15 @@
                                 ⚙️ إعدادات WAF
                             </a>
 
+                            <form method="POST" action="{{ route('sites.toggle-ssl', $site) }}" style="display: inline;">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="btn btn-sm {{ $site->ssl_enabled ? 'btn-warning' : 'btn-success' }}" 
+                                        title="{{ $site->ssl_enabled ? 'تعطيل SSL' : 'تفعيل SSL وتوليد الشهادة' }}">
+                                    {{ $site->ssl_enabled ? '🔓 تعطيل SSL' : '🔒 تفعيل SSL' }}
+                                </button>
+                            </form>
+
                             <form method="POST" action="{{ route('sites.toggle', $site) }}" style="display: inline;">
                                 @csrf
                                 @method('PATCH')

@@ -307,6 +307,7 @@ Route::get('/waf/sites/create', [SiteController::class, 'create'])->name('sites.
 Route::post('/waf/sites', [SiteController::class, 'store'])->name('sites.store');
 Route::delete('/waf/sites/{site}', [SiteController::class, 'destroy'])->name('sites.destroy');
 Route::patch('/waf/sites/{site}/toggle', [SiteController::class, 'toggle'])->name('sites.toggle');
+Route::patch('/waf/sites/{site}/toggle-ssl', [SiteController::class, 'toggleSsl'])->name('sites.toggle-ssl');
 Route::post('/waf/sites/regenerate', [SiteController::class, 'regenerateAll'])->name('sites.regenerate');
 
 // إعدادات WAF لكل موقع (Site Policies)

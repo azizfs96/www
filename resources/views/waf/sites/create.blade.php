@@ -426,15 +426,34 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sslCheckbox = document.getElementById('sslCheckbox');
     const sslFields = document.getElementById('sslFields');
+    const sslHiddenInput = document.querySelector('input[type="hidden"][name="ssl_enabled"]');
 
     if (sslCheckbox && sslFields) {
+        // عند تغيير checkbox
         sslCheckbox.addEventListener('change', function() {
             if (this.checked) {
                 sslFields.classList.add('active');
+                // إزالة hidden input عند تحديد checkbox (لإرسال '1' فقط)
+                if (sslHiddenInput) {
+                    sslHiddenInput.remove();
+                }
             } else {
                 sslFields.classList.remove('active');
+                // إعادة إضافة hidden input عند إلغاء التحديد
+                if (!sslHiddenInput || !sslHiddenInput.parentNode) {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'ssl_enabled';
+                    hidden.value = '0';
+                    sslCheckbox.parentNode.insertBefore(hidden, sslCheckbox);
+                }
             }
         });
+        
+        // التحقق من الحالة الأولية
+        if (sslCheckbox.checked && sslHiddenInput) {
+            sslHiddenInput.remove();
+        }
     }
 });
 </script>

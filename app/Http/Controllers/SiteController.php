@@ -41,13 +41,19 @@ class SiteController extends Controller
         ]);
 
         $data['enabled'] = true;
+        
         // Checkbox: إذا كان محدد = '1' (true)، إذا لم يكن محدد = '0' (false)
-        $sslEnabled = $request->input('ssl_enabled') === '1' || $request->input('ssl_enabled') === true;
+        // في Laravel، إذا كان checkbox محدد، سيتم إرسال '1'، وإذا لم يكن محدد، لن يتم إرسال أي شيء
+        // لكن لدينا hidden input بقيمة '0'، لذا سنحصل على '0' أو '1'
+        $sslInput = $request->input('ssl_enabled', '0');
+        $sslEnabled = ($sslInput === '1' || $sslInput === 1 || $sslInput === true || $sslInput === 'on');
         
         \Log::info("Creating site", [
             'server_name' => $data['server_name'],
-            'ssl_enabled_input' => $request->input('ssl_enabled'),
-            'ssl_enabled_parsed' => $sslEnabled
+            'ssl_enabled_raw' => $sslInput,
+            'ssl_enabled_type' => gettype($sslInput),
+            'ssl_enabled_parsed' => $sslEnabled,
+            'all_inputs' => $request->all()
         ]);
         
         // إذا كان SSL مفعل، نولد الشهادة تلقائياً
@@ -62,8 +68,19 @@ class SiteController extends Controller
         }
         
         $data['ssl_enabled'] = $sslEnabled;
+        
+        \Log::info("Data before Site::create", [
+            'ssl_enabled' => $data['ssl_enabled'],
+            'ssl_enabled_type' => gettype($data['ssl_enabled'])
+        ]);
 
         $site = Site::create($data);
+        
+        \Log::info("Site created", [
+            'site_id' => $site->id,
+            'ssl_enabled_in_db' => $site->ssl_enabled,
+            'ssl_enabled_type' => gettype($site->ssl_enabled)
+        ]);
 
         // توليد ملف Nginx أولاً (HTTP فقط) حتى يتمكن Certbot من التحقق
         $this->generateNginxConfig($site);
@@ -131,6 +148,54 @@ class SiteController extends Controller
 
         return redirect()->route('sites.index')
             ->with('status', 'تم حذف الموقع بنجاح.');
+    }
+
+    /**
+     * تفعيل/تعطيل SSL لموقع
+     */
+    public function toggleSsl(Site $site)
+    {
+        if (!$site->ssl_enabled) {
+            // تفعيل SSL
+            $site->ssl_enabled = true;
+            $site->ssl_cert_path = "/etc/letsencrypt/live/{$site->server_name}/fullchain.pem";
+            $site->ssl_key_path = "/etc/letsencrypt/live/{$site->server_name}/privkey.pem";
+            $site->save();
+            
+            // توليد ملف Nginx أولاً (HTTP فقط)
+            $this->generateNginxConfig($site);
+            
+            // توليد الشهادة
+            $certResult = $this->generateSslCertificate($site);
+            
+            if (!$certResult['success']) {
+                $site->ssl_enabled = false;
+                $site->ssl_cert_path = null;
+                $site->ssl_key_path = null;
+                $site->save();
+                $this->generateNginxConfig($site);
+                
+                return redirect()->route('sites.index')
+                    ->with('error', 'فشل توليد شهادة SSL: ' . $certResult['message']);
+            }
+            
+            // إعادة توليد ملف Nginx مع SSL
+            $this->generateNginxConfig($site);
+            
+            return redirect()->route('sites.index')
+                ->with('status', 'تم تفعيل SSL وتوليد الشهادة بنجاح!');
+        } else {
+            // تعطيل SSL
+            $site->ssl_enabled = false;
+            $site->ssl_cert_path = null;
+            $site->ssl_key_path = null;
+            $site->save();
+            
+            $this->generateNginxConfig($site);
+            
+            return redirect()->route('sites.index')
+                ->with('status', 'تم تعطيل SSL بنجاح.');
+        }
     }
 
     /**
