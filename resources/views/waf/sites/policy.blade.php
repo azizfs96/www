@@ -555,6 +555,30 @@
         </div>
     </div>
 
+    {{-- Custom 403 Page --}}
+    <div class="card">
+        <h2 class="section-title" style="direction: ltr; text-align: left;">🚫 Custom 403 Forbidden Page</h2>
+
+        <div class="form-group">
+            <label class="form-label" style="direction: ltr; text-align: left;">Custom 403 Page Path (Optional)</label>
+            <input type="text" name="custom_403_page_path" class="form-input" 
+                   value="{{ $policy->custom_403_page_path }}" 
+                   placeholder="/etc/nginx/custom-403.html">
+            <div class="form-help" style="direction: ltr; text-align: left;">
+                Full path to your custom 403 HTML page. If empty, a default page will be generated automatically.
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" style="direction: ltr; text-align: left;">Custom 403 Message (Optional)</label>
+            <textarea name="custom_403_message" class="form-textarea" style="min-height: 80px;"
+                      placeholder="Access Denied - Your request has been blocked by WAF">{{ $policy->custom_403_message }}</textarea>
+            <div class="form-help" style="direction: ltr; text-align: left;">
+                Custom message to display on the 403 page. Used if no custom page path is provided.
+            </div>
+        </div>
+    </div>
+
     {{-- Custom Rules --}}
     <div class="card">
         <h2 class="section-title" style="direction: ltr; text-align: left;">⚡ Custom ModSecurity Rules</h2>

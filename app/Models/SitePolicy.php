@@ -38,6 +38,8 @@ class SitePolicy extends Model
         'log_level',
         'custom_modsec_rules',
         'notes',
+        'custom_403_page_path',
+        'custom_403_message',
     ];
 
     protected $casts = [

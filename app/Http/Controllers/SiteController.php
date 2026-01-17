@@ -427,6 +427,9 @@ class SiteController extends Controller
                 $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
             }
             
+            // تخصيص صفحة 403
+            $this->add403ErrorPage($content, $site);
+            
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
@@ -467,6 +470,9 @@ class SiteController extends Controller
                 $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
             }
             
+            // تخصيص صفحة 403
+            $this->add403ErrorPage($content, $site);
+            
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
@@ -481,6 +487,121 @@ class SiteController extends Controller
         }
         
         return $content;
+    }
+
+    /**
+     * إضافة error_page 403 في Nginx config
+     */
+    protected function add403ErrorPage(string &$content, Site $site): void
+    {
+        if (!$site->policy) {
+            return;
+        }
+
+        // إنشاء مجلد صفحات 403 إذا لم يكن موجوداً
+        $pagesDir = '/etc/nginx/waf-403-pages';
+        if (!is_dir($pagesDir)) {
+            @mkdir($pagesDir, 0755, true);
+        }
+
+        // تحديد مسار صفحة 403
+        if ($site->policy->custom_403_page_path && file_exists($site->policy->custom_403_page_path)) {
+            // استخدام صفحة مخصصة من المستخدم
+            $content .= "    error_page 403 {$site->policy->custom_403_page_path};\n";
+        } else {
+            // توليد صفحة افتراضية مخصصة
+            $default403Path = "{$pagesDir}/{$site->server_name}.html";
+            $this->generateDefault403Page($site, $default403Path);
+            $content .= "    error_page 403 {$default403Path};\n";
+        }
+        $content .= "\n";
+    }
+
+    /**
+     * توليد صفحة 403 افتراضية جميلة
+     */
+    protected function generateDefault403Page(Site $site, string $filePath): void
+    {
+        $message = $site->policy->custom_403_message 
+            ?: "Access Denied - Your request has been blocked by WAF (Web Application Firewall)";
+
+        $html = <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden - Access Denied</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #333;
+            font-size: 36px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .message {
+            color: #666;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+        .details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #888;
+        }
+        .site-name {
+            color: #667eea;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🚫</div>
+        <h1>403 Forbidden</h1>
+        <p class="message">{$message}</p>
+        <div class="details">
+            <p>Site: <span class="site-name">{$site->server_name}</span></p>
+            <p style="margin-top: 10px;">If you believe this is an error, please contact the site administrator.</p>
+        </div>
+    </div>
+</body>
+</html>
+HTML;
+
+        @file_put_contents($filePath, $html);
+        @chmod($filePath, 0644);
     }
 
     /**

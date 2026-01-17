@@ -38,6 +38,8 @@ class SitePolicyController extends Controller
             'log_level' => 'required|in:debug,info,warn,error',
             'custom_modsec_rules' => 'nullable|string',
             'notes' => 'nullable|string',
+            'custom_403_page_path' => 'nullable|string|max:500',
+            'custom_403_message' => 'nullable|string',
         ]);
 
         // Handle checkboxes manually (they don't send values when unchecked)
