@@ -418,7 +418,7 @@
                 <div class="nav-section">
                     <div class="nav-section-title">Settings</div>
                     <a href="/waf/sites" class="nav-item {{ request()->is('waf/sites*') ? 'active' : '' }}">
-                        <span class="nav-item-icon">🌐</span>
+                        <span class="nav-item-icon">▫</span>
                         <span>Sites Management</span>
                     </a>
                     <a href="/waf/ip-rules" class="nav-item {{ request()->is('waf/ip-rules*') ? 'active' : '' }}">
