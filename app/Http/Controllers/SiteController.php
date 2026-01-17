@@ -362,6 +362,11 @@ class SiteController extends Controller
     {
         $configFile = "/etc/nginx/sites-enabled/{$site->server_name}.waf.conf";
 
+        // توليد ملف ModSecurity أولاً (إذا كان هناك policy)
+        if ($site->policy) {
+            $this->generateModSecurityConfig($site, $site->policy);
+        }
+
         // إنشاء المحتوى
         $content = $this->buildNginxConfigContent($site);
 
@@ -414,6 +419,14 @@ class SiteController extends Controller
         if ($isSslEnabled && !empty($site->ssl_cert_path) && !empty($site->ssl_key_path)) {
             $content .= "server {\n";
             $content .= "    server_name {$site->server_name} www.{$site->server_name};\n\n";
+            
+            // إضافة ModSecurity (دائماً إذا كان هناك policy)
+            $modsecFile = "/etc/nginx/modsec/{$site->server_name}.conf";
+            if ($site->policy && file_exists($modsecFile)) {
+                $content .= "    modsecurity on;\n";
+                $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
+            }
+            
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
@@ -446,6 +459,14 @@ class SiteController extends Controller
             // HTTP Only
             $content .= "server {\n";
             $content .= "    server_name {$site->server_name} www.{$site->server_name};\n\n";
+            
+            // إضافة ModSecurity (دائماً إذا كان هناك policy)
+            $modsecFile = "/etc/nginx/modsec/{$site->server_name}.conf";
+            if ($site->policy && file_exists($modsecFile)) {
+                $content .= "    modsecurity on;\n";
+                $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
+            }
+            
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
