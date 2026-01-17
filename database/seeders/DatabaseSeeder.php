@@ -22,6 +22,11 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
+        // إنشاء Super Admin
+        $this->call([
+            AdminUserSeeder::class,
+        ]);
+
         // إضافة أحداث WAF وهمية
         $this->call([
             WafEventsSeeder::class,

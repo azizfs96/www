@@ -34,14 +34,16 @@ Route::get('/waf', function () {
     // Filter events by tenant if not super admin
     if (!$user->isSuperAdmin() && $user->tenant_id) {
         $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
-        $today->whereIn('site_id', $siteIds)->orWhereNull('site_id');
+        // Tenant users should only see events for their tenant's sites (not global events)
+        $today->whereIn('site_id', $siteIds);
     }
 
     // Get unique hosts for dropdown (filtered by tenant)
     $hostsQuery = WafEvent::whereNotNull('host');
     if (!$user->isSuperAdmin() && $user->tenant_id) {
         $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
-        $hostsQuery->whereIn('site_id', $siteIds)->orWhereNull('site_id');
+        // Tenant users should only see hosts for their tenant's sites
+        $hostsQuery->whereIn('site_id', $siteIds);
     }
     $hosts = $hostsQuery->distinct()
         ->orderBy('host')
@@ -83,7 +85,8 @@ Route::get('/waf/api/chart-data', function (Request $request) {
     // Filter by tenant if not super admin
     if (!$user->isSuperAdmin() && $user->tenant_id) {
         $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
-        $query->whereIn('site_id', $siteIds)->orWhereNull('site_id');
+        // Tenant users should only see events for their tenant's sites (not global events)
+        $query->whereIn('site_id', $siteIds);
     }
     
     if ($host) {
@@ -175,7 +178,8 @@ Route::get('/waf/events', function (Request $request) {
     // Filter by tenant if not super admin
     if (!$user->isSuperAdmin() && $user->tenant_id) {
         $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
-        $baseQuery->whereIn('site_id', $siteIds)->orWhereNull('site_id');
+        // Tenant users should only see events for their tenant's sites (not global events)
+        $baseQuery->whereIn('site_id', $siteIds);
     }
     
     $query = clone $baseQuery;
