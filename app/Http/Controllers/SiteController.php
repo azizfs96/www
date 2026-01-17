@@ -166,24 +166,32 @@ class SiteController extends Controller
             $this->generateNginxConfig($site);
             
             // توليد الشهادة
+            \Log::info("Starting SSL certificate generation for site: {$site->server_name}");
             $certResult = $this->generateSslCertificate($site);
             
+            \Log::info("SSL certificate generation completed", [
+                'success' => $certResult['success'],
+                'message' => $certResult['message']
+            ]);
+            
             if (!$certResult['success']) {
-                $site->ssl_enabled = false;
-                $site->ssl_cert_path = null;
-                $site->ssl_key_path = null;
-                $site->save();
-                $this->generateNginxConfig($site);
-                
+                // نحتفظ بـ SSL مفعل لكن نعرض رسالة خطأ
+                // يمكن للمستخدم إعادة المحاولة لاحقاً
                 return redirect()->route('sites.index')
-                    ->with('error', 'فشل توليد شهادة SSL: ' . $certResult['message']);
+                    ->with('error', '⚠️ فشل توليد شهادة SSL: ' . $certResult['message'] . 
+                           '<br><br><strong>التحقق من:</strong>' .
+                           '<br>1. أن النطاق ' . $site->server_name . ' يشير إلى IP السيرفر' .
+                           '<br>2. أن Certbot مثبت: <code>sudo apt-get install certbot python3-certbot-nginx</code>' .
+                           '<br>3. أن Nginx يعمل: <code>sudo systemctl status nginx</code>' .
+                           '<br>4. أن الموقع متاح على HTTP (port 80)' .
+                           '<br><br>يمكنك إعادة المحاولة بالضغط على زر "تفعيل SSL" مرة أخرى.');
             }
             
             // إعادة توليد ملف Nginx مع SSL
             $this->generateNginxConfig($site);
             
             return redirect()->route('sites.index')
-                ->with('status', 'تم تفعيل SSL وتوليد الشهادة بنجاح!');
+                ->with('status', '✅ تم تفعيل SSL وتوليد الشهادة بنجاح! تم تحديث ملف Nginx.');
         } else {
             // تعطيل SSL
             $site->ssl_enabled = false;
@@ -540,9 +548,17 @@ class SiteController extends Controller
         sleep(2); // انتظار قليل لضمان أن Nginx تم تحميله
 
         // توليد الشهادة باستخدام Certbot
-        // نستخدم --nginx ليقوم Certbot بتعديل ملف Nginx تلقائياً
-        // لكننا سنستخدم --certonly --nginx لتوليد الشهادة فقط
+        // نستخدم --certonly --nginx لتوليد الشهادة فقط بدون تعديل ملف Nginx
         $email = config('mail.from.address', 'admin@' . $domain);
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $email = "admin@{$domain}";
+        }
+        
+        \Log::info("Running certbot command", [
+            'domain' => $domain,
+            'wwwDomain' => $wwwDomain,
+            'email' => $email
+        ]);
         
         $command = sprintf(
             'sudo certbot certonly --nginx --non-interactive --agree-tos --email %s -d %s -d %s 2>&1',
@@ -550,43 +566,96 @@ class SiteController extends Controller
             escapeshellarg($domain),
             escapeshellarg($wwwDomain)
         );
+        
+        \Log::info("Certbot command: " . $command);
 
         $output = [];
         $returnVar = 0;
         exec($command, $output, $returnVar);
         
         $outputString = implode("\n", $output);
+        
+        \Log::info("Certbot execution result", [
+            'return_code' => $returnVar,
+            'output' => $outputString
+        ]);
 
-        if ($returnVar !== 0) {
-            // إذا فشل، قد تكون الشهادة موجودة بالفعل
-            // نتحقق من وجود الملفات
-            $certPath = "/etc/letsencrypt/live/{$domain}/fullchain.pem";
-            $keyPath = "/etc/letsencrypt/live/{$domain}/privkey.pem";
-            
-            if (file_exists($certPath) && file_exists($keyPath)) {
-                // الشهادة موجودة بالفعل
-                return [
-                    'success' => true,
-                    'message' => 'الشهادة موجودة بالفعل'
-                ];
-            }
-            
-            return [
-                'success' => false,
-                'message' => 'فشل توليد الشهادة: ' . $outputString
-            ];
-        }
-
-        // التحقق من وجود الملفات
+        // التحقق من وجود الملفات أولاً (حتى لو فشل الأمر)
         $certPath = "/etc/letsencrypt/live/{$domain}/fullchain.pem";
         $keyPath = "/etc/letsencrypt/live/{$domain}/privkey.pem";
         
-        if (!file_exists($certPath) || !file_exists($keyPath)) {
+        if (file_exists($certPath) && file_exists($keyPath)) {
+            // الشهادة موجودة (سواء تم توليدها الآن أو كانت موجودة مسبقاً)
+            \Log::info("SSL certificate files found", [
+                'cert_path' => $certPath,
+                'key_path' => $keyPath
+            ]);
             return [
-                'success' => false,
-                'message' => 'تم تنفيذ الأمر لكن الملفات غير موجودة'
+                'success' => true,
+                'message' => 'الشهادة موجودة'
             ];
         }
+
+        if ($returnVar !== 0) {
+            // فشل توليد الشهادة - جرب طريقة بديلة باستخدام standalone
+            \Log::warning("Certbot with --nginx failed, trying standalone method", [
+                'return_code' => $returnVar,
+                'output' => $outputString
+            ]);
+            
+            // إيقاف Nginx مؤقتاً لاستخدام standalone
+            @exec('sudo systemctl stop nginx 2>&1');
+            sleep(1);
+            
+            $standaloneCommand = sprintf(
+                'sudo certbot certonly --standalone --non-interactive --agree-tos --email %s -d %s -d %s 2>&1',
+                escapeshellarg($email),
+                escapeshellarg($domain),
+                escapeshellarg($wwwDomain)
+            );
+            
+            \Log::info("Trying certbot standalone: " . $standaloneCommand);
+            
+            $standaloneOutput = [];
+            $standaloneReturnVar = 0;
+            exec($standaloneCommand, $standaloneOutput, $standaloneReturnVar);
+            $standaloneOutputString = implode("\n", $standaloneOutput);
+            
+            // إعادة تشغيل Nginx
+            @exec('sudo systemctl start nginx 2>&1');
+            
+            if ($standaloneReturnVar !== 0) {
+                \Log::error("SSL certificate generation failed with both methods", [
+                    'nginx_method_output' => $outputString,
+                    'standalone_method_output' => $standaloneOutputString
+                ]);
+                
+                return [
+                    'success' => false,
+                    'message' => 'فشل توليد الشهادة باستخدام كلا الطريقتين. ' .
+                                 'تفاصيل: ' . $standaloneOutputString
+                ];
+            }
+        }
+
+        // التحقق من وجود الملفات (بعد نجاح الأمر)
+        // $certPath و $keyPath معرفة مسبقاً في السطر 584-585
+        
+        if (!file_exists($certPath) || !file_exists($keyPath)) {
+            \Log::error("SSL certificate files not found after generation", [
+                'cert_path' => $certPath,
+                'key_path' => $keyPath
+            ]);
+            return [
+                'success' => false,
+                'message' => 'تم تنفيذ الأمر لكن الملفات غير موجودة في: ' . $certPath
+            ];
+        }
+
+        \Log::info("SSL certificate generated successfully", [
+            'cert_path' => $certPath,
+            'key_path' => $keyPath
+        ]);
 
         return [
             'success' => true,
