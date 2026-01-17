@@ -44,6 +44,12 @@ class SiteController extends Controller
         // Checkbox: إذا كان محدد = '1' (true)، إذا لم يكن محدد = '0' (false)
         $sslEnabled = $request->input('ssl_enabled') === '1' || $request->input('ssl_enabled') === true;
         
+        \Log::info("Creating site", [
+            'server_name' => $data['server_name'],
+            'ssl_enabled_input' => $request->input('ssl_enabled'),
+            'ssl_enabled_parsed' => $sslEnabled
+        ]);
+        
         // إذا كان SSL مفعل، نولد الشهادة تلقائياً
         if ($sslEnabled) {
             // مسارات شهادة Let's Encrypt الافتراضية
@@ -64,30 +70,47 @@ class SiteController extends Controller
 
         // إذا كان SSL مفعل، نولد الشهادة تلقائياً
         if ($sslEnabled) {
+            \Log::info("Attempting to generate SSL certificate for site: {$site->server_name}");
+            
             $certResult = $this->generateSslCertificate($site);
             
+            \Log::info("SSL certificate generation result", [
+                'success' => $certResult['success'],
+                'message' => $certResult['message'],
+                'site_id' => $site->id
+            ]);
+            
             if (!$certResult['success']) {
-                // إذا فشل توليد الشهادة، نعطل SSL
+                // إذا فشل توليد الشهادة، نحتفظ بـ SSL مفعل لكن نستخدم HTTP فقط
+                // يمكن للمستخدم إعادة المحاولة لاحقاً
+                \Log::warning("SSL certificate generation failed for site: {$site->server_name}", [
+                    'error' => $certResult['message']
+                ]);
+                
+                // نعيد توليد ملف Nginx بدون SSL (HTTP فقط)
                 $site->ssl_enabled = false;
                 $site->ssl_cert_path = null;
                 $site->ssl_key_path = null;
                 $site->save();
-                
-                // إعادة توليد ملف Nginx بدون SSL
                 $this->generateNginxConfig($site);
                 
                 return redirect()->route('sites.index')
-                    ->with('error', 'تم إضافة الموقع بنجاح، لكن فشل توليد شهادة SSL: ' . $certResult['message']);
+                    ->with('error', 'تم إضافة الموقع بنجاح، لكن فشل توليد شهادة SSL: ' . $certResult['message'] . 
+                           '<br><br>يمكنك إعادة المحاولة من لوحة التحكم بعد التأكد من: ' .
+                           '<br>1. أن النطاق يشير إلى IP السيرفر' .
+                           '<br>2. أن Certbot مثبت' .
+                           '<br>3. أن Nginx يعمل بشكل صحيح');
             }
             
             // إذا نجح توليد الشهادة، نعيد توليد ملف Nginx مع SSL
             $this->generateNginxConfig($site);
+            
+            return redirect()->route('sites.index')
+                ->with('status', 'تم إضافة الموقع وتوليد شهادة SSL بنجاح!');
         }
 
         return redirect()->route('sites.index')
-            ->with('status', $sslEnabled 
-                ? 'تم إضافة الموقع وتوليد شهادة SSL بنجاح!' 
-                : 'تم إضافة الموقع بنجاح! يرجى إعادة تحميل Nginx.');
+            ->with('status', 'تم إضافة الموقع بنجاح! يرجى إعادة تحميل Nginx.');
     }
 
     /**
@@ -165,6 +188,16 @@ class SiteController extends Controller
         $content .= "upstream {$backendName} {\n";
         $content .= "    server {$site->backend_ip}:{$site->backend_port};\n";
         $content .= "}\n\n";
+
+        // Log للتحقق من حالة SSL
+        \Log::info("Building Nginx config for site", [
+            'site_id' => $site->id,
+            'server_name' => $site->server_name,
+            'ssl_enabled' => $site->ssl_enabled,
+            'ssl_enabled_type' => gettype($site->ssl_enabled),
+            'ssl_cert_path' => $site->ssl_cert_path,
+            'ssl_key_path' => $site->ssl_key_path
+        ]);
 
         // HTTPS Server Block (إذا كان SSL مفعل)
         // يتم تفعيل SSL فقط إذا كان ssl_enabled = true وتم توفير مسارات الشهادة والمفتاح
