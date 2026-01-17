@@ -252,10 +252,12 @@
 
 <div class="card">
     <div style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
-        <a href="{{ route('ip-rules.index', ['site_id' => 'global']) }}" 
-           class="btn {{ $siteId === 'global' ? 'btn-primary' : 'btn-secondary' }}">
-            🌍 Global Rules
-        </a>
+        @if(auth()->user()->isSuperAdmin())
+            <a href="{{ route('ip-rules.index', ['site_id' => 'global']) }}" 
+               class="btn {{ $siteId === 'global' ? 'btn-primary' : 'btn-secondary' }}">
+                🌍 Global Rules
+            </a>
+        @endif
         <a href="{{ route('ip-rules.index', ['site_id' => 'all']) }}" 
            class="btn {{ $siteId === 'all' ? 'btn-primary' : 'btn-secondary' }}">
             📋 All Rules
@@ -276,7 +278,9 @@
             <div class="form-group">
                 <label>Site (Domain)</label>
                 <select name="site_id">
-                    <option value="">🌍 Global (All Sites)</option>
+                    @if(auth()->user()->isSuperAdmin())
+                        <option value="">🌍 Global (All Sites)</option>
+                    @endif
                     @foreach($sites as $site)
                         <option value="{{ $site->id }}">{{ $site->name }} ({{ $site->server_name }})</option>
                     @endforeach

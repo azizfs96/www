@@ -24,6 +24,10 @@ class IpRuleController extends Controller
         $query = IpRule::with('site')->orderByDesc('created_at');
         
         if ($siteId === 'global') {
+            // Super admin only can see global rules
+            if (!$user->isSuperAdmin()) {
+                abort(403, 'Access denied. Only super admin can view global rules.');
+            }
             $query->global();
         } elseif ($siteId !== 'all') {
             $query->forSite($siteId);
@@ -51,11 +55,29 @@ class IpRuleController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+        
         $data = $request->validate([
             'site_id' => 'nullable|exists:sites,id',
             'ip'   => 'required|ip',
             'type' => 'required|in:allow,block',
         ]);
+
+        // Check permissions
+        if (empty($data['site_id'])) {
+            // Global rule - only super admin can create
+            if (!$user->isSuperAdmin()) {
+                abort(403, 'Access denied. Only super admin can create global rules.');
+            }
+        } else {
+            // Site-specific rule - verify site belongs to tenant
+            if (!$user->isSuperAdmin()) {
+                $site = Site::find($data['site_id']);
+                if (!$site || $site->tenant_id !== $user->tenant_id) {
+                    abort(403, 'Access denied. You can only create rules for your tenant sites.');
+                }
+            }
+        }
 
         IpRule::create($data);
 
@@ -67,6 +89,24 @@ class IpRuleController extends Controller
 
     public function destroy(IpRule $ipRule)
     {
+        $user = auth()->user();
+        
+        // Check permissions
+        if (empty($ipRule->site_id)) {
+            // Global rule - only super admin can delete
+            if (!$user->isSuperAdmin()) {
+                abort(403, 'Access denied. Only super admin can delete global rules.');
+            }
+        } else {
+            // Site-specific rule - verify site belongs to tenant
+            if (!$user->isSuperAdmin()) {
+                $site = Site::find($ipRule->site_id);
+                if (!$site || $site->tenant_id !== $user->tenant_id) {
+                    abort(403, 'Access denied. You can only delete rules for your tenant sites.');
+                }
+            }
+        }
+        
         $siteId = $ipRule->site_id;
         $ipRule->delete();
 

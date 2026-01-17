@@ -277,6 +277,27 @@
         @csrf
         <div class="form-row">
             <div class="form-group">
+                <label>Site (Optional)</label>
+                <select name="site_id" style="background: var(--bg-dark); border-radius: 8px; border: 1px solid var(--border); color: var(--text-primary); font-size: 13px; padding: 11px 16px; width: 100%;">
+                    <option value="">Global (All Sites)</option>
+                    @php
+                        $user = auth()->user();
+                        $sites = $user->isSuperAdmin() 
+                            ? \App\Models\Site::orderBy('name')->get()
+                            : \App\Models\Site::where('tenant_id', $user->tenant_id)->orderBy('name')->get();
+                    @endphp
+                    @foreach($sites as $site)
+                        <option value="{{ $site->id }}" {{ old('site_id') == $site->id ? 'selected' : '' }}>
+                            {{ $site->name }} ({{ $site->server_name }})
+                        </option>
+                    @endforeach
+                </select>
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px;">Select a site to apply this rule only to that site. Leave as "Global" to apply to all sites (Super Admin only).</small>
+                @error('site_id')
+                    <span class="error-message">{{ $message }}</span>
+                @enderror
+            </div>
+            <div class="form-group">
                 <label>Country Code</label>
                 <input type="text" name="country_code" placeholder="e.g., SA, US, CN" maxlength="2" required style="text-transform: uppercase;">
                 <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px;">Enter 2-letter country code (ISO 3166-1 alpha-2)</small>

@@ -171,9 +171,31 @@
         </div>
 
         <div class="form-group">
+            <label>Site (Optional)</label>
+            <select name="site_id" class="form-group input" style="background: var(--bg-dark); border-radius: 8px; border: 1px solid var(--border); color: var(--text-primary); font-size: 13px; padding: 11px 16px;">
+                <option value="">Global (All Sites)</option>
+                @php
+                    $user = auth()->user();
+                    $sites = $user->isSuperAdmin() 
+                        ? \App\Models\Site::orderBy('name')->get()
+                        : \App\Models\Site::where('tenant_id', $user->tenant_id)->orderBy('name')->get();
+                @endphp
+                @foreach($sites as $site)
+                    <option value="{{ $site->id }}" {{ old('site_id') == $site->id ? 'selected' : '' }}>
+                        {{ $site->name }} ({{ $site->server_name }})
+                    </option>
+                @endforeach
+            </select>
+            <small>Select a site to apply this rule only to that site. Leave as "Global" to apply to all sites (Super Admin only).</small>
+            @error('site_id')
+                <span class="error-message">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="form-group">
             <label>Host / Domain (Optional)</label>
             <input type="text" name="host" placeholder="e.g., rabbitclean.sa" value="{{ old('host') }}">
-            <small>Leave empty to apply to all sites. Specify domain to apply only to that site (e.g., rabbitclean.sa)</small>
+            <small>Leave empty. If site is selected, host will be auto-filled. You can also specify manually.</small>
             @error('host')
                 <span class="error-message">{{ $message }}</span>
             @enderror

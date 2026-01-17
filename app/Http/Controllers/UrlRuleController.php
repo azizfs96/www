@@ -15,9 +15,10 @@ class UrlRuleController extends Controller
         
         // Filter by tenant if not super admin
         if (!$user->isSuperAdmin()) {
+            // Tenant users can only see rules for their tenant's sites (not global rules)
             $query->whereHas('site', function($q) use ($user) {
                 $q->where('tenant_id', $user->tenant_id);
-            })->orWhereNull('site_id'); // Also show global rules
+            });
         }
         
         return view('waf.url-rules.index', [
@@ -32,12 +33,45 @@ class UrlRuleController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+        
         $data = $request->validate([
             'name'        => 'nullable|string|max:255',
             'host'        => 'nullable|string|max:255',
             'path'        => 'required|string|max:255',
             'allowed_ips' => 'required|string',
+            'site_id'     => 'nullable|exists:sites,id',
         ]);
+
+        // If host is provided, find site by host
+        if (empty($data['site_id']) && !empty($data['host'])) {
+            $host = $data['host'];
+            $hostWithoutWww = preg_replace('/^www\./', '', $host);
+            
+            $site = Site::where('server_name', $host)
+                ->orWhere('server_name', $hostWithoutWww)
+                ->first();
+            
+            if ($site) {
+                $data['site_id'] = $site->id;
+            }
+        }
+
+        // Check permissions
+        if (empty($data['site_id'])) {
+            // Global rule - only super admin can create
+            if (!$user->isSuperAdmin()) {
+                abort(403, 'Access denied. Only super admin can create global rules.');
+            }
+        } else {
+            // Site-specific rule - verify site belongs to tenant
+            if (!$user->isSuperAdmin()) {
+                $site = Site::find($data['site_id']);
+                if (!$site || $site->tenant_id !== $user->tenant_id) {
+                    abort(403, 'Access denied. You can only create rules for your tenant sites.');
+                }
+            }
+        }
 
         $data['enabled'] = true;
 
@@ -50,6 +84,24 @@ class UrlRuleController extends Controller
 
     public function destroy(UrlRule $urlRule)
     {
+        $user = auth()->user();
+        
+        // Check permissions
+        if (empty($urlRule->site_id)) {
+            // Global rule - only super admin can delete
+            if (!$user->isSuperAdmin()) {
+                abort(403, 'Access denied. Only super admin can delete global rules.');
+            }
+        } else {
+            // Site-specific rule - verify site belongs to tenant
+            if (!$user->isSuperAdmin()) {
+                $site = Site::find($urlRule->site_id);
+                if (!$site || $site->tenant_id !== $user->tenant_id) {
+                    abort(403, 'Access denied. You can only delete rules for your tenant sites.');
+                }
+            }
+        }
+        
         $urlRule->delete();
 
         $this->syncFiles();

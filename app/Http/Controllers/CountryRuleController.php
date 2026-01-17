@@ -15,9 +15,10 @@ class CountryRuleController extends Controller
         
         // Filter by tenant if not super admin
         if (!$user->isSuperAdmin()) {
+            // Tenant users can only see rules for their tenant's sites (not global rules)
             $query->whereHas('site', function($q) use ($user) {
                 $q->where('tenant_id', $user->tenant_id);
-            })->orWhereNull('site_id'); // Also show global rules
+            });
         }
         
         $rules = $query->get();
@@ -27,14 +28,34 @@ class CountryRuleController extends Controller
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+        
         $data = $request->validate([
             'country_code' => 'required|string|size:2|uppercase',
             'type'         => 'required|in:allow,block',
+            'site_id'      => 'nullable|exists:sites,id',
         ]);
 
-        // Check if rule already exists
+        // Check permissions
+        if (empty($data['site_id'])) {
+            // Global rule - only super admin can create
+            if (!$user->isSuperAdmin()) {
+                abort(403, 'Access denied. Only super admin can create global rules.');
+            }
+        } else {
+            // Site-specific rule - verify site belongs to tenant
+            if (!$user->isSuperAdmin()) {
+                $site = Site::find($data['site_id']);
+                if (!$site || $site->tenant_id !== $user->tenant_id) {
+                    abort(403, 'Access denied. You can only create rules for your tenant sites.');
+                }
+            }
+        }
+
+        // Check if rule already exists (for same site or global)
         $exists = CountryRule::where('country_code', $data['country_code'])
             ->where('type', $data['type'])
+            ->where('site_id', $data['site_id'] ?? null)
             ->exists();
 
         if ($exists) {
@@ -53,6 +74,24 @@ class CountryRuleController extends Controller
 
     public function destroy(CountryRule $countryRule)
     {
+        $user = auth()->user();
+        
+        // Check permissions
+        if (empty($countryRule->site_id)) {
+            // Global rule - only super admin can delete
+            if (!$user->isSuperAdmin()) {
+                abort(403, 'Access denied. Only super admin can delete global rules.');
+            }
+        } else {
+            // Site-specific rule - verify site belongs to tenant
+            if (!$user->isSuperAdmin()) {
+                $site = Site::find($countryRule->site_id);
+                if (!$site || $site->tenant_id !== $user->tenant_id) {
+                    abort(403, 'Access denied. You can only delete rules for your tenant sites.');
+                }
+            }
+        }
+        
         $countryRule->delete();
 
         $this->syncFiles();
