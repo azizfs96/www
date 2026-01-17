@@ -583,14 +583,31 @@ class SiteController extends Controller
             ];
         }
 
-        // التحقق من أن Nginx يعمل
+        // التحقق من أن Nginx يعمل - محاولة تشغيله إذا لم يكن نشطاً
         $nginxCheck = shell_exec('sudo systemctl is-active nginx 2>/dev/null');
         if (trim($nginxCheck) !== 'active') {
-            return [
-                'success' => false,
-                'message' => 'Nginx غير نشط. يرجى تشغيله أولاً: sudo systemctl start nginx'
-            ];
+            // محاولة تشغيل Nginx
+            @exec('sudo systemctl start nginx 2>&1');
+            sleep(2);
+            
+            // التحقق مرة أخرى
+            $nginxCheck = shell_exec('sudo systemctl is-active nginx 2>/dev/null');
+            if (trim($nginxCheck) !== 'active') {
+                return [
+                    'success' => false,
+                    'message' => 'Nginx غير نشط. يرجى تشغيله يدوياً: sudo systemctl start nginx'
+                ];
+            }
         }
+        
+        // التحقق من وجود سجل DNS لـ www (اختياري)
+        $checkWww = @dns_get_record($wwwDomain, DNS_A);
+        $useWww = !empty($checkWww);
+        
+        \Log::info("DNS check for www domain", [
+            'www_domain' => $wwwDomain,
+            'dns_exists' => $useWww
+        ]);
 
         // التحقق من أن الملف موجود و Nginx يمكنه قراءته
         $configFile = "/etc/nginx/sites-enabled/{$domain}.waf.conf";
@@ -627,12 +644,26 @@ class SiteController extends Controller
             'email' => $email
         ]);
         
-        $command = sprintf(
-            'sudo certbot certonly --nginx --non-interactive --agree-tos --email %s -d %s -d %s 2>&1',
-            escapeshellarg($email),
-            escapeshellarg($domain),
-            escapeshellarg($wwwDomain)
-        );
+        // بناء أمر Certbot - نضيف www فقط إذا كان موجوداً في DNS
+        if ($useWww) {
+            $command = sprintf(
+                'sudo certbot certonly --nginx --non-interactive --agree-tos --email %s -d %s -d %s 2>&1',
+                escapeshellarg($email),
+                escapeshellarg($domain),
+                escapeshellarg($wwwDomain)
+            );
+        } else {
+            // توليد الشهادة للنطاق الرئيسي فقط (بدون www)
+            $command = sprintf(
+                'sudo certbot certonly --nginx --non-interactive --agree-tos --email %s -d %s 2>&1',
+                escapeshellarg($email),
+                escapeshellarg($domain)
+            );
+            
+            \Log::info("www domain not found in DNS, generating certificate for main domain only", [
+                'domain' => $domain
+            ]);
+        }
         
         \Log::info("Certbot command: " . $command);
 
