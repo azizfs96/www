@@ -35,14 +35,14 @@ class SiteController extends Controller
             'server_name'    => 'required|string|max:255',
             'backend_ip'     => 'required|ip',
             'backend_port'   => 'required|integer|min:1|max:65535',
-            'ssl_enabled'    => 'boolean',
             'ssl_cert_path'  => 'nullable|string|max:500',
             'ssl_key_path'   => 'nullable|string|max:500',
             'notes'          => 'nullable|string',
         ]);
 
         $data['enabled'] = true;
-        $sslEnabled = $request->has('ssl_enabled');
+        // Checkbox: إذا كان محدد = '1' (true)، إذا لم يكن محدد = '0' (false)
+        $sslEnabled = $request->input('ssl_enabled') === '1' || $request->input('ssl_enabled') === true;
         
         // إذا كان SSL مفعل، نولد الشهادة تلقائياً
         if ($sslEnabled) {

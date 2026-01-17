@@ -356,11 +356,13 @@
 
             <div class="form-group">
                 <label class="form-checkbox-wrapper">
+                    <input type="hidden" name="ssl_enabled" value="0">
                     <input 
                         type="checkbox" 
                         name="ssl_enabled" 
                         class="form-checkbox"
                         id="sslCheckbox"
+                        value="1"
                         {{ old('ssl_enabled') ? 'checked' : '' }}
                     >
                     <span class="form-checkbox-label">
