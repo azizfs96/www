@@ -494,7 +494,8 @@ class SiteController extends Controller
         $content .= "# Generated at: " . now()->format('Y-m-d H:i:s') . "\n\n";
 
         // تضمين القواعد الأساسية (إن وجدت)
-        $content .= "# Include base configuration\n";
+        // ملاحظة: main.conf محمّل بالفعل من nginx.conf الرئيسي، لذلك لا نضيفه هنا
+        $content .= "# Base configuration is loaded from nginx.conf (main.conf)\n";
         $mainConfExists = file_exists('/etc/nginx/modsec/main.conf');
         $mainConfHasOwasp = false;
         
@@ -506,8 +507,9 @@ class SiteController extends Controller
                 strpos($mainConfContent, 'REQUEST-942') !== false ||
                 strpos($mainConfContent, 'REQUEST-941') !== false
             );
-            $content .= "Include /etc/nginx/modsec/main.conf\n\n";
+            // لا نضيف Include main.conf هنا لأنه محمّل بالفعل من nginx.conf
         } elseif (file_exists('/etc/nginx/modsec/modsecurity.conf')) {
+            // إذا لم يكن main.conf موجوداً، نستخدم modsecurity.conf كبديل
             $content .= "Include /etc/nginx/modsec/modsecurity.conf\n\n";
         } else {
             // إعدادات أساسية بديلة
