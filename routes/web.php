@@ -8,6 +8,7 @@ use App\Http\Controllers\UrlRuleController;
 use App\Http\Controllers\CountryRuleController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SitePolicyController;
+use App\Http\Controllers\WafEventController;
 
 // اختياري: خله يحول الصفحة الرئيسية للوحة WAF
 Route::get('/', function () {
@@ -311,3 +312,7 @@ Route::post('/waf/sites/regenerate', [SiteController::class, 'regenerateAll'])->
 // إعدادات WAF لكل موقع (Site Policies)
 Route::get('/waf/sites/{site}/policy', [SitePolicyController::class, 'edit'])->name('sites.policy.edit');
 Route::put('/waf/sites/{site}/policy', [SitePolicyController::class, 'update'])->name('sites.policy.update');
+
+// AI Analysis for WAF Events
+Route::post('/waf/events/{event}/analyze', [WafEventController::class, 'analyze'])->name('events.analyze');
+Route::post('/waf/events/analyze-pattern', [WafEventController::class, 'analyzePattern'])->name('events.analyze-pattern');

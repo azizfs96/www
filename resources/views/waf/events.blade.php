@@ -826,6 +826,103 @@
             display: none;
         }
     }
+
+    /* AI Analysis Button */
+    .btn-ai-analyze {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-ai-analyze:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    /* AI Modal */
+    .ai-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .ai-modal.active {
+        display: flex;
+    }
+
+    .ai-modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        max-width: 800px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .ai-modal-header {
+        padding: 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .ai-modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .ai-modal-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .ai-modal-body {
+        padding: 24px;
+        color: var(--text-primary);
+        line-height: 1.8;
+    }
+
+    .ai-loading {
+        text-align: center;
+        padding: 40px;
+    }
+
+    .ai-loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
 </style>
 @endsection
 
@@ -1098,6 +1195,17 @@
                         </div>
                     @endif
                 </div>
+                
+                {{-- AI Analysis Button --}}
+                <div class="event-detail-actions" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                    <button onclick="analyzeEvent({{ $event->id }})" class="btn-ai-analyze" title="تحليل بواسطة AI">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        AI Analysis
+                    </button>
+                </div>
             </div>
         </div>
     @empty
@@ -1238,5 +1346,103 @@ function toggleEventDetails(element) {
     }
 }
 
+// AI Analysis Function
+function analyzeEvent(eventId) {
+    const modal = document.getElementById('aiModal');
+    const modalBody = document.getElementById('aiModalBody');
+    
+    // Show modal with loading state
+    modal.classList.add('active');
+    modalBody.innerHTML = `
+        <div class="ai-loading">
+            <div class="ai-loading-spinner"></div>
+            <div>جاري التحليل بواسطة الذكاء الاصطناعي...</div>
+        </div>
+    `;
+    
+    // Make AJAX request
+    fetch(`/waf/events/${eventId}/analyze`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Format the analysis with markdown-like styling
+            const formattedAnalysis = data.analysis
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+            
+            modalBody.innerHTML = `
+                <div class="event-info-card">
+                    <div class="event-info-row">
+                        <span class="event-info-label">IP Address</span>
+                        <span class="event-info-value">${data.event.client_ip}</span>
+                    </div>
+                    <div class="event-info-row">
+                        <span class="event-info-label">Time</span>
+                        <span class="event-info-value">${data.event.event_time}</span>
+                    </div>
+                    <div class="event-info-row">
+                        <span class="event-info-label">Status</span>
+                        <span class="event-info-value">${data.event.status}</span>
+                    </div>
+                </div>
+                <div class="ai-analysis-content">
+                    ${formattedAnalysis}
+                </div>
+            `;
+        } else {
+            modalBody.innerHTML = `
+                <div class="ai-error">
+                    <strong>خطأ:</strong> ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        modalBody.innerHTML = `
+            <div class="ai-error">
+                <strong>خطأ في الاتصال:</strong> ${error.message}
+            </div>
+        `;
+    });
+}
+
+function closeAiModal() {
+    document.getElementById('aiModal').classList.remove('active');
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('aiModal');
+    if (event.target === modal) {
+        closeAiModal();
+    }
+});
+
 </script>
+
+{{-- AI Analysis Modal --}}
+<div id="aiModal" class="ai-modal">
+    <div class="ai-modal-content">
+        <div class="ai-modal-header">
+            <div class="ai-modal-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                AI Security Analysis
+            </div>
+            <button class="ai-modal-close" onclick="closeAiModal()">&times;</button>
+        </div>
+        <div class="ai-modal-body" id="aiModalBody">
+            <!-- Content will be loaded here -->
+        </div>
+    </div>
+</div>
+
 @endsection
