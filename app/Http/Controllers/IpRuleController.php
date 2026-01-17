@@ -11,13 +11,27 @@ class IpRuleController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $siteId = $request->get('site_id', 'global');
+        $siteId = $request->get('site_id');
         
         // Filter sites based on user role
         if ($user->isSuperAdmin()) {
             $sites = Site::orderBy('name')->get();
         } else {
             $sites = Site::where('tenant_id', $user->tenant_id)->orderBy('name')->get();
+            
+            // If tenant user and no site_id specified, redirect to first site or 'all'
+            if (empty($siteId)) {
+                if ($sites->count() > 0) {
+                    return redirect()->route('ip-rules.index', ['site_id' => $sites->first()->id]);
+                } else {
+                    return redirect()->route('ip-rules.index', ['site_id' => 'all']);
+                }
+            }
+        }
+        
+        // Default to 'global' for super admin if no site_id
+        if (empty($siteId)) {
+            $siteId = 'global';
         }
         
         // جلب القواعد حسب الموقع المختار
@@ -26,7 +40,12 @@ class IpRuleController extends Controller
         if ($siteId === 'global') {
             // Super admin only can see global rules
             if (!$user->isSuperAdmin()) {
-                abort(403, 'Access denied. Only super admin can view global rules.');
+                // Redirect tenant users to their sites
+                if ($sites->count() > 0) {
+                    return redirect()->route('ip-rules.index', ['site_id' => $sites->first()->id]);
+                } else {
+                    return redirect()->route('ip-rules.index', ['site_id' => 'all']);
+                }
             }
             $query->global();
         } elseif ($siteId !== 'all') {
