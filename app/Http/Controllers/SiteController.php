@@ -362,8 +362,8 @@ class SiteController extends Controller
     {
         $configFile = "/etc/nginx/sites-enabled/{$site->server_name}.waf.conf";
 
-        // توليد ملف ModSecurity أولاً (إذا كان هناك policy)
-        if ($site->policy) {
+        // توليد ملف ModSecurity أولاً (إذا كان هناك policy و WAF مفعل)
+        if ($site->policy && $site->policy->waf_enabled) {
             $this->generateModSecurityConfig($site, $site->policy);
         }
 
@@ -420,9 +420,9 @@ class SiteController extends Controller
             $content .= "server {\n";
             $content .= "    server_name {$site->server_name} www.{$site->server_name};\n\n";
             
-            // إضافة ModSecurity (دائماً إذا كان هناك policy)
+            // إضافة ModSecurity (فقط إذا كان WAF مفعل)
             $modsecFile = "/etc/nginx/modsec/{$site->server_name}.conf";
-            if ($site->policy && file_exists($modsecFile)) {
+            if ($site->policy && $site->policy->waf_enabled && file_exists($modsecFile)) {
                 $content .= "    modsecurity on;\n";
                 $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
             }
@@ -460,9 +460,9 @@ class SiteController extends Controller
             $content .= "server {\n";
             $content .= "    server_name {$site->server_name} www.{$site->server_name};\n\n";
             
-            // إضافة ModSecurity (دائماً إذا كان هناك policy)
+            // إضافة ModSecurity (فقط إذا كان WAF مفعل)
             $modsecFile = "/etc/nginx/modsec/{$site->server_name}.conf";
-            if ($site->policy && file_exists($modsecFile)) {
+            if ($site->policy && $site->policy->waf_enabled && file_exists($modsecFile)) {
                 $content .= "    modsecurity on;\n";
                 $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
             }
