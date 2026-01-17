@@ -84,6 +84,11 @@ class IpRuleController extends Controller
             ->filter()
             ->implode(PHP_EOL);
 
+        // كتابة في الملفات التي يستخدمها ModSecurity
+        @file_put_contents('/etc/nginx/modsec/whitelist.txt', $whitelist . PHP_EOL);
+        @file_put_contents('/etc/nginx/modsec/blacklist.txt', $blacklist . PHP_EOL);
+        
+        // أيضاً كتابة في ملفات global- للتوافق مع الكود القديم
         @file_put_contents('/etc/nginx/modsec/global-whitelist.txt', $whitelist . PHP_EOL);
         @file_put_contents('/etc/nginx/modsec/global-blacklist.txt', $blacklist . PHP_EOL);
 
