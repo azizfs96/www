@@ -179,7 +179,15 @@ Route::get('/waf/events', function (Request $request) {
     if (!$user->isSuperAdmin() && $user->tenant_id) {
         $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
         // Tenant users should only see events for their tenant's sites (not global events)
-        $baseQuery->whereIn('site_id', $siteIds);
+        // Also filter by host if site_id is null (for backward compatibility)
+        $siteServerNames = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('server_name')->toArray();
+        $baseQuery->where(function($q) use ($siteIds, $siteServerNames) {
+            $q->whereIn('site_id', $siteIds)
+              ->orWhere(function($subQ) use ($siteServerNames) {
+                  $subQ->whereNull('site_id')
+                       ->whereIn('host', $siteServerNames);
+              });
+        });
     }
     
     $query = clone $baseQuery;

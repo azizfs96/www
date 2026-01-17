@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use App\Models\WafEvent;
+use App\Models\Site;
 use App\Services\GeoIpService;
 
 class ImportWafLogs extends Command
@@ -95,16 +96,35 @@ public function handle(): int
             : now();
 
         $clientIp = $tx['client_ip'] ?? null;
+        $host = $req['headers']['Host'] ?? null;
         
         // Get country from IP using GeoIP service
         $geoIpService = app(GeoIpService::class);
         $country = $geoIpService->getCountryFromIp($clientIp);
 
+        // Find site by host (server_name)
+        $siteId = null;
+        if ($host) {
+            // Remove www. prefix if exists
+            $hostWithoutWww = preg_replace('/^www\./', '', $host);
+            
+            // Try to find site by server_name
+            $site = Site::where('server_name', $host)
+                ->orWhere('server_name', $hostWithoutWww)
+                ->orWhere('server_name', 'like', '%' . $host . '%')
+                ->first();
+            
+            if ($site) {
+                $siteId = $site->id;
+            }
+        }
+
         WafEvent::create([
+            'site_id'    => $siteId,
             'event_time' => $eventTime,
             'client_ip'  => $clientIp,
             'country'    => $country,
-            'host'       => $req['headers']['Host'] ?? null,
+            'host'       => $host,
             'uri'        => $req['uri'] ?? null,
             'method'     => $req['method'] ?? null,
             'status'     => $res['http_code'] ?? null,
