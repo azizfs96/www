@@ -495,7 +495,17 @@ class SiteController extends Controller
 
         // تضمين القواعد الأساسية (إن وجدت)
         $content .= "# Include base configuration\n";
-        if (file_exists('/etc/nginx/modsec/main.conf')) {
+        $mainConfExists = file_exists('/etc/nginx/modsec/main.conf');
+        $mainConfHasOwasp = false;
+        
+        // التحقق من محتوى main.conf لمعرفة إذا كان يحتوي على OWASP CRS
+        if ($mainConfExists) {
+            $mainConfContent = @file_get_contents('/etc/nginx/modsec/main.conf');
+            $mainConfHasOwasp = $mainConfContent && (
+                strpos($mainConfContent, 'owasp-crs') !== false ||
+                strpos($mainConfContent, 'REQUEST-942') !== false ||
+                strpos($mainConfContent, 'REQUEST-941') !== false
+            );
             $content .= "Include /etc/nginx/modsec/main.conf\n\n";
         } elseif (file_exists('/etc/nginx/modsec/modsecurity.conf')) {
             $content .= "Include /etc/nginx/modsec/modsecurity.conf\n\n";
@@ -536,35 +546,40 @@ class SiteController extends Controller
             }
         }
 
-        // قواعد OWASP CRS (فقط إذا كانت مثبتة)
-        $owaspPath = '/etc/nginx/modsec/owasp-crs/rules';
-        if (is_dir($owaspPath)) {
-            if ($policy->block_sql_injection && file_exists("$owaspPath/REQUEST-942-APPLICATION-ATTACK-SQLI.conf")) {
-                $content .= "# OWASP CRS - SQL Injection\n";
-                $content .= "Include $owaspPath/REQUEST-942-APPLICATION-ATTACK-SQLI.conf\n\n";
-            }
+        // قواعد OWASP CRS (فقط إذا كانت مثبتة ولم تكن موجودة في main.conf)
+        // لتجنب التكرار
+        if (!$mainConfHasOwasp) {
+            $owaspPath = '/etc/nginx/modsec/owasp-crs/rules';
+            if (is_dir($owaspPath)) {
+                if ($policy->block_sql_injection && file_exists("$owaspPath/REQUEST-942-APPLICATION-ATTACK-SQLI.conf")) {
+                    $content .= "# OWASP CRS - SQL Injection\n";
+                    $content .= "Include $owaspPath/REQUEST-942-APPLICATION-ATTACK-SQLI.conf\n\n";
+                }
 
-            if ($policy->block_xss && file_exists("$owaspPath/REQUEST-941-APPLICATION-ATTACK-XSS.conf")) {
-                $content .= "# OWASP CRS - XSS\n";
-                $content .= "Include $owaspPath/REQUEST-941-APPLICATION-ATTACK-XSS.conf\n\n";
-            }
+                if ($policy->block_xss && file_exists("$owaspPath/REQUEST-941-APPLICATION-ATTACK-XSS.conf")) {
+                    $content .= "# OWASP CRS - XSS\n";
+                    $content .= "Include $owaspPath/REQUEST-941-APPLICATION-ATTACK-XSS.conf\n\n";
+                }
 
-            if ($policy->block_rce && file_exists("$owaspPath/REQUEST-932-APPLICATION-ATTACK-RCE.conf")) {
-                $content .= "# OWASP CRS - RCE\n";
-                $content .= "Include $owaspPath/REQUEST-932-APPLICATION-ATTACK-RCE.conf\n\n";
-            }
+                if ($policy->block_rce && file_exists("$owaspPath/REQUEST-932-APPLICATION-ATTACK-RCE.conf")) {
+                    $content .= "# OWASP CRS - RCE\n";
+                    $content .= "Include $owaspPath/REQUEST-932-APPLICATION-ATTACK-RCE.conf\n\n";
+                }
 
-            if ($policy->block_lfi && file_exists("$owaspPath/REQUEST-930-APPLICATION-ATTACK-LFI.conf")) {
-                $content .= "# OWASP CRS - LFI\n";
-                $content .= "Include $owaspPath/REQUEST-930-APPLICATION-ATTACK-LFI.conf\n\n";
-            }
+                if ($policy->block_lfi && file_exists("$owaspPath/REQUEST-930-APPLICATION-ATTACK-LFI.conf")) {
+                    $content .= "# OWASP CRS - LFI\n";
+                    $content .= "Include $owaspPath/REQUEST-930-APPLICATION-ATTACK-LFI.conf\n\n";
+                }
 
-            if ($policy->block_rfi && file_exists("$owaspPath/REQUEST-931-APPLICATION-ATTACK-RFI.conf")) {
-                $content .= "# OWASP CRS - RFI\n";
-                $content .= "Include $owaspPath/REQUEST-931-APPLICATION-ATTACK-RFI.conf\n\n";
+                if ($policy->block_rfi && file_exists("$owaspPath/REQUEST-931-APPLICATION-ATTACK-RFI.conf")) {
+                    $content .= "# OWASP CRS - RFI\n";
+                    $content .= "Include $owaspPath/REQUEST-931-APPLICATION-ATTACK-RFI.conf\n\n";
+                }
+            } else {
+                $content .= "# OWASP CRS not installed - using basic rules only\n\n";
             }
         } else {
-            $content .= "# OWASP CRS not installed - using basic rules only\n\n";
+            $content .= "# OWASP CRS rules are included in main.conf\n\n";
         }
 
         // استثناءات URLs
