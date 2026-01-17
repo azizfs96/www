@@ -266,7 +266,20 @@ class SiteController extends Controller
 
         // HTTPS Server Block (إذا كان SSL مفعل)
         // يتم تفعيل SSL فقط إذا كان ssl_enabled = true وتم توفير مسارات الشهادة والمفتاح
-        if ($site->ssl_enabled && !empty($site->ssl_cert_path) && !empty($site->ssl_key_path)) {
+        // Model يحول ssl_enabled إلى boolean تلقائياً
+        $isSslEnabled = (bool) $site->ssl_enabled;
+        
+        \Log::info("SSL check in buildNginxConfigContent", [
+            'ssl_enabled' => $site->ssl_enabled,
+            'ssl_enabled_type' => gettype($site->ssl_enabled),
+            'isSslEnabled' => $isSslEnabled,
+            'ssl_cert_path' => $site->ssl_cert_path,
+            'ssl_key_path' => $site->ssl_key_path,
+            'cert_exists' => !empty($site->ssl_cert_path),
+            'key_exists' => !empty($site->ssl_key_path)
+        ]);
+        
+        if ($isSslEnabled && !empty($site->ssl_cert_path) && !empty($site->ssl_key_path)) {
             $content .= "server {\n";
             $content .= "    server_name {$site->server_name} www.{$site->server_name};\n\n";
             $content .= "    location / {\n";
@@ -521,6 +534,10 @@ class SiteController extends Controller
                 'message' => 'إعدادات Nginx غير صحيحة: ' . $testResult
             ];
         }
+
+        // إعادة تحميل Nginx لضمان أن الملف الجديد نشط
+        @exec('sudo systemctl reload nginx 2>&1');
+        sleep(2); // انتظار قليل لضمان أن Nginx تم تحميله
 
         // توليد الشهادة باستخدام Certbot
         // نستخدم --nginx ليقوم Certbot بتعديل ملف Nginx تلقائياً
