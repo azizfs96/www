@@ -297,6 +297,23 @@
                                 ⚙️ إعدادات WAF
                             </a>
 
+                            @if($site->ssl_enabled)
+                                @php
+                                    $certPath = "/etc/letsencrypt/live/{$site->server_name}/fullchain.pem";
+                                    $keyPath = "/etc/letsencrypt/live/{$site->server_name}/privkey.pem";
+                                    $certExists = file_exists($certPath) && file_exists($keyPath);
+                                @endphp
+                                @if(!$certExists)
+                                    <form method="POST" action="{{ route('sites.fix-ssl', $site) }}" style="display: inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-warning" 
+                                                title="إصلاح SSL: توليد الشهادة المفقودة">
+                                            🔧 إصلاح SSL
+                                        </button>
+                                    </form>
+                                @endif
+                            @endif
+                            
                             <form method="POST" action="{{ route('sites.toggle-ssl', $site) }}" style="display: inline;">
                                 @csrf
                                 @method('PATCH')
