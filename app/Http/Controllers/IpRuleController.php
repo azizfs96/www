@@ -74,25 +74,68 @@ class IpRuleController extends Controller
      */
     protected function syncGlobalFiles(): void
     {
-        $whitelist = IpRule::global()->where('type', 'allow')
-            ->pluck('ip')
-            ->filter()
-            ->implode(PHP_EOL);
-
-        $blacklist = IpRule::global()->where('type', 'block')
-            ->pluck('ip')
-            ->filter()
-            ->implode(PHP_EOL);
+        // جلب القواعد من قاعدة البيانات
+        $whitelistIps = IpRule::global()->where('type', 'allow')->pluck('ip')->filter()->values();
+        $blacklistIps = IpRule::global()->where('type', 'block')->pluck('ip')->filter()->values();
+        
+        // تحويل إلى نص
+        $whitelist = $whitelistIps->implode(PHP_EOL);
+        $blacklist = $blacklistIps->implode(PHP_EOL);
+        
+        // Logging للتحقق
+        \Log::info('Syncing global IP rules', [
+            'whitelist_count' => $whitelistIps->count(),
+            'blacklist_count' => $blacklistIps->count(),
+            'whitelist_ips' => $whitelistIps->toArray(),
+            'blacklist_ips' => $blacklistIps->toArray()
+        ]);
 
         // كتابة في الملفات التي يستخدمها ModSecurity
-        @file_put_contents('/etc/nginx/modsec/whitelist.txt', $whitelist . PHP_EOL);
-        @file_put_contents('/etc/nginx/modsec/blacklist.txt', $blacklist . PHP_EOL);
+        $whitelistFile = '/etc/nginx/modsec/whitelist.txt';
+        $blacklistFile = '/etc/nginx/modsec/blacklist.txt';
+        
+        // إضافة سطر جديد فقط إذا كان هناك محتوى
+        $whitelistContent = $whitelist ? $whitelist . PHP_EOL : '';
+        $blacklistContent = $blacklist ? $blacklist . PHP_EOL : '';
+        
+        $whitelistWritten = @file_put_contents($whitelistFile, $whitelistContent);
+        $blacklistWritten = @file_put_contents($blacklistFile, $blacklistContent);
+        
+        \Log::info('IP rules files written', [
+            'whitelist_file' => $whitelistFile,
+            'blacklist_file' => $blacklistFile,
+            'whitelist_written' => $whitelistWritten !== false,
+            'blacklist_written' => $blacklistWritten !== false,
+            'whitelist_content_length' => strlen($whitelistContent),
+            'blacklist_content_length' => strlen($blacklistContent)
+        ]);
         
         // أيضاً كتابة في ملفات global- للتوافق مع الكود القديم
-        @file_put_contents('/etc/nginx/modsec/global-whitelist.txt', $whitelist . PHP_EOL);
-        @file_put_contents('/etc/nginx/modsec/global-blacklist.txt', $blacklist . PHP_EOL);
+        @file_put_contents('/etc/nginx/modsec/global-whitelist.txt', $whitelistContent);
+        @file_put_contents('/etc/nginx/modsec/global-blacklist.txt', $blacklistContent);
+
+        // إعادة توليد ملفات ModSecurity لجميع المواقع لأن القواعد العامة تغيرت
+        $this->regenerateAllSiteConfigs();
 
         @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
+    }
+    
+    /**
+     * إعادة توليد ملفات ModSecurity لجميع المواقع
+     */
+    protected function regenerateAllSiteConfigs(): void
+    {
+        $sites = Site::where('enabled', true)->get();
+        $siteController = new SiteController();
+        $reflection = new \ReflectionClass($siteController);
+        $method = $reflection->getMethod('generateModSecurityConfig');
+        $method->setAccessible(true);
+        
+        foreach ($sites as $site) {
+            if ($site->policy) {
+                $method->invoke($siteController, $site, $site->policy);
+            }
+        }
     }
 
     /**
@@ -115,6 +158,15 @@ class IpRuleController extends Controller
 
         @file_put_contents("/etc/nginx/modsec/sites/{$site->server_name}-whitelist.txt", $whitelist . PHP_EOL);
         @file_put_contents("/etc/nginx/modsec/sites/{$site->server_name}-blacklist.txt", $blacklist . PHP_EOL);
+
+        // إعادة توليد ملف ModSecurity لهذا الموقع
+        if ($site->policy) {
+            $siteController = new SiteController();
+            $reflection = new \ReflectionClass($siteController);
+            $method = $reflection->getMethod('generateModSecurityConfig');
+            $method->setAccessible(true);
+            $method->invoke($siteController, $site, $site->policy);
+        }
 
         @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
     }

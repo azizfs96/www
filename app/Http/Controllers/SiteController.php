@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Site;
+use App\Models\IpRule;
 use Illuminate\Http\Request;
 
 class SiteController extends Controller
@@ -575,10 +576,48 @@ class SiteController extends Controller
             $content .= $policy->custom_modsec_rules . "\n\n";
         }
 
-        // قواعد IP الخاصة بالموقع
-        $content .= "# Site-specific IP Rules\n";
+        // قواعد IP - العامة والخاصة بالموقع
+        $content .= "# IP Rules (Global + Site-specific)\n";
         
-        // إنشاء ملفات IP Rules إذا لم تكن موجودة
+        // القواعد العامة (Global)
+        $globalWhitelist = IpRule::global()->where('type', 'allow')->pluck('ip')->filter();
+        $globalBlacklist = IpRule::global()->where('type', 'block')->pluck('ip')->filter();
+        
+        // القواعد الخاصة بالموقع
+        $siteWhitelist = IpRule::forSite($site->id)->where('type', 'allow')->pluck('ip')->filter();
+        $siteBlacklist = IpRule::forSite($site->id)->where('type', 'block')->pluck('ip')->filter();
+        
+        // دمج القواعد العامة والخاصة
+        $allWhitelist = $globalWhitelist->merge($siteWhitelist)->unique()->filter();
+        $allBlacklist = $globalBlacklist->merge($siteBlacklist)->unique()->filter();
+        
+        // قواعد Whitelist (Allow)
+        if ($allWhitelist->isNotEmpty()) {
+            $content .= "# Whitelist IPs (Allow)\n";
+            foreach ($allWhitelist as $ip) {
+                $ip = trim($ip);
+                if ($ip && filter_var($ip, FILTER_VALIDATE_IP)) {
+                    $ruleId = 700000 + crc32($ip . $site->id);
+                    $content .= "SecRule REMOTE_ADDR \"@ipMatch {$ip}\" \"id:{$ruleId},phase:1,nolog,allow\"\n";
+                }
+            }
+            $content .= "\n";
+        }
+        
+        // قواعد Blacklist (Block)
+        if ($allBlacklist->isNotEmpty()) {
+            $content .= "# Blacklist IPs (Block)\n";
+            foreach ($allBlacklist as $ip) {
+                $ip = trim($ip);
+                if ($ip && filter_var($ip, FILTER_VALIDATE_IP)) {
+                    $ruleId = 710000 + crc32($ip . $site->id);
+                    $content .= "SecRule REMOTE_ADDR \"@ipMatch {$ip}\" \"id:{$ruleId},phase:1,deny,status:403,msg:'IP Blocked: {$ip}'\"\n";
+                }
+            }
+            $content .= "\n";
+        }
+        
+        // أيضاً إنشاء ملفات .txt للتوافق (لكن لا نستخدم Include لها)
         $sitesDir = '/etc/nginx/modsec/sites';
         if (!is_dir($sitesDir)) {
             @mkdir($sitesDir, 0755, true);
@@ -587,19 +626,9 @@ class SiteController extends Controller
         $whitelistFile = "$sitesDir/{$site->server_name}-whitelist.txt";
         $blacklistFile = "$sitesDir/{$site->server_name}-blacklist.txt";
         
-        if (!file_exists($whitelistFile)) {
-            @file_put_contents($whitelistFile, "# Whitelist for {$site->name}\n");
-        }
-        if (!file_exists($blacklistFile)) {
-            @file_put_contents($blacklistFile, "# Blacklist for {$site->name}\n");
-        }
-        
-        if (file_exists($whitelistFile)) {
-            $content .= "Include $whitelistFile\n";
-        }
-        if (file_exists($blacklistFile)) {
-            $content .= "Include $blacklistFile\n";
-        }
+        // كتابة ملفات .txt (للرجوع إليها)
+        @file_put_contents($whitelistFile, $siteWhitelist->implode(PHP_EOL) . PHP_EOL);
+        @file_put_contents($blacklistFile, $siteBlacklist->implode(PHP_EOL) . PHP_EOL);
 
         @file_put_contents($configFile, $content);
     }
