@@ -30,11 +30,24 @@ class CheckCountryBlock
             return $next($request);
         }
 
-        // الحصول على IP العميل
-        $clientIp = $request->ip();
+        // الحصول على IP العميل (مع دعم Proxy/Load Balancer)
+        $clientIp = $request->header('X-Real-IP') 
+            ?: $request->header('X-Forwarded-For') 
+            ?: $request->ip();
         
-        // تخطي التحقق إذا كان IP محلي
-        if (!$clientIp || filter_var($clientIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+        // تنظيف IP إذا كان هناك عدة IPs في X-Forwarded-For
+        if (strpos($clientIp, ',') !== false) {
+            $ips = explode(',', $clientIp);
+            $clientIp = trim($ips[0]);
+        }
+        
+        // تخطي التحقق إذا كان IP محلي أو غير صحيح
+        if (!$clientIp || !filter_var($clientIp, FILTER_VALIDATE_IP)) {
+            return $next($request);
+        }
+        
+        // تخطي IPs المحلية (127.0.0.1, 192.168.x.x, etc.)
+        if (filter_var($clientIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
             return $next($request);
         }
 

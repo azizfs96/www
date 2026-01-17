@@ -52,12 +52,16 @@ class CountryRuleController extends Controller
     /**
      * مزامنة قاعدة البيانات مع ملف ModSecurity
      * 
-     * ملاحظات مهمة:
-     * 1. يتم التحقق من حظر الدول أيضاً عبر Middleware (CheckCountryBlock)
-     *    الذي يستخدم GeoIpService (نفس الـ service المستخدم في Events)
-     * 2. ModSecurity يتطلب قاعدة بيانات GeoIP محلية (مثل GeoLite2)
-     *    يمكن تثبيتها من: https://dev.maxmind.com/geoip/geoip2/geolite2/
-     * 3. الـ Middleware يعمل بشكل فوري ولا يحتاج قاعدة بيانات GeoIP محلية
+     * ⚠️ مهم جداً:
+     * - الطلبات تمر عبر Nginx مباشرة (لا تمر عبر Laravel)
+     * - ModSecurity يحتاج قاعدة بيانات GeoIP محلية ليعمل
+     * - بدون قاعدة بيانات GeoIP، قواعد @geoLookup لن تعمل
+     * 
+     * 📋 خطوات التثبيت:
+     * 1. تثبيت المكتبات: sudo apt-get install libmaxminddb0 libmaxminddb-dev mmdb-bin
+     * 2. تحميل قاعدة بيانات GeoLite2 من MaxMind
+     * 3. إضافة SecGeoLookupDb في modsecurity.conf
+     * 4. راجع: docs/GEOIP_SETUP.md للتفاصيل الكاملة
      */
     protected function syncFiles(): void
     {
@@ -113,7 +117,43 @@ class CountryRuleController extends Controller
         // Write file
         @file_put_contents($file, $content);
 
+        // Ensure country-rules.conf is included in main.conf
+        $this->ensureMainConfIncludes();
+
         // Reload Nginx
         @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
+    }
+
+    /**
+     * التأكد من إضافة country-rules.conf إلى main.conf
+     */
+    protected function ensureMainConfIncludes(): void
+    {
+        $mainConf = '/etc/nginx/modsec/main.conf';
+        
+        if (!file_exists($mainConf)) {
+            return;
+        }
+
+        $content = file_get_contents($mainConf);
+        $includeLine = 'Include /etc/nginx/modsec/country-rules.conf';
+
+        // التحقق من وجود السطر
+        if (strpos($content, $includeLine) === false) {
+            // إضافة السطر بعد url-rules.conf
+            if (strpos($content, 'Include /etc/nginx/modsec/url-rules.conf') !== false) {
+                $content = str_replace(
+                    'Include /etc/nginx/modsec/url-rules.conf',
+                    "Include /etc/nginx/modsec/url-rules.conf\n\nInclude /etc/nginx/modsec/country-rules.conf",
+                    $content
+                );
+            } else {
+                // إذا لم نجد url-rules.conf، نضيف في النهاية
+                $content .= "\n{$includeLine}\n";
+            }
+
+            // حفظ الملف (يتطلب صلاحيات sudo)
+            @file_put_contents($mainConf, $content);
+        }
     }
 }

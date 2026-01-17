@@ -370,38 +370,20 @@
             </div>
 
             <div class="ssl-fields {{ old('ssl_enabled') ? 'active' : '' }}" id="sslFields">
-                <div class="form-group">
-                    <label class="form-label">
-                        مسار شهادة SSL
-                    </label>
-                    <input 
-                        type="text" 
-                        name="ssl_cert_path" 
-                        class="form-input" 
-                        value="{{ old('ssl_cert_path') }}"
-                        placeholder="مثال: /etc/ssl/certs/rabbitclean.sa.crt"
-                    >
-                    <div class="form-help">المسار الكامل لملف الشهادة (.crt أو .pem)</div>
-                    @error('ssl_cert_path')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">
-                        مسار مفتاح SSL
-                    </label>
-                    <input 
-                        type="text" 
-                        name="ssl_key_path" 
-                        class="form-input" 
-                        value="{{ old('ssl_key_path') }}"
-                        placeholder="مثال: /etc/ssl/private/rabbitclean.sa.key"
-                    >
-                    <div class="form-help">المسار الكامل لملف المفتاح الخاص (.key)</div>
-                    @error('ssl_key_path')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
+                <div class="alert alert-info" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; padding: 12px; margin-bottom: 16px;">
+                    <strong>ℹ️ ملاحظة:</strong> سيتم توليد شهادة SSL تلقائياً باستخدام Let's Encrypt (Certbot) عند حفظ الموقع.
+                    <br><br>
+                    <strong>المتطلبات:</strong>
+                    <ul style="margin: 8px 0 0 20px; padding: 0;">
+                        <li>يجب أن يكون النطاق (Domain) يشير إلى IP السيرفر</li>
+                        <li>يجب أن يكون Certbot مثبت: <code>sudo apt-get install certbot python3-certbot-nginx</code></li>
+                        <li>يجب أن يكون Nginx نشط ويعمل</li>
+                        <li>يجب أن يكون الموقع متاحاً على HTTP (port 80) قبل توليد الشهادة</li>
+                    </ul>
+                    <br>
+                    <strong>مسار الشهادة:</strong> <code>/etc/letsencrypt/live/{{ old('server_name', 'example.com') }}/fullchain.pem</code>
+                    <br>
+                    <strong>مسار المفتاح:</strong> <code>/etc/letsencrypt/live/{{ old('server_name', 'example.com') }}/privkey.pem</code>
                 </div>
             </div>
         </div>
