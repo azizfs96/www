@@ -27,29 +27,21 @@ class SitePolicyController extends Controller
      */
     public function update(Request $request, Site $site)
     {
-        $data = $request->validate([
-            'waf_enabled' => 'boolean',
+        // Validate only non-checkbox fields
+        $validated = $request->validate([
             'paranoia_level' => 'required|integer|min:1|max:4',
             'anomaly_threshold' => 'required|string',
-            'inherit_global_rules' => 'boolean',
-            'block_suspicious_user_agents' => 'boolean',
-            'block_sql_injection' => 'boolean',
-            'block_xss' => 'boolean',
-            'block_rce' => 'boolean',
-            'block_lfi' => 'boolean',
-            'block_rfi' => 'boolean',
-            'rate_limiting_enabled' => 'boolean',
             'requests_per_minute' => 'nullable|integer|min:1',
             'burst_size' => 'nullable|integer|min:1',
             'excluded_urls' => 'nullable|string',
             'excluded_ips' => 'nullable|string',
-            'detailed_logging' => 'boolean',
             'log_level' => 'required|in:debug,info,warn,error',
             'custom_modsec_rules' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
 
-        // تحويل checkboxes
+        // Handle checkboxes manually (they don't send values when unchecked)
+        $data = $validated;
         $data['waf_enabled'] = $request->has('waf_enabled');
         $data['inherit_global_rules'] = $request->has('inherit_global_rules');
         $data['block_suspicious_user_agents'] = $request->has('block_suspicious_user_agents');
@@ -61,8 +53,23 @@ class SitePolicyController extends Controller
         $data['rate_limiting_enabled'] = $request->has('rate_limiting_enabled');
         $data['detailed_logging'] = $request->has('detailed_logging');
 
-        $policy = $site->policy ?? $site->policy()->create([]);
+        // Get or create policy
+        $policy = $site->policy ?? $site->policy()->create([
+            'waf_enabled' => true,
+            'paranoia_level' => 1,
+            'anomaly_threshold' => '5',
+            'inherit_global_rules' => true,
+        ]);
+
+        // Update policy
         $policy->update($data);
+
+        // Log for debugging
+        \Log::info('Site Policy Updated', [
+            'site_id' => $site->id,
+            'site_name' => $site->server_name,
+            'policy_data' => $data,
+        ]);
 
         // إعادة توليد ملف Nginx
         app(SiteController::class)->generateNginxConfig($site);
