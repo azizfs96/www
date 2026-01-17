@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Site extends Model
 {
@@ -18,6 +19,7 @@ class Site extends Model
         'ssl_key_path',
         'enabled',
         'notes',
+        'tenant_id',
     ];
 
     protected $casts = [
@@ -64,6 +66,14 @@ class Site extends Model
     public function events(): HasMany
     {
         return $this->hasMany(WafEvent::class);
+    }
+
+    /**
+     * العلاقة مع Tenant
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 
     /**

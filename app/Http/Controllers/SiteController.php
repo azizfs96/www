@@ -13,7 +13,16 @@ class SiteController extends Controller
      */
     public function index()
     {
-        $sites = Site::orderByDesc('created_at')->get();
+        $user = auth()->user();
+        
+        // Super admin sees all sites, others see only their tenant's sites
+        if ($user->isSuperAdmin()) {
+            $sites = Site::orderByDesc('created_at')->get();
+        } else {
+            $sites = Site::where('tenant_id', $user->tenant_id)
+                ->orderByDesc('created_at')
+                ->get();
+        }
 
         return view('waf.sites.index', compact('sites'));
     }
@@ -42,6 +51,16 @@ class SiteController extends Controller
         ]);
 
         $data['enabled'] = true;
+        
+        // Assign tenant_id based on user role
+        $user = auth()->user();
+        if ($user->isSuperAdmin()) {
+            // Super admin can create sites without tenant (global sites)
+            $data['tenant_id'] = $request->input('tenant_id');
+        } else {
+            // Regular users can only create sites for their tenant
+            $data['tenant_id'] = $user->tenant_id;
+        }
         
         // Checkbox: إذا كان محدد = '1' (true)، إذا لم يكن محدد = '0' (false)
         // في Laravel، إذا كان checkbox محدد، سيتم إرسال '1'، وإذا لم يكن محدد، لن يتم إرسال أي شيء
@@ -132,10 +151,29 @@ class SiteController extends Controller
     }
 
     /**
+     * التحقق من صلاحيات الوصول للموقع
+     */
+    protected function checkSiteAccess(Site $site): void
+    {
+        $user = auth()->user();
+        
+        // Super admin can access all sites
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+        
+        // Others can only access their tenant's sites
+        if ($site->tenant_id !== $user->tenant_id) {
+            abort(403, 'Access denied. You can only manage sites in your tenant.');
+        }
+    }
+
+    /**
      * حذف موقع
      */
     public function destroy(Site $site)
     {
+        $this->checkSiteAccess($site);
         $serverName = $site->server_name;
         
         // حذف ملف Nginx
@@ -177,6 +215,7 @@ class SiteController extends Controller
      */
     public function toggleSsl(Site $site)
     {
+        $this->checkSiteAccess($site);
         if (!$site->ssl_enabled) {
             // تفعيل SSL - نفس منطق fixSsl()
             // نضع مسارات الشهادات أولاً
@@ -268,6 +307,7 @@ class SiteController extends Controller
      */
     public function fixSsl(Site $site)
     {
+        $this->checkSiteAccess($site);
         if (!$site->ssl_enabled) {
             return redirect()->route('sites.index')
                 ->with('error', 'SSL غير مفعل لهذا الموقع.');
@@ -335,6 +375,7 @@ class SiteController extends Controller
      */
     public function toggle(Site $site)
     {
+        $this->checkSiteAccess($site);
         $site->enabled = !$site->enabled;
         $site->save();
 

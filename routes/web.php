@@ -9,25 +9,48 @@ use App\Http\Controllers\CountryRuleController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SitePolicyController;
 use App\Http\Controllers\WafEventController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\TenantController;
+use App\Http\Controllers\TenantUserController;
+
+// Authentication Routes
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login']);
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // اختياري: خله يحول الصفحة الرئيسية للوحة WAF
 Route::get('/', function () {
     return redirect('/waf');
 });
 
+// Protect all WAF routes with authentication
+Route::middleware(['auth'])->group(function () {
+    
 Route::get('/waf', function () {
+    $user = auth()->user();
+    
     $today = WafEvent::whereDate('event_time', today());
+    
+    // Filter events by tenant if not super admin
+    if (!$user->isSuperAdmin() && $user->tenant_id) {
+        $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
+        $today->whereIn('site_id', $siteIds)->orWhereNull('site_id');
+    }
 
-    // Get unique hosts for dropdown
-    $hosts = WafEvent::whereNotNull('host')
-        ->distinct()
+    // Get unique hosts for dropdown (filtered by tenant)
+    $hostsQuery = WafEvent::whereNotNull('host');
+    if (!$user->isSuperAdmin() && $user->tenant_id) {
+        $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
+        $hostsQuery->whereIn('site_id', $siteIds)->orWhereNull('site_id');
+    }
+    $hosts = $hostsQuery->distinct()
         ->orderBy('host')
         ->pluck('host')
         ->unique()
         ->values();
 
     return view('waf.dashboard', [
-        'total'   => $today->count(),
+        'total'   => (clone $today)->count(),
         'blocked' => (clone $today)->where('status', 403)->count(),
 
         'topIps'  => (clone $today)
@@ -51,10 +74,17 @@ Route::get('/waf', function () {
 
 // API route for chart data
 Route::get('/waf/api/chart-data', function (Request $request) {
+    $user = auth()->user();
     $host = $request->get('host');
     $hours = (int) $request->get('hours', 24); // Default 24 hours
     
     $query = WafEvent::where('event_time', '>=', now()->subHours($hours));
+    
+    // Filter by tenant if not super admin
+    if (!$user->isSuperAdmin() && $user->tenant_id) {
+        $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
+        $query->whereIn('site_id', $siteIds)->orWhereNull('site_id');
+    }
     
     if ($host) {
         $query->where('host', $host);
@@ -138,7 +168,16 @@ Route::get('/waf/api/chart-data', function (Request $request) {
 });
 
 Route::get('/waf/events', function (Request $request) {
+    $user = auth()->user();
+    
     $baseQuery = WafEvent::query()->orderByDesc('event_time');
+    
+    // Filter by tenant if not super admin
+    if (!$user->isSuperAdmin() && $user->tenant_id) {
+        $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
+        $baseQuery->whereIn('site_id', $siteIds)->orWhereNull('site_id');
+    }
+    
     $query = clone $baseQuery;
 
     // فلتر بالحالة (status)
@@ -318,3 +357,14 @@ Route::put('/waf/sites/{site}/policy', [SitePolicyController::class, 'update'])-
 // AI Analysis for WAF Events
 Route::post('/waf/events/{event}/analyze', [WafEventController::class, 'analyze'])->name('events.analyze');
 Route::post('/waf/events/analyze-pattern', [WafEventController::class, 'analyzePattern'])->name('events.analyze-pattern');
+
+// Tenants Management (Super Admin only)
+Route::middleware(['role:super_admin'])->group(function () {
+    Route::resource('tenants', TenantController::class);
+    Route::get('/tenants/{tenant}/users', [TenantUserController::class, 'index'])->name('tenants.users.index');
+    Route::get('/tenants/{tenant}/users/create', [TenantUserController::class, 'create'])->name('tenants.users.create');
+    Route::post('/tenants/{tenant}/users', [TenantUserController::class, 'store'])->name('tenants.users.store');
+    Route::delete('/tenants/{tenant}/users/{user}', [TenantUserController::class, 'destroy'])->name('tenants.users.destroy');
+});
+
+}); // End of auth middleware group

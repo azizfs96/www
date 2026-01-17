@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Tenant;
+use App\Policies\TenantPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register Policies
+        Gate::policy(Tenant::class, TenantPolicy::class);
+        
+        // Define abilities
+        Gate::define('manage-tenants', [TenantPolicy::class, 'manageTenants']);
     }
 }

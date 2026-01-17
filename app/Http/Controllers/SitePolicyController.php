@@ -13,6 +13,8 @@ class SitePolicyController extends Controller
      */
     public function edit(Site $site)
     {
+        $this->checkSiteAccess($site);
+        
         $policy = $site->policy ?? $site->policy()->create([
             'waf_enabled' => true,
             'paranoia_level' => 1,
@@ -23,10 +25,30 @@ class SitePolicyController extends Controller
     }
 
     /**
+     * التحقق من صلاحيات الوصول للموقع
+     */
+    protected function checkSiteAccess(Site $site): void
+    {
+        $user = auth()->user();
+        
+        // Super admin can access all sites
+        if ($user->isSuperAdmin()) {
+            return;
+        }
+        
+        // Others can only access their tenant's sites
+        if ($site->tenant_id !== $user->tenant_id) {
+            abort(403, 'Access denied. You can only manage sites in your tenant.');
+        }
+    }
+
+    /**
      * تحديث إعدادات WAF
      */
     public function update(Request $request, Site $site)
     {
+        $this->checkSiteAccess($site);
+        
         // Validate only non-checkbox fields
         $validated = $request->validate([
             'paranoia_level' => 'required|integer|min:1|max:4',

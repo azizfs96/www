@@ -10,8 +10,15 @@ class IpRuleController extends Controller
 {
     public function index(Request $request)
     {
+        $user = auth()->user();
         $siteId = $request->get('site_id', 'global');
-        $sites = Site::orderBy('name')->get();
+        
+        // Filter sites based on user role
+        if ($user->isSuperAdmin()) {
+            $sites = Site::orderBy('name')->get();
+        } else {
+            $sites = Site::where('tenant_id', $user->tenant_id)->orderBy('name')->get();
+        }
         
         // جلب القواعد حسب الموقع المختار
         $query = IpRule::with('site')->orderByDesc('created_at');
@@ -20,6 +27,20 @@ class IpRuleController extends Controller
             $query->global();
         } elseif ($siteId !== 'all') {
             $query->forSite($siteId);
+            // Verify site belongs to user's tenant (unless super admin)
+            if (!$user->isSuperAdmin()) {
+                $site = Site::find($siteId);
+                if ($site && $site->tenant_id !== $user->tenant_id) {
+                    abort(403);
+                }
+            }
+        } else {
+            // Filter by tenant if not super admin
+            if (!$user->isSuperAdmin()) {
+                $query->whereHas('site', function($q) use ($user) {
+                    $q->where('tenant_id', $user->tenant_id);
+                });
+            }
         }
         
         $rules = $query->get();

@@ -434,6 +434,35 @@
                         <span>Country Rules</span>
                     </a>
                 </div>
+
+                @auth
+                    @if(auth()->user()->isSuperAdmin())
+                        <div class="nav-section">
+                            <div class="nav-section-title">Administration</div>
+                            <a href="/tenants" class="nav-item {{ request()->is('tenants*') ? 'active' : '' }}">
+                                <span class="nav-item-icon">⚙</span>
+                                <span>Tenants Management</span>
+                            </a>
+                        </div>
+                    @endif
+
+                    <div class="nav-section">
+                        <div class="nav-section-title">Account</div>
+                        <div class="nav-item" style="color: var(--text-secondary); padding: 8px 12px; font-size: 12px;">
+                            <span>{{ auth()->user()->name }}</span>
+                            <span style="display: block; color: var(--text-muted); font-size: 11px; margin-top: 4px;">
+                                {{ auth()->user()->isSuperAdmin() ? 'Super Admin' : (auth()->user()->isTenantAdmin() ? 'Tenant Admin' : 'User') }}
+                            </span>
+                        </div>
+                        <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="nav-item" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; color: var(--text-muted);">
+                                <span class="nav-item-icon">🚪</span>
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                @endauth
             </nav>
         </div>
 

@@ -9,7 +9,18 @@ class CountryRuleController extends Controller
 {
     public function index()
     {
-        $rules = CountryRule::orderByDesc('created_at')->get();
+        $user = auth()->user();
+        
+        $query = CountryRule::orderByDesc('created_at');
+        
+        // Filter by tenant if not super admin
+        if (!$user->isSuperAdmin()) {
+            $query->whereHas('site', function($q) use ($user) {
+                $q->where('tenant_id', $user->tenant_id);
+            })->orWhereNull('site_id'); // Also show global rules
+        }
+        
+        $rules = $query->get();
 
         return view('waf.country-rules', compact('rules'));
     }

@@ -9,8 +9,19 @@ class UrlRuleController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
+        
+        $query = UrlRule::orderBy('id', 'desc');
+        
+        // Filter by tenant if not super admin
+        if (!$user->isSuperAdmin()) {
+            $query->whereHas('site', function($q) use ($user) {
+                $q->where('tenant_id', $user->tenant_id);
+            })->orWhereNull('site_id'); // Also show global rules
+        }
+        
         return view('waf.url-rules.index', [
-            'rules' => UrlRule::orderBy('id', 'desc')->get(),
+            'rules' => $query->get(),
         ]);
     }
 

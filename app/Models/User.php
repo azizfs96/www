@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'tenant_id',
     ];
 
     /**
@@ -44,5 +46,56 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Check if user is super admin
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    /**
+     * Check if user is tenant admin
+     */
+    public function isTenantAdmin(): bool
+    {
+        if ($this->role === 'tenant_admin') {
+            return true;
+        }
+        
+        // Check if user is admin in any tenant
+        if ($this->pivot && $this->pivot->role === 'admin') {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if user can manage tenants
+     */
+    public function canManageTenants(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
+    /**
+     * Get current tenant for user
+     */
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    /**
+     * Get all tenants user belongs to
+     */
+    public function tenants()
+    {
+        return $this->belongsToMany(Tenant::class, 'tenant_users')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 }
