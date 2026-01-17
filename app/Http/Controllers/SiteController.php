@@ -135,10 +135,31 @@ class SiteController extends Controller
      */
     public function destroy(Site $site)
     {
+        $serverName = $site->server_name;
+        
         // حذف ملف Nginx
-        $configFile = "/etc/nginx/sites-enabled/{$site->server_name}.waf.conf";
+        $configFile = "/etc/nginx/sites-enabled/{$serverName}.waf.conf";
         if (file_exists($configFile)) {
             @unlink($configFile);
+        }
+
+        // حذف شهادات SSL إذا كانت موجودة
+        if ($site->ssl_enabled) {
+            $certPath = "/etc/letsencrypt/live/{$serverName}/fullchain.pem";
+            if (file_exists($certPath)) {
+                // استخدام Certbot لحذف الشهادة (الطريقة الآمنة)
+                $certbotDelete = shell_exec("sudo certbot delete --cert-name {$serverName} --non-interactive 2>&1");
+                
+                \Log::info("Deleting SSL certificate for site: {$serverName}", [
+                    'certbot_output' => $certbotDelete
+                ]);
+                
+                // إذا فشل Certbot، نحاول حذف المجلد يدوياً
+                $certDir = "/etc/letsencrypt/live/{$serverName}";
+                if (is_dir($certDir)) {
+                    @exec("sudo rm -rf {$certDir} 2>&1");
+                }
+            }
         }
 
         $site->delete();
@@ -147,7 +168,7 @@ class SiteController extends Controller
         @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
 
         return redirect()->route('sites.index')
-            ->with('status', 'تم حذف الموقع بنجاح.');
+            ->with('status', 'تم حذف الموقع وملفات SSL بنجاح.');
     }
 
     /**
@@ -156,14 +177,44 @@ class SiteController extends Controller
     public function toggleSsl(Site $site)
     {
         if (!$site->ssl_enabled) {
-            // تفعيل SSL
-            $site->ssl_enabled = true;
-            $site->ssl_cert_path = "/etc/letsencrypt/live/{$site->server_name}/fullchain.pem";
-            $site->ssl_key_path = "/etc/letsencrypt/live/{$site->server_name}/privkey.pem";
+            // تفعيل SSL - نفس منطق fixSsl()
+            // نضع مسارات الشهادات أولاً
+            $certPath = "/etc/letsencrypt/live/{$site->server_name}/fullchain.pem";
+            $keyPath = "/etc/letsencrypt/live/{$site->server_name}/privkey.pem";
+            
+            // التحقق من وجود الشهادات أولاً
+            if (file_exists($certPath) && file_exists($keyPath)) {
+                // الشهادات موجودة، فقط تفعيل SSL
+                $site->ssl_enabled = true;
+                $site->ssl_cert_path = $certPath;
+                $site->ssl_key_path = $keyPath;
+                $site->save();
+                
+                // إعادة توليد ملف Nginx مع SSL
+                $this->generateNginxConfig($site);
+                
+                return redirect()->route('sites.index')
+                    ->with('status', '✅ تم تفعيل SSL بنجاح! الشهادات موجودة.');
+            }
+            
+            // الشهادات غير موجودة - نعيد إنشاء الملف بـ HTTP فقط أولاً
+            // تعطيل SSL مؤقتاً لإعادة إنشاء الملف بـ HTTP فقط
+            $site->ssl_enabled = false;
+            $site->ssl_cert_path = null;
+            $site->ssl_key_path = null;
             $site->save();
             
-            // توليد ملف Nginx أولاً (HTTP فقط)
+            // إعادة إنشاء ملف Nginx بـ HTTP فقط
             $this->generateNginxConfig($site);
+            
+            // انتظار قليل
+            sleep(2);
+            
+            // إعداد مسارات الشهادات وتفعيل SSL
+            $site->ssl_enabled = true;
+            $site->ssl_cert_path = $certPath;
+            $site->ssl_key_path = $keyPath;
+            $site->save();
             
             // توليد الشهادة
             \Log::info("Starting SSL certificate generation for site: {$site->server_name}");
@@ -175,8 +226,13 @@ class SiteController extends Controller
             ]);
             
             if (!$certResult['success']) {
-                // نحتفظ بـ SSL مفعل لكن نعرض رسالة خطأ
-                // يمكن للمستخدم إعادة المحاولة لاحقاً
+                // إذا فشل، نعيد الملف إلى HTTP فقط
+                $site->ssl_enabled = false;
+                $site->ssl_cert_path = null;
+                $site->ssl_key_path = null;
+                $site->save();
+                $this->generateNginxConfig($site);
+                
                 return redirect()->route('sites.index')
                     ->with('error', '⚠️ فشل توليد شهادة SSL: ' . $certResult['message'] . 
                            '<br><br><strong>التحقق من:</strong>' .
