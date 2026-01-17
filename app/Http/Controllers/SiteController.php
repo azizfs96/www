@@ -581,7 +581,39 @@ class SiteController extends Controller
                 $content .= "# OWASP CRS not installed - using basic rules only\n\n";
             }
         } else {
-            $content .= "# OWASP CRS rules are included in main.conf\n\n";
+            // إذا كانت قواعد OWASP في main.conf، نضيف قواعد تعطيل حسب السياسة
+            $content .= "# OWASP CRS rules are included in main.conf\n";
+            $content .= "# Disabling specific attack types if not enabled in policy\n\n";
+            
+            // تعطيل SQL Injection إذا كان معطلاً
+            if (!$policy->block_sql_injection) {
+                $content .= "# Disable SQL Injection rules (REQUEST-942)\n";
+                $content .= "SecRuleRemoveByTag \"attack-sqli\"\n\n";
+            }
+            
+            // تعطيل XSS إذا كان معطلاً
+            if (!$policy->block_xss) {
+                $content .= "# Disable XSS rules (REQUEST-941)\n";
+                $content .= "SecRuleRemoveByTag \"attack-xss\"\n\n";
+            }
+            
+            // تعطيل RCE إذا كان معطلاً
+            if (!$policy->block_rce) {
+                $content .= "# Disable RCE rules (REQUEST-932)\n";
+                $content .= "SecRuleRemoveByTag \"attack-rce\"\n\n";
+            }
+            
+            // تعطيل LFI إذا كان معطلاً
+            if (!$policy->block_lfi) {
+                $content .= "# Disable LFI rules (REQUEST-930)\n";
+                $content .= "SecRuleRemoveByTag \"attack-lfi\"\n\n";
+            }
+            
+            // تعطيل RFI إذا كان معطلاً
+            if (!$policy->block_rfi) {
+                $content .= "# Disable RFI rules (REQUEST-931)\n";
+                $content .= "SecRuleRemoveByTag \"attack-rfi\"\n\n";
+            }
         }
 
         // استثناءات URLs
