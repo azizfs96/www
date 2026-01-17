@@ -468,9 +468,6 @@ class SiteController extends Controller
                 $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
             }
             
-            // تخصيص صفحة 403
-            $this->add403ErrorPage($content, $site);
-            
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
@@ -511,9 +508,6 @@ class SiteController extends Controller
                 $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
             }
             
-            // تخصيص صفحة 403
-            $this->add403ErrorPage($content, $site);
-            
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
@@ -548,12 +542,12 @@ class SiteController extends Controller
         // تحديد مسار صفحة 403
         if ($site->policy->custom_403_page_path && file_exists($site->policy->custom_403_page_path)) {
             // استخدام صفحة مخصصة من المستخدم
-            $content .= "    error_page 403 {$site->policy->custom_403_page_path};\n";
+            $content .= "    error_page 403 =403 {$site->policy->custom_403_page_path};\n";
         } else {
             // توليد صفحة افتراضية مخصصة
             $default403Path = "{$pagesDir}/{$site->server_name}.html";
             $this->generateDefault403Page($site, $default403Path);
-            $content .= "    error_page 403 {$default403Path};\n";
+            $content .= "    error_page 403 =403 {$default403Path};\n";
         }
         $content .= "\n";
     }
@@ -692,6 +686,11 @@ HTML;
             $content .= "SecDataDir /tmp/\n\n";
         }
 
+        // إعدادات ModSecurity الأساسية - إجبار 403 على deny
+        $content .= "# Force 403 status code on deny\n";
+        $content .= "SecDefaultAction \"phase:1,deny,status:403\"\n";
+        $content .= "SecDefaultAction \"phase:2,deny,status:403\"\n\n";
+        
         // إعدادات مستوى الصرامة
         $content .= "# Paranoia Level\n";
         $content .= "SecAction \"id:900000,phase:1,nolog,pass,t:none,setvar:tx.paranoia_level={$policy->paranoia_level}\"\n\n";
