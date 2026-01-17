@@ -577,6 +577,73 @@ class SiteController extends Controller
                     $content .= "# OWASP CRS - RFI\n";
                     $content .= "Include $owaspPath/REQUEST-931-APPLICATION-ATTACK-RFI.conf\n\n";
                 }
+
+                // Path Traversal (part of REQUEST-930)
+                if ($policy->block_path_traversal && file_exists("$owaspPath/REQUEST-930-APPLICATION-ATTACK-LFI.conf")) {
+                    // Path Traversal is included in REQUEST-930, handled by block_lfi
+                }
+
+                // PHP Injection
+                if ($policy->block_php_injection && file_exists("$owaspPath/REQUEST-933-APPLICATION-ATTACK-PHP.conf")) {
+                    $content .= "# OWASP CRS - PHP Injection\n";
+                    $content .= "Include $owaspPath/REQUEST-933-APPLICATION-ATTACK-PHP.conf\n\n";
+                }
+
+                // Node.js Injection
+                if ($policy->block_nodejs_injection && file_exists("$owaspPath/REQUEST-934-APPLICATION-ATTACK-NODEJS.conf")) {
+                    $content .= "# OWASP CRS - Node.js Injection\n";
+                    $content .= "Include $owaspPath/REQUEST-934-APPLICATION-ATTACK-NODEJS.conf\n\n";
+                }
+
+                // Java Injection
+                if ($policy->block_java_injection && file_exists("$owaspPath/REQUEST-944-APPLICATION-ATTACK-JAVA.conf")) {
+                    $content .= "# OWASP CRS - Java Injection\n";
+                    $content .= "Include $owaspPath/REQUEST-944-APPLICATION-ATTACK-JAVA.conf\n\n";
+                }
+
+                // Session Fixation
+                if ($policy->block_session_fixation && file_exists("$owaspPath/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf")) {
+                    $content .= "# OWASP CRS - Session Fixation\n";
+                    $content .= "Include $owaspPath/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf\n\n";
+                }
+
+                // File Upload Attacks
+                if ($policy->block_file_upload_attacks && file_exists("$owaspPath/REQUEST-914-FILE-UPLOAD-ATTACKS.conf")) {
+                    $content .= "# OWASP CRS - File Upload Attacks\n";
+                    $content .= "Include $owaspPath/REQUEST-914-FILE-UPLOAD-ATTACKS.conf\n\n";
+                }
+
+                // Scanner Detection
+                if ($policy->block_scanner_detection && file_exists("$owaspPath/REQUEST-913-SCANNER-DETECTION.conf")) {
+                    $content .= "# OWASP CRS - Scanner Detection\n";
+                    $content .= "Include $owaspPath/REQUEST-913-SCANNER-DETECTION.conf\n\n";
+                }
+
+                // Protocol Attacks
+                if ($policy->block_protocol_attacks) {
+                    if (file_exists("$owaspPath/REQUEST-920-PROTOCOL-ENFORCEMENT.conf")) {
+                        $content .= "# OWASP CRS - Protocol Enforcement\n";
+                        $content .= "Include $owaspPath/REQUEST-920-PROTOCOL-ENFORCEMENT.conf\n\n";
+                    }
+                    if (file_exists("$owaspPath/REQUEST-921-PROTOCOL-ATTACK.conf")) {
+                        $content .= "# OWASP CRS - Protocol Attack\n";
+                        $content .= "Include $owaspPath/REQUEST-921-PROTOCOL-ATTACK.conf\n\n";
+                    }
+                }
+
+                // DoS Protection
+                if ($policy->block_dos_protection && file_exists("$owaspPath/REQUEST-912-DOS-PROTECTION.conf")) {
+                    $content .= "# OWASP CRS - DoS Protection\n";
+                    $content .= "Include $owaspPath/REQUEST-912-DOS-PROTECTION.conf\n\n";
+                }
+
+                // Data Leakages
+                if ($policy->block_data_leakages) {
+                    if (file_exists("$owaspPath/REQUEST-950-DATA-LEAKAGES.conf")) {
+                        $content .= "# OWASP CRS - Data Leakages\n";
+                        $content .= "Include $owaspPath/REQUEST-950-DATA-LEAKAGES.conf\n\n";
+                    }
+                }
             } else {
                 $content .= "# OWASP CRS not installed - using basic rules only\n\n";
             }
@@ -613,6 +680,66 @@ class SiteController extends Controller
             if (!$policy->block_rfi) {
                 $content .= "# Disable RFI rules (REQUEST-931)\n";
                 $content .= "SecRuleRemoveByTag \"attack-rfi\"\n\n";
+            }
+
+            // تعطيل Path Traversal إذا كان معطلاً
+            if (!$policy->block_path_traversal) {
+                $content .= "# Disable Path Traversal rules (REQUEST-930)\n";
+                $content .= "SecRuleRemoveByTag \"attack-path\"\n\n";
+            }
+
+            // تعطيل PHP Injection إذا كان معطلاً
+            if (!$policy->block_php_injection) {
+                $content .= "# Disable PHP Injection rules (REQUEST-933)\n";
+                $content .= "SecRuleRemoveByTag \"attack-php\"\n\n";
+            }
+
+            // تعطيل Node.js Injection إذا كان معطلاً
+            if (!$policy->block_nodejs_injection) {
+                $content .= "# Disable Node.js Injection rules (REQUEST-934)\n";
+                $content .= "SecRuleRemoveByTag \"attack-nodejs\"\n\n";
+            }
+
+            // تعطيل Java Injection إذا كان معطلاً
+            if (!$policy->block_java_injection) {
+                $content .= "# Disable Java Injection rules (REQUEST-944)\n";
+                $content .= "SecRuleRemoveByTag \"attack-java\"\n\n";
+            }
+
+            // تعطيل Session Fixation إذا كان معطلاً
+            if (!$policy->block_session_fixation) {
+                $content .= "# Disable Session Fixation rules (REQUEST-943)\n";
+                $content .= "SecRuleRemoveByTag \"attack-session\"\n\n";
+            }
+
+            // تعطيل File Upload Attacks إذا كان معطلاً
+            if (!$policy->block_file_upload_attacks) {
+                $content .= "# Disable File Upload Attacks rules (REQUEST-914)\n";
+                $content .= "SecRuleRemoveByTag \"attack-fileupload\"\n\n";
+            }
+
+            // تعطيل Scanner Detection إذا كان معطلاً
+            if (!$policy->block_scanner_detection) {
+                $content .= "# Disable Scanner Detection rules (REQUEST-913)\n";
+                $content .= "SecRuleRemoveByTag \"scanner\"\n\n";
+            }
+
+            // تعطيل Protocol Attacks إذا كان معطلاً
+            if (!$policy->block_protocol_attacks) {
+                $content .= "# Disable Protocol Attacks rules (REQUEST-920, 921)\n";
+                $content .= "SecRuleRemoveByTag \"protocol-violation\"\n\n";
+            }
+
+            // تعطيل DoS Protection إذا كان معطلاً
+            if (!$policy->block_dos_protection) {
+                $content .= "# Disable DoS Protection rules (REQUEST-912)\n";
+                $content .= "SecRuleRemoveByTag \"dos-protection\"\n\n";
+            }
+
+            // تعطيل Data Leakages إذا كان معطلاً
+            if (!$policy->block_data_leakages) {
+                $content .= "# Disable Data Leakages rules (REQUEST-950)\n";
+                $content .= "SecRuleRemoveByTag \"data-leakage\"\n\n";
             }
         }
 

@@ -398,6 +398,86 @@
                     Suspicious User Agents
                 </label>
             </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_path_traversal" id="block_path_traversal" 
+                       {{ $policy->block_path_traversal ?? true ? 'checked' : '' }}>
+                <label for="block_path_traversal" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    Path Traversal
+                </label>
+            </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_php_injection" id="block_php_injection" 
+                       {{ $policy->block_php_injection ?? true ? 'checked' : '' }}>
+                <label for="block_php_injection" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    PHP Injection
+                </label>
+            </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_java_injection" id="block_java_injection" 
+                       {{ $policy->block_java_injection ?? true ? 'checked' : '' }}>
+                <label for="block_java_injection" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    Java Injection
+                </label>
+            </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_nodejs_injection" id="block_nodejs_injection" 
+                       {{ $policy->block_nodejs_injection ?? true ? 'checked' : '' }}>
+                <label for="block_nodejs_injection" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    Node.js Injection
+                </label>
+            </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_session_fixation" id="block_session_fixation" 
+                       {{ $policy->block_session_fixation ?? true ? 'checked' : '' }}>
+                <label for="block_session_fixation" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    Session Fixation
+                </label>
+            </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_file_upload_attacks" id="block_file_upload_attacks" 
+                       {{ $policy->block_file_upload_attacks ?? true ? 'checked' : '' }}>
+                <label for="block_file_upload_attacks" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    File Upload Attacks
+                </label>
+            </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_scanner_detection" id="block_scanner_detection" 
+                       {{ $policy->block_scanner_detection ?? true ? 'checked' : '' }}>
+                <label for="block_scanner_detection" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    Scanner Detection
+                </label>
+            </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_protocol_attacks" id="block_protocol_attacks" 
+                       {{ $policy->block_protocol_attacks ?? true ? 'checked' : '' }}>
+                <label for="block_protocol_attacks" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    Protocol Attacks
+                </label>
+            </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_dos_protection" id="block_dos_protection" 
+                       {{ $policy->block_dos_protection ?? false ? 'checked' : '' }}>
+                <label for="block_dos_protection" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    DoS Protection
+                </label>
+            </div>
+
+            <div class="checkbox-item">
+                <input type="checkbox" name="block_data_leakages" id="block_data_leakages" 
+                       {{ $policy->block_data_leakages ?? true ? 'checked' : '' }}>
+                <label for="block_data_leakages" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    Data Leakages
+                </label>
+            </div>
         </div>
     </div>
 

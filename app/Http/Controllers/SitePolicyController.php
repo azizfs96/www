@@ -50,6 +50,16 @@ class SitePolicyController extends Controller
         $data['block_rce'] = $request->has('block_rce');
         $data['block_lfi'] = $request->has('block_lfi');
         $data['block_rfi'] = $request->has('block_rfi');
+        $data['block_path_traversal'] = $request->has('block_path_traversal');
+        $data['block_php_injection'] = $request->has('block_php_injection');
+        $data['block_java_injection'] = $request->has('block_java_injection');
+        $data['block_session_fixation'] = $request->has('block_session_fixation');
+        $data['block_file_upload_attacks'] = $request->has('block_file_upload_attacks');
+        $data['block_scanner_detection'] = $request->has('block_scanner_detection');
+        $data['block_protocol_attacks'] = $request->has('block_protocol_attacks');
+        $data['block_dos_protection'] = $request->has('block_dos_protection');
+        $data['block_data_leakages'] = $request->has('block_data_leakages');
+        $data['block_nodejs_injection'] = $request->has('block_nodejs_injection');
         $data['rate_limiting_enabled'] = $request->has('rate_limiting_enabled');
         $data['detailed_logging'] = $request->has('detailed_logging');
 
