@@ -68,6 +68,6 @@ class SitePolicyController extends Controller
         app(SiteController::class)->generateNginxConfig($site);
 
         return redirect()->route('sites.policy.edit', $site)
-            ->with('status', 'تم تحديث إعدادات WAF بنجاح!');
+            ->with('status', 'WAF settings updated successfully!');
     }
 }

@@ -1,6 +1,6 @@
 @extends('layouts.waf')
 
-@section('title', 'إعدادات WAF - ' . $site->name)
+@section('title', 'WAF Policy - ' . $site->name)
 
 @section('styles')
 <style>
@@ -270,16 +270,16 @@
 @endsection
 
 @section('content')
-<div class="page-header">
-    <h1 class="page-title">⚙️ إعدادات WAF</h1>
+<div class="page-header" style="direction: ltr; text-align: left;">
+    <h1 class="page-title">⚙️ WAF Policy Settings</h1>
     <div class="site-badge">
         🌐 {{ $site->name }} ({{ $site->server_name }})
     </div>
-    <a href="{{ route('sites.index') }}" class="back-link">← العودة للمواقع</a>
+    <a href="{{ route('sites.index') }}" class="back-link">← Back to Sites</a>
 </div>
 
 @if(session('status'))
-    <div class="alert-success">
+    <div class="alert-success" style="direction: ltr; text-align: left;">
         ✓ {{ session('status') }}
     </div>
 @endif
@@ -288,16 +288,16 @@
     @csrf
     @method('PUT')
 
-    {{-- إعدادات عامة --}}
+    {{-- General Settings --}}
     <div class="card">
-        <h2 class="section-title">🛡️ الإعدادات العامة</h2>
+        <h2 class="section-title" style="direction: ltr; text-align: left;">🛡️ General Settings</h2>
 
         <div class="form-group">
             <div class="checkbox-item">
                 <input type="checkbox" name="waf_enabled" id="waf_enabled" 
                        {{ $policy->waf_enabled ? 'checked' : '' }}>
-                <label for="waf_enabled" class="checkbox-label">
-                    <strong>تفعيل WAF</strong> - تفعيل/تعطيل جدار الحماية لهذا الموقع
+                <label for="waf_enabled" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    <strong>Enable WAF</strong> - Enable/disable WAF for this site
                 </label>
             </div>
         </div>
@@ -306,14 +306,14 @@
             <div class="checkbox-item">
                 <input type="checkbox" name="inherit_global_rules" id="inherit_global_rules" 
                        {{ $policy->inherit_global_rules ? 'checked' : '' }}>
-                <label for="inherit_global_rules" class="checkbox-label">
-                    <strong>وراثة القواعد العامة</strong> - تطبيق القواعد العامة + القواعد الخاصة بهذا الموقع
+                <label for="inherit_global_rules" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    <strong>Inherit Global Rules</strong> - Apply global rules + site-specific rules
                 </label>
             </div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">مستوى الصرامة (Paranoia Level)</label>
+            <label class="form-label" style="direction: ltr; text-align: left;">Paranoia Level</label>
             <div class="paranoia-levels">
                 @for($i = 1; $i <= 4; $i++)
                     <div class="paranoia-level">
@@ -322,33 +322,33 @@
                         <label for="level{{ $i }}">
                             <div class="level-number">{{ $i }}</div>
                             <div class="level-name">
-                                @if($i == 1) منخفض
-                                @elseif($i == 2) متوسط
-                                @elseif($i == 3) عالي
-                                @else شديد
+                                @if($i == 1) Low
+                                @elseif($i == 2) Medium
+                                @elseif($i == 3) High
+                                @else Critical
                                 @endif
                             </div>
                         </label>
                     </div>
                 @endfor
             </div>
-            <div class="form-help">
-                المستوى 1 = حماية أساسية (موصى به للبدء)<br>
-                المستوى 4 = حماية قصوى (قد يحظر طلبات شرعية)
+            <div class="form-help" style="direction: ltr; text-align: left;">
+                Level 1 = Basic protection (recommended to start)<br>
+                Level 4 = Maximum protection (may block legitimate requests)
             </div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">عتبة الشذوذ (Anomaly Threshold)</label>
+            <label class="form-label" style="direction: ltr; text-align: left;">Anomaly Threshold</label>
             <input type="text" name="anomaly_threshold" class="form-input" 
                    value="{{ $policy->anomaly_threshold }}" required>
-            <div class="form-help">القيمة الافتراضية: 5. كلما قلت القيمة، زادت الصرامة</div>
+            <div class="form-help" style="direction: ltr; text-align: left;">Default: 5. Lower value = stricter protection</div>
         </div>
     </div>
 
-    {{-- أنواع الهجمات المحظورة --}}
+    {{-- Blocked Attack Types --}}
     <div class="card">
-        <h2 class="section-title">🚫 أنواع الهجمات المحظورة</h2>
+        <h2 class="section-title" style="direction: ltr; text-align: left;">🚫 Blocked Attack Types</h2>
 
         <div class="checkbox-group">
             <div class="checkbox-item">
@@ -394,8 +394,8 @@
             <div class="checkbox-item">
                 <input type="checkbox" name="block_suspicious_user_agents" id="block_suspicious_user_agents" 
                        {{ $policy->block_suspicious_user_agents ? 'checked' : '' }}>
-                <label for="block_suspicious_user_agents" class="checkbox-label">
-                    User Agents المشبوهة
+                <label for="block_suspicious_user_agents" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    Suspicious User Agents
                 </label>
             </div>
         </div>
@@ -403,104 +403,104 @@
 
     {{-- Rate Limiting --}}
     <div class="card">
-        <h2 class="section-title">⏱️ تحديد المعدل (Rate Limiting)</h2>
+        <h2 class="section-title" style="direction: ltr; text-align: left;">⏱️ Rate Limiting</h2>
 
         <div class="form-group">
             <div class="checkbox-item">
                 <input type="checkbox" name="rate_limiting_enabled" id="rate_limiting_enabled" 
                        {{ $policy->rate_limiting_enabled ? 'checked' : '' }}>
-                <label for="rate_limiting_enabled" class="checkbox-label">
-                    <strong>تفعيل Rate Limiting</strong>
+                <label for="rate_limiting_enabled" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    <strong>Enable Rate Limiting</strong>
                 </label>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">عدد الطلبات في الدقيقة</label>
+                <label class="form-label" style="direction: ltr; text-align: left;">Requests Per Minute</label>
                 <input type="number" name="requests_per_minute" class="form-input" 
                        value="{{ $policy->requests_per_minute }}" min="1">
             </div>
 
             <div class="form-group">
-                <label class="form-label">Burst Size</label>
+                <label class="form-label" style="direction: ltr; text-align: left;">Burst Size</label>
                 <input type="number" name="burst_size" class="form-input" 
                        value="{{ $policy->burst_size }}" min="1">
-                <div class="form-help">عدد الطلبات الإضافية المسموحة في اللحظة</div>
+                <div class="form-help" style="direction: ltr; text-align: left;">Additional requests allowed at once</div>
             </div>
         </div>
     </div>
 
-    {{-- استثناءات --}}
+    {{-- Exceptions --}}
     <div class="card">
-        <h2 class="section-title">🔓 الاستثناءات</h2>
+        <h2 class="section-title" style="direction: ltr; text-align: left;">🔓 Exceptions</h2>
 
         <div class="form-group">
-            <label class="form-label">URLs مستثناة من WAF</label>
+            <label class="form-label" style="direction: ltr; text-align: left;">Excluded URLs (one per line)</label>
             <textarea name="excluded_urls" class="form-textarea" 
                       placeholder="/api/webhook&#10;/admin/login">{{ $policy->excluded_urls }}</textarea>
-            <div class="form-help">كل URL في سطر منفصل. هذه المسارات لن تخضع لفحص WAF</div>
+            <div class="form-help" style="direction: ltr; text-align: left;">These paths will bypass WAF checks</div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">IPs مستثناة (Whitelisted)</label>
+            <label class="form-label" style="direction: ltr; text-align: left;">Whitelisted IPs (one per line)</label>
             <textarea name="excluded_ips" class="form-textarea" 
                       placeholder="192.168.1.1&#10;10.0.0.5">{{ $policy->excluded_ips }}</textarea>
-            <div class="form-help">كل IP في سطر منفصل. هذه العناوين لن تخضع لأي فحص WAF</div>
+            <div class="form-help" style="direction: ltr; text-align: left;">These IPs will bypass all WAF checks</div>
         </div>
     </div>
 
     {{-- Logging --}}
     <div class="card">
-        <h2 class="section-title">📝 السجلات (Logging)</h2>
+        <h2 class="section-title" style="direction: ltr; text-align: left;">📝 Logging</h2>
 
         <div class="form-group">
             <div class="checkbox-item">
                 <input type="checkbox" name="detailed_logging" id="detailed_logging" 
                        {{ $policy->detailed_logging ? 'checked' : '' }}>
-                <label for="detailed_logging" class="checkbox-label">
-                    <strong>تفعيل السجلات التفصيلية</strong>
+                <label for="detailed_logging" class="checkbox-label" style="direction: ltr; text-align: left;">
+                    <strong>Enable Detailed Logging</strong>
                 </label>
             </div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">مستوى السجل</label>
+            <label class="form-label" style="direction: ltr; text-align: left;">Log Level</label>
             <select name="log_level" class="form-select">
-                <option value="debug" {{ $policy->log_level == 'debug' ? 'selected' : '' }}>Debug (كل شيء)</option>
+                <option value="debug" {{ $policy->log_level == 'debug' ? 'selected' : '' }}>Debug (Everything)</option>
                 <option value="info" {{ $policy->log_level == 'info' ? 'selected' : '' }}>Info</option>
-                <option value="warn" {{ $policy->log_level == 'warn' ? 'selected' : '' }}>Warning (موصى به)</option>
-                <option value="error" {{ $policy->log_level == 'error' ? 'selected' : '' }}>Error فقط</option>
+                <option value="warn" {{ $policy->log_level == 'warn' ? 'selected' : '' }}>Warning (Recommended)</option>
+                <option value="error" {{ $policy->log_level == 'error' ? 'selected' : '' }}>Error Only</option>
             </select>
         </div>
     </div>
 
-    {{-- قواعد مخصصة --}}
+    {{-- Custom Rules --}}
     <div class="card">
-        <h2 class="section-title">⚡ قواعد ModSecurity مخصصة</h2>
+        <h2 class="section-title" style="direction: ltr; text-align: left;">⚡ Custom ModSecurity Rules</h2>
 
         <div class="form-group">
-            <label class="form-label">قواعد ModSecurity إضافية (اختياري)</label>
+            <label class="form-label" style="direction: ltr; text-align: left;">Additional ModSecurity Rules (Optional)</label>
             <textarea name="custom_modsec_rules" class="form-textarea" style="min-height: 150px;"
                       placeholder="SecRule ...">{{ $policy->custom_modsec_rules }}</textarea>
-            <div class="form-help">
-                قواعد ModSecurity متقدمة. استخدم هذا فقط إذا كنت تعرف ما تفعل!<br>
-                مثال: SecRule REQUEST_URI "@beginsWith /test" "id:100001,phase:1,deny,status:403"
+            <div class="form-help" style="direction: ltr; text-align: left;">
+                Advanced ModSecurity rules. Use only if you know what you're doing!<br>
+                Example: SecRule REQUEST_URI "@beginsWith /test" "id:100001,phase:1,deny,status:403"
             </div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">ملاحظات</label>
+            <label class="form-label" style="direction: ltr; text-align: left;">Notes</label>
             <textarea name="notes" class="form-textarea" style="min-height: 80px;">{{ $policy->notes }}</textarea>
         </div>
     </div>
 
-    <div style="display: flex; gap: 12px;">
+    <div style="display: flex; gap: 12px; direction: ltr;">
         <button type="submit" class="btn btn-primary">
-            💾 حفظ الإعدادات
+            💾 Save Settings
         </button>
         <a href="{{ route('sites.index') }}" class="btn btn-secondary">
-            ✕ إلغاء
+            ✕ Cancel
         </a>
     </div>
 </form>
