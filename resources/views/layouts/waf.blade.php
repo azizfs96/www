@@ -147,55 +147,49 @@
         }
 
         .sidebar-header {
-            padding: 18px 16px;
+            padding: 24px 20px;
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
+            background: var(--sidebar-bg);
         }
 
         .sidebar-logo {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 4px;
+            gap: 12px;
         }
 
-        .sidebar-logo-icon {
-            width: 32px;
-            height: 32px;
-            background: transparent;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 16px;
-            color: var(--text);
-            border: 1px solid var(--border);
+        .sidebar-logo img {
+            max-height: 80px;
+            width: auto;
+            object-fit: contain;
         }
 
         .sidebar-logo-text {
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
             color: var(--text);
-            letter-spacing: -0.3px;
+            letter-spacing: -0.5px;
         }
 
         .sidebar-subtitle {
-            font-size: 10px;
+            font-size: 11px;
             color: var(--text-muted);
-            margin-top: 2px;
+            margin-top: 6px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            font-weight: 500;
         }
 
         .sidebar-nav {
-            padding: 20px 12px;
+            padding: 24px 12px;
             flex: 1;
             overflow-y: auto;
         }
 
         .nav-section {
-            margin-bottom: 28px;
+            margin-bottom: 32px;
         }
 
         .nav-section:last-child {
@@ -204,64 +198,70 @@
 
         .nav-section-title {
             font-size: 10px;
-            color: var(--text-muted);
+            color: var(--text-tertiary);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 0 12px;
-            margin-bottom: 10px;
+            letter-spacing: 1.2px;
+            padding: 0 16px;
+            margin-bottom: 12px;
             font-weight: 600;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 4px;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
             text-decoration: none;
             color: var(--text-muted);
             font-size: 13px;
-            transition: all 0.15s ease;
-            margin-bottom: 2px;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+            position: relative;
         }
 
         .nav-item:hover {
-            background: var(--sidebar-active);
+            background: var(--bg-soft);
             color: var(--text);
         }
 
         .nav-item.active {
-            background: #1E1E1E;
+            background: var(--bg-soft);
             color: var(--text);
-            border-left: 2px solid var(--text);
             font-weight: 500;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 0 2px 2px 0;
         }
         
         .nav-item.active .nav-item-icon {
-            color: var(--text);
+            color: var(--primary);
         }
         
-        .nav-item:hover {
-            background: #1E1E1E;
+        .nav-item:hover .nav-item-icon {
             color: var(--text);
         }
 
         .nav-item-icon {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 14px;
             color: var(--text-muted);
-            transition: color 0.15s ease;
+            transition: color 0.2s ease;
             font-weight: normal;
             flex-shrink: 0;
-        }
-        
-        .nav-item:hover .nav-item-icon,
-        .nav-item.active .nav-item-icon {
-            color: var(--text);
         }
 
         .nav-item-badge {
@@ -392,10 +392,8 @@
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <div class="sidebar-logo-icon">W</div>
-                    <div class="sidebar-logo-text">WAF Monitor</div>
+                    <img src="{{ asset('images/Logo.png') }}" alt="WAF Gate Logo">
                 </div>
-                <div class="sidebar-subtitle">Web Application Firewall Monitor</div>
             </div>
 
             <nav class="sidebar-nav">
@@ -448,15 +446,17 @@
 
                     <div class="nav-section">
                         <div class="nav-section-title">Account</div>
-                        <div class="nav-item" style="color: var(--text-secondary); padding: 8px 12px; font-size: 12px;">
-                            <span>{{ auth()->user()->name }}</span>
-                            <span style="display: block; color: var(--text-muted); font-size: 11px; margin-top: 4px;">
+                        <div style="background: var(--bg-soft); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;">
+                            <div style="font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px;">
+                                {{ auth()->user()->name }}
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
                                 {{ auth()->user()->isSuperAdmin() ? 'Super Admin' : (auth()->user()->isTenantAdmin() ? 'Tenant Admin' : 'User') }}
-                            </span>
+                            </div>
                         </div>
-                        <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+                        <form method="POST" action="{{ route('logout') }}" style="display: inline; width: 100%;">
                             @csrf
-                            <button type="submit" class="nav-item" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; color: var(--text-muted);">
+                            <button type="submit" class="nav-item" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; color: var(--text-muted); padding: 12px 16px;">
                                 <span class="nav-item-icon">🚪</span>
                                 <span>Logout</span>
                             </button>
