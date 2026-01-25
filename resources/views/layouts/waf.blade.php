@@ -147,23 +147,31 @@
         }
 
         .sidebar-header {
-            padding: 24px 20px;
+            padding: 0;
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
             background: var(--sidebar-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
         }
 
         .sidebar-logo {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 0;
         }
 
         .sidebar-logo img {
-            max-height: 80px;
+            max-height: 100%;
             width: auto;
             object-fit: contain;
+            display: block;
         }
 
         .sidebar-logo-text {
