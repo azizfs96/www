@@ -514,11 +514,69 @@ class SiteController extends Controller
         $content = $this->buildNginxConfigContent($site);
 
         // كتابة الملف
-        @file_put_contents($configFile, $content);
+        $writeResult = @file_put_contents($configFile, $content);
+        
+        // التحقق من أن الملف تم كتابته بنجاح
+        $fileExists = file_exists($configFile);
+        $fileContent = $fileExists ? @file_get_contents($configFile) : null;
+        $fileSize = $fileExists ? filesize($configFile) : 0;
+        
+        // استخراج محتوى upstream من الملف للتحقق
+        $upstreamInFile = null;
+        if ($fileContent) {
+            $upstreamStart = strpos($fileContent, 'upstream');
+            if ($upstreamStart !== false) {
+                $upstreamEnd = strpos($fileContent, "\n\n", $upstreamStart);
+                $upstreamInFile = $upstreamEnd !== false 
+                    ? substr($fileContent, $upstreamStart, $upstreamEnd - $upstreamStart + 2)
+                    : substr($fileContent, $upstreamStart, 500);
+            }
+        }
+        
+        \Log::info("Nginx config file written", [
+            'site_id' => $site->id,
+            'site_name' => $site->server_name,
+            'config_file' => $configFile,
+            'write_result' => $writeResult !== false,
+            'bytes_written' => $writeResult,
+            'file_exists' => $fileExists,
+            'file_size' => $fileSize,
+            'upstream_in_file' => $upstreamInFile,
+            'is_windows' => $isWindows,
+        ]);
+        
+        // إذا فشلت الكتابة، محاولة كتابة مع sudo (فقط على Linux)
+        if ($writeResult === false && !$isWindows) {
+            \Log::warning("Failed to write Nginx config file, trying with sudo", [
+                'config_file' => $configFile,
+                'site_id' => $site->id,
+            ]);
+            
+            // محاولة كتابة الملف باستخدام sudo
+            $tempFile = sys_get_temp_dir() . '/' . basename($configFile);
+            @file_put_contents($tempFile, $content);
+            @exec("sudo cp {$tempFile} {$configFile} 2>&1");
+            @exec("sudo chmod 644 {$configFile} 2>&1");
+            @unlink($tempFile);
+            
+            // التحقق مرة أخرى
+            $fileExists = file_exists($configFile);
+            $fileContent = $fileExists ? @file_get_contents($configFile) : null;
+            
+            \Log::info("Nginx config file write retry result", [
+                'config_file' => $configFile,
+                'file_exists' => $fileExists,
+                'file_size' => $fileExists ? filesize($configFile) : 0,
+            ]);
+        }
 
         // إعادة تحميل Nginx (فقط على Linux)
         if (!$isWindows) {
-            @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
+            $reloadResult = @exec('sudo systemctl reload nginx 2>&1');
+            \Log::info("Nginx reload executed", [
+                'site_id' => $site->id,
+                'reload_result' => $reloadResult,
+            ]);
         } else {
             \Log::info("Nginx config generated on Windows", [
                 'config_file' => $configFile,
@@ -603,11 +661,18 @@ class SiteController extends Controller
             }
         }
         
+        // حفظ محتوى upstream فقط للوج
+        $upstreamEndPos = strpos($content, "\n\n", strpos($content, "upstream"));
+        $upstreamContent = $upstreamEndPos !== false 
+            ? substr($content, 0, $upstreamEndPos + 2) 
+            : substr($content, 0, 500);
+        
         \Log::info("Nginx upstream configuration generated", [
             'site_id' => $site->id,
             'site_name' => $site->server_name,
             'upstream_name' => $backendName,
-            'upstream_content' => $content,
+            'upstream_content' => $upstreamContent,
+            'full_content_length' => strlen($content),
         ]);
         
         // إعدادات load balancing (اختياري - يمكن تخصيصها لاحقاً)
