@@ -284,6 +284,16 @@
                 🔍 فحص جميع السيرفرات
             </button>
         </form>
+        
+        @if($backendServers->where('status', 'active')->count() > 0 && $backendServers->where('status', 'standby')->count() > 0)
+            <form method="POST" action="{{ route('sites.backends.failover', $site) }}" style="display: inline;" 
+                  onsubmit="return confirm('⚠️ هل أنت متأكد من تنفيذ Failover؟\n\nسيتم:\n- تعطيل جميع السيرفرات النشطة\n- تفعيل أول سيرفر احتياطي\n- إعادة توليد ملف Nginx');">
+                @csrf
+                <button type="submit" class="btn btn-warning">
+                    🔄 تنفيذ Failover يدوي
+                </button>
+            </form>
+        @endif
     </div>
 </div>
 

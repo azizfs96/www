@@ -1683,4 +1683,65 @@ HTML;
         return redirect()->route('sites.backends', $site)
             ->with('status', $message);
     }
+
+    /**
+     * تنفيذ Failover يدوي - التبديل من السيرفر النشط إلى الاحتياطي
+     */
+    public function manualFailover(Site $site, BackendHealthCheckService $healthCheckService)
+    {
+        $this->checkSiteAccess($site);
+        
+        // الحصول على السيرفرات النشطة
+        $activeServers = $site->backendServers()
+            ->where('status', 'active')
+            ->orderBy('priority')
+            ->get();
+        
+        if ($activeServers->isEmpty()) {
+            return redirect()->route('sites.backends', $site)
+                ->with('error', 'لا توجد سيرفرات نشطة للتبديل.');
+        }
+        
+        // الحصول على السيرفرات الاحتياطية
+        $standbyServers = $site->backendServers()
+            ->where('status', 'standby')
+            ->orderBy('priority')
+            ->get();
+        
+        if ($standbyServers->isEmpty()) {
+            return redirect()->route('sites.backends', $site)
+                ->with('error', 'لا توجد سيرفرات احتياطية للتبديل إليها.');
+        }
+        
+        // تحويل جميع السيرفرات النشطة إلى standby
+        $deactivatedServers = [];
+        foreach ($activeServers as $server) {
+            $server->status = 'standby';
+            $server->save();
+            $deactivatedServers[] = "{$server->ip}:{$server->port}";
+        }
+        
+        // تفعيل أول سيرفر احتياطي
+        $newActiveServer = $standbyServers->first();
+        $newActiveServer->status = 'active';
+        $newActiveServer->fail_count = 0;
+        $newActiveServer->save();
+        
+        \Log::info("Manual failover executed", [
+            'site_id' => $site->id,
+            'site_name' => $site->server_name,
+            'deactivated_servers' => $deactivatedServers,
+            'new_active_server' => "{$newActiveServer->ip}:{$newActiveServer->port}",
+        ]);
+        
+        // إعادة توليد ملف Nginx
+        $this->generateNginxConfig($site);
+        
+        $message = "تم تنفيذ Failover بنجاح:\n";
+        $message .= "✓ تم تعطيل: " . implode(', ', $deactivatedServers) . "\n";
+        $message .= "✓ تم تفعيل: {$newActiveServer->ip}:{$newActiveServer->port}";
+        
+        return redirect()->route('sites.backends', $site)
+            ->with('status', $message);
+    }
 }

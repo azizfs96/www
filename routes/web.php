@@ -373,6 +373,7 @@ Route::get('/waf/sites/{site}/backends', [SiteController::class, 'showBackends']
 Route::post('/waf/sites/{site}/backends/check', [SiteController::class, 'checkBackendHealth'])->name('sites.backends.check');
 Route::post('/waf/sites/{site}/backends/{backendServer}/toggle-status', [SiteController::class, 'toggleBackendStatus'])->name('sites.backends.toggle-status');
 Route::post('/waf/sites/{site}/backends/{backendServer}/check', [SiteController::class, 'checkSingleBackend'])->name('sites.backends.check-single');
+Route::post('/waf/sites/{site}/backends/failover', [SiteController::class, 'manualFailover'])->name('sites.backends.failover');
 
 // إعدادات WAF لكل موقع (Site Policies)
 Route::get('/waf/sites/{site}/policy', [SitePolicyController::class, 'edit'])->name('sites.policy.edit');
