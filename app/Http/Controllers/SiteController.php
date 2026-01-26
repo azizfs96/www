@@ -286,8 +286,11 @@ class SiteController extends Controller
 
         $site->delete();
 
-        // إعادة تحميل Nginx
-        @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
+        // إعادة تحميل Nginx (فقط على Linux)
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        if (!$isWindows) {
+            @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
+        }
 
         return redirect()->route('sites.index')
             ->with('status', 'تم حذف الموقع وملفات SSL بنجاح.');
@@ -472,8 +475,11 @@ class SiteController extends Controller
             }
         }
 
-        // إعادة تحميل Nginx
-        @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
+        // إعادة تحميل Nginx (فقط على Linux)
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        if (!$isWindows) {
+            @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
+        }
 
         return redirect()->route('sites.index')
             ->with('status', $site->enabled ? 'تم تفعيل الموقع.' : 'تم تعطيل الموقع.');
@@ -484,7 +490,19 @@ class SiteController extends Controller
      */
     public function generateNginxConfig(Site $site): void
     {
-        $configFile = "/etc/nginx/sites-enabled/{$site->server_name}.waf.conf";
+        // التحقق من نظام التشغيل
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        
+        // تحديد مسار الملف حسب نظام التشغيل
+        if ($isWindows) {
+            $configDir = storage_path('app/nginx');
+            if (!is_dir($configDir)) {
+                @mkdir($configDir, 0755, true);
+            }
+            $configFile = "{$configDir}/{$site->server_name}.waf.conf";
+        } else {
+            $configFile = "/etc/nginx/sites-enabled/{$site->server_name}.waf.conf";
+        }
 
         // توليد ملف ModSecurity أولاً (إذا كان هناك policy و WAF مفعل)
         if ($site->policy && $site->policy->waf_enabled) {
@@ -497,8 +515,15 @@ class SiteController extends Controller
         // كتابة الملف
         @file_put_contents($configFile, $content);
 
-        // إعادة تحميل Nginx
-        @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
+        // إعادة تحميل Nginx (فقط على Linux)
+        if (!$isWindows) {
+            @exec('sudo systemctl reload nginx > /dev/null 2>&1 &');
+        } else {
+            \Log::info("Nginx config generated on Windows", [
+                'config_file' => $configFile,
+                'site_id' => $site->id
+            ]);
+        }
     }
 
     /**
@@ -1135,7 +1160,26 @@ HTML;
         $domain = $site->server_name;
         $wwwDomain = "www.{$domain}";
         
-        // التحقق من أن Certbot مثبت
+        // التحقق من نظام التشغيل
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        
+        // على Windows (بيئة التطوير)، نسمح بإنشاء الموقع بدون توليد شهادة SSL حقيقية
+        if ($isWindows) {
+            \Log::info("SSL certificate generation skipped on Windows (development environment)", [
+                'domain' => $domain,
+                'site_id' => $site->id
+            ]);
+            
+            // نعيد توليد ملف Nginx مع SSL (لكن بدون شهادة حقيقية)
+            $this->generateNginxConfig($site);
+            
+            return [
+                'success' => true,
+                'message' => 'تم إنشاء الموقع بنجاح. ملاحظة: توليد شهادة SSL يتطلب Linux server. على Windows، يمكنك استخدام شهادة SSL محلية للاختبار.'
+            ];
+        }
+        
+        // التحقق من أن Certbot مثبت (فقط على Linux)
         $certbotCheck = shell_exec('which certbot 2>/dev/null');
         if (empty($certbotCheck)) {
             return [
@@ -1144,20 +1188,22 @@ HTML;
             ];
         }
 
-        // التحقق من أن Nginx يعمل - محاولة تشغيله إذا لم يكن نشطاً
-        $nginxCheck = shell_exec('sudo systemctl is-active nginx 2>/dev/null');
-        if (trim($nginxCheck) !== 'active') {
-            // محاولة تشغيل Nginx
-            @exec('sudo systemctl start nginx 2>&1');
-            sleep(2);
-            
-            // التحقق مرة أخرى
+        // التحقق من أن Nginx يعمل (فقط على Linux)
+        if (!$isWindows) {
             $nginxCheck = shell_exec('sudo systemctl is-active nginx 2>/dev/null');
             if (trim($nginxCheck) !== 'active') {
-                return [
-                    'success' => false,
-                    'message' => 'Nginx غير نشط. يرجى تشغيله يدوياً: sudo systemctl start nginx'
-                ];
+                // محاولة تشغيل Nginx
+                @exec('sudo systemctl start nginx 2>&1');
+                sleep(2);
+                
+                // التحقق مرة أخرى
+                $nginxCheck = shell_exec('sudo systemctl is-active nginx 2>/dev/null');
+                if (trim($nginxCheck) !== 'active') {
+                    return [
+                        'success' => false,
+                        'message' => 'Nginx غير نشط. يرجى تشغيله يدوياً: sudo systemctl start nginx'
+                    ];
+                }
             }
         }
         
@@ -1167,30 +1213,49 @@ HTML;
         
         \Log::info("DNS check for www domain", [
             'www_domain' => $wwwDomain,
-            'dns_exists' => $useWww
+            'dns_exists' => $useWww,
+            'is_windows' => $isWindows
         ]);
 
         // التحقق من أن الملف موجود و Nginx يمكنه قراءته
-        $configFile = "/etc/nginx/sites-enabled/{$domain}.waf.conf";
+        $configFile = $isWindows 
+            ? storage_path("app/nginx/{$domain}.waf.conf") 
+            : "/etc/nginx/sites-enabled/{$domain}.waf.conf";
+            
         if (!file_exists($configFile)) {
-            return [
-                'success' => false,
-                'message' => 'ملف Nginx غير موجود. يرجى التأكد من إنشاء الموقع أولاً.'
-            ];
+            // على Windows، نكتفي بإنشاء الملف في storage
+            if ($isWindows) {
+                $configDir = storage_path('app/nginx');
+                if (!is_dir($configDir)) {
+                    @mkdir($configDir, 0755, true);
+                }
+                // نعيد توليد الملف في المكان الصحيح
+                $this->generateNginxConfig($site);
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'ملف Nginx غير موجود. يرجى التأكد من إنشاء الموقع أولاً.'
+                ];
+            }
         }
 
-        // اختبار إعدادات Nginx
-        $testResult = shell_exec('sudo nginx -t 2>&1');
-        if (strpos($testResult, 'successful') === false) {
-            return [
-                'success' => false,
-                'message' => 'إعدادات Nginx غير صحيحة: ' . $testResult
-            ];
-        }
+        // اختبار إعدادات Nginx (فقط على Linux)
+        if (!$isWindows) {
+            $testResult = shell_exec('sudo nginx -t 2>&1');
+            if (strpos($testResult, 'successful') === false) {
+                return [
+                    'success' => false,
+                    'message' => 'إعدادات Nginx غير صحيحة: ' . $testResult
+                ];
+            }
 
-        // إعادة تحميل Nginx لضمان أن الملف الجديد نشط
-        @exec('sudo systemctl reload nginx 2>&1');
-        sleep(2); // انتظار قليل لضمان أن Nginx تم تحميله
+            // إعادة تحميل Nginx لضمان أن الملف الجديد نشط
+            @exec('sudo systemctl reload nginx 2>&1');
+            sleep(2); // انتظار قليل لضمان أن Nginx تم تحميله
+        } else {
+            // على Windows، نكتفي بإنشاء الملف
+            \Log::info("Skipping Nginx reload on Windows - config file created at: {$configFile}");
+        }
 
         // توليد الشهادة باستخدام Certbot
         // نستخدم --certonly --nginx لتوليد الشهادة فقط بدون تعديل ملف Nginx
@@ -1262,9 +1327,11 @@ HTML;
                 'output' => $outputString
             ]);
             
-            // إيقاف Nginx مؤقتاً لاستخدام standalone
-            @exec('sudo systemctl stop nginx 2>&1');
-            sleep(1);
+            // إيقاف Nginx مؤقتاً لاستخدام standalone (فقط على Linux)
+            if (!$isWindows) {
+                @exec('sudo systemctl stop nginx 2>&1');
+                sleep(1);
+            }
             
             $standaloneCommand = sprintf(
                 'sudo certbot certonly --standalone --non-interactive --agree-tos --email %s -d %s -d %s 2>&1',
@@ -1280,8 +1347,10 @@ HTML;
             exec($standaloneCommand, $standaloneOutput, $standaloneReturnVar);
             $standaloneOutputString = implode("\n", $standaloneOutput);
             
-            // إعادة تشغيل Nginx
-            @exec('sudo systemctl start nginx 2>&1');
+            // إعادة تشغيل Nginx (فقط على Linux)
+            if (!$isWindows) {
+                @exec('sudo systemctl start nginx 2>&1');
+            }
             
             if ($standaloneReturnVar !== 0) {
                 \Log::error("SSL certificate generation failed with both methods", [
