@@ -539,8 +539,13 @@ class SiteController extends Controller
         // Upstream مع دعم High Availability
         $content .= "upstream {$backendName} {\n";
         
-        // الحصول على جميع السيرفرات الخلفية مرتبة حسب الأولوية
-        $backendServers = $site->backendServers()->orderBy('priority')->get();
+        // إعادة تحميل الموقع من قاعدة البيانات لضمان الحصول على أحدث البيانات
+        $site->refresh();
+        
+        // الحصول على جميع السيرفرات الخلفية مرتبة حسب الأولوية (من قاعدة البيانات مباشرة)
+        $backendServers = BackendServer::where('site_id', $site->id)
+            ->orderBy('priority')
+            ->get();
         
         if ($backendServers->isEmpty()) {
             // إذا لم تكن هناك سيرفرات خلفية، نستخدم القيم القديمة
@@ -548,6 +553,20 @@ class SiteController extends Controller
         } else {
             // إضافة السيرفرات النشطة أولاً
             $activeServers = $backendServers->where('status', 'active')->sortBy('priority');
+            
+            \Log::info("Building Nginx upstream - Active servers", [
+                'site_id' => $site->id,
+                'site_name' => $site->server_name,
+                'active_count' => $activeServers->count(),
+                'active_servers' => $activeServers->map(fn($s) => [
+                    'id' => $s->id,
+                    'ip' => $s->ip,
+                    'port' => $s->port,
+                    'status' => $s->status,
+                    'priority' => $s->priority,
+                ])->toArray(),
+            ]);
+            
             foreach ($activeServers as $server) {
                 $healthCheckParams = '';
                 if ($server->health_check_enabled) {
@@ -560,6 +579,20 @@ class SiteController extends Controller
             
             // إضافة السيرفرات الاحتياطية (standby) كـ backup
             $standbyServers = $backendServers->where('status', 'standby')->sortBy('priority');
+            
+            \Log::info("Building Nginx upstream - Standby servers", [
+                'site_id' => $site->id,
+                'site_name' => $site->server_name,
+                'standby_count' => $standbyServers->count(),
+                'standby_servers' => $standbyServers->map(fn($s) => [
+                    'id' => $s->id,
+                    'ip' => $s->ip,
+                    'port' => $s->port,
+                    'status' => $s->status,
+                    'priority' => $s->priority,
+                ])->toArray(),
+            ]);
+            
             foreach ($standbyServers as $server) {
                 $healthCheckParams = '';
                 if ($server->health_check_enabled) {
@@ -569,6 +602,13 @@ class SiteController extends Controller
                 $content .= "    server {$server->ip}:{$server->port}{$healthCheckParams} backup;\n";
             }
         }
+        
+        \Log::info("Nginx upstream configuration generated", [
+            'site_id' => $site->id,
+            'site_name' => $site->server_name,
+            'upstream_name' => $backendName,
+            'upstream_content' => $content,
+        ]);
         
         // إعدادات load balancing (اختياري - يمكن تخصيصها لاحقاً)
         // least_conn = توزيع الاتصالات على السيرفر الأقل اتصالات

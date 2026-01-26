@@ -107,32 +107,49 @@ class BackendHealthCheckService
         
         // تعطيل السيرفرات النشطة غير الصحية
         foreach ($unhealthyActiveServers as $server) {
+            $oldStatus = $server->status;
             $server->status = 'standby';
             $server->save();
+            
+            // التأكد من أن التحديث تم حفظه
+            $server->refresh();
             
             Log::info("Deactivated unhealthy active server", [
                 'server_id' => $server->id,
                 'ip' => $server->ip,
                 'port' => $server->port,
+                'old_status' => $oldStatus,
+                'new_status' => $server->status,
+                'saved' => $server->status === 'standby',
             ]);
         }
         
-        // تفعيل أول سيرفر احتياطي صحي
-        $healthyStandbyServer = $site->backendServers()
+        // إعادة تحميل الموقع من قاعدة البيانات
+        $site->refresh();
+        
+        // تفعيل أول سيرفر احتياطي صحي (من قاعدة البيانات مباشرة)
+        $healthyStandbyServer = BackendServer::where('site_id', $site->id)
             ->where('status', 'standby')
             ->where('is_healthy', true)
             ->orderBy('priority')
             ->first();
         
         if ($healthyStandbyServer) {
+            $oldStatus = $healthyStandbyServer->status;
             $healthyStandbyServer->status = 'active';
             $healthyStandbyServer->fail_count = 0;
             $healthyStandbyServer->save();
+            
+            // التأكد من أن التحديث تم حفظه
+            $healthyStandbyServer->refresh();
             
             Log::info("Activated standby server", [
                 'server_id' => $healthyStandbyServer->id,
                 'ip' => $healthyStandbyServer->ip,
                 'port' => $healthyStandbyServer->port,
+                'old_status' => $oldStatus,
+                'new_status' => $healthyStandbyServer->status,
+                'saved' => $healthyStandbyServer->status === 'active',
             ]);
             
             // إعادة توليد ملف Nginx مع التغييرات الجديدة
@@ -140,6 +157,13 @@ class BackendHealthCheckService
         } else {
             Log::warning("No healthy standby server available for failover", [
                 'site_id' => $site->id,
+                'standby_servers_count' => BackendServer::where('site_id', $site->id)
+                    ->where('status', 'standby')
+                    ->count(),
+                'healthy_standby_count' => BackendServer::where('site_id', $site->id)
+                    ->where('status', 'standby')
+                    ->where('is_healthy', true)
+                    ->count(),
             ]);
         }
     }
@@ -150,16 +174,26 @@ class BackendHealthCheckService
     protected function regenerateNginxConfig(Site $site): void
     {
         try {
+            // إعادة تحميل الموقع من قاعدة البيانات لضمان الحصول على أحدث البيانات
+            $site->refresh();
+            $site->load('backendServers');
+            
+            // إعادة تحميل جميع السيرفرات من قاعدة البيانات
+            $site->backendServers->each->refresh();
+            
             $controller = app(\App\Http\Controllers\SiteController::class);
             $controller->generateNginxConfig($site);
             
             Log::info("Regenerated Nginx config after failover", [
                 'site_id' => $site->id,
+                'active_servers' => $site->backendServers()->where('status', 'active')->pluck('ip', 'port')->toArray(),
+                'standby_servers' => $site->backendServers()->where('status', 'standby')->pluck('ip', 'port')->toArray(),
             ]);
         } catch (\Exception $e) {
             Log::error("Failed to regenerate Nginx config after failover", [
                 'site_id' => $site->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
