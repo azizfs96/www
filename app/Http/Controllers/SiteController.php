@@ -564,7 +564,21 @@ class SiteController extends Controller
         // إنشاء المحتوى
         $content = $this->buildNginxConfigContent($site);
 
-        // كتابة الملف
+        // حفظ الملف في storage أولاً (يمكن الكتابة فيه دائماً)
+        $storageDir = storage_path('app/nginx');
+        if (!is_dir($storageDir)) {
+            @mkdir($storageDir, 0755, true);
+        }
+        $storageFile = "{$storageDir}/{$site->server_name}.waf.conf";
+        $storageWriteResult = @file_put_contents($storageFile, $content);
+        
+        \Log::info("Nginx config saved to storage", [
+            'storage_file' => $storageFile,
+            'site_id' => $site->id,
+            'write_result' => $storageWriteResult !== false,
+        ]);
+
+        // كتابة الملف في /etc/nginx/sites-enabled
         if (!$isWindows) {
             // التحقق من المستخدم الحالي
             $currentUser = posix_getpwuid(posix_geteuid());
@@ -587,48 +601,39 @@ class SiteController extends Controller
                     @chown($configFile, 'root');
                 }
             } else {
-                // إذا لم يكن root، استخدم sudo tee
-                // كتابة المحتوى في ملف مؤقت أولاً
-                $tempFile = sys_get_temp_dir() . '/' . uniqid('nginx_') . '_' . basename($configFile);
-                $tempWriteResult = @file_put_contents($tempFile, $content);
-                
-                if ($tempWriteResult !== false) {
-                    // استخدام sudo tee للكتابة في الملف النهائي
-                    $teeCommand = "sudo tee {$configFile} < {$tempFile} > /dev/null 2>&1";
-                    $teeResult = shell_exec($teeCommand);
+                // إذا لم يكن root، استخدم الملف من storage وانسخه
+                // الملف موجود بالفعل في storageFile
+                if ($storageWriteResult !== false && file_exists($storageFile)) {
+                    // استخدام sudo cp لنسخ الملف من storage إلى /etc/nginx
+                    $cpCommand = "sudo cp {$storageFile} {$configFile} 2>&1";
+                    $cpResult = shell_exec($cpCommand);
                     
-                    // إذا فشل tee، جرب cp كبديل
-                    if (!file_exists($configFile) || filesize($configFile) === 0) {
-                        $cpCommand = "sudo cp {$tempFile} {$configFile} 2>&1";
-                        $cpResult = shell_exec($cpCommand);
-                        
-                        \Log::info("Tried sudo cp as fallback after tee", [
+                    if (file_exists($configFile) && filesize($configFile) > 0) {
+                        shell_exec("sudo chmod 644 {$configFile} 2>&1");
+                        shell_exec("sudo chown root:root {$configFile} 2>&1");
+                        $writeResult = true;
+                    } else {
+                        $writeResult = false;
+                        \Log::warning("Failed to copy config file from storage to /etc/nginx", [
+                            'storage_file' => $storageFile,
+                            'target_file' => $configFile,
                             'cp_result' => $cpResult,
-                            'file_exists_after_cp' => file_exists($configFile),
+                            'note' => 'File saved in storage. Run: sudo cp ' . $storageFile . ' ' . $configFile,
                         ]);
                     }
                     
-                    // تعيين الصلاحيات الصحيحة
-                    if (file_exists($configFile)) {
-                        shell_exec("sudo chmod 644 {$configFile} 2>&1");
-                        shell_exec("sudo chown root:root {$configFile} 2>&1");
-                    }
-                    
-                    // حذف الملف المؤقت
-                    @unlink($tempFile);
-                    
-                    $writeResult = file_exists($configFile) && filesize($configFile) > 0;
-                    
-                    \Log::info("File write result after sudo tee/cp", [
+                    \Log::info("File copy result from storage", [
                         'config_file' => $configFile,
+                        'storage_file' => $storageFile,
                         'file_exists' => file_exists($configFile),
                         'file_size' => file_exists($configFile) ? filesize($configFile) : 0,
                         'write_result' => $writeResult,
+                        'cp_result' => $cpResult,
                     ]);
                 } else {
                     $writeResult = false;
-                    \Log::error("Failed to write temp file for Nginx config", [
-                        'temp_file' => $tempFile,
+                    \Log::error("Failed to write config file to storage", [
+                        'storage_file' => $storageFile,
                         'site_id' => $site->id,
                     ]);
                 }
@@ -643,32 +648,14 @@ class SiteController extends Controller
         $fileContent = $fileExists ? @file_get_contents($configFile) : null;
         $fileSize = $fileExists ? filesize($configFile) : 0;
         
-        // إذا فشلت الكتابة، حاول مرة أخرى باستخدام طريقة بديلة
-        if (!$fileExists && !$isWindows) {
-            \Log::warning("File was not created, trying alternative method", [
+        // إذا فشلت الكتابة في /etc/nginx، الملف موجود في storage
+        if (!$fileExists && !$isWindows && $storageWriteResult !== false) {
+            \Log::warning("File was not created in /etc/nginx, but saved to storage", [
                 'config_file' => $configFile,
+                'storage_file' => $storageFile,
                 'site_id' => $site->id,
+                'manual_copy_command' => "sudo cp {$storageFile} {$configFile} && sudo systemctl reload nginx",
             ]);
-            
-            // محاولة كتابة مباشرة في /tmp ثم نسخها
-            $tempFile = '/tmp/' . uniqid('nginx_') . '_' . basename($configFile);
-            if (@file_put_contents($tempFile, $content)) {
-                // استخدام sudo cp مباشرة
-                $copyResult = shell_exec("sudo cp {$tempFile} {$configFile} 2>&1");
-                shell_exec("sudo chmod 644 {$configFile} 2>&1");
-                shell_exec("sudo chown root:root {$configFile} 2>&1");
-                @unlink($tempFile);
-                
-                $fileExists = file_exists($configFile);
-                $fileSize = $fileExists ? filesize($configFile) : 0;
-                
-                \Log::info("Alternative write method result", [
-                    'config_file' => $configFile,
-                    'copy_result' => $copyResult,
-                    'file_exists' => $fileExists,
-                    'file_size' => $fileSize,
-                ]);
-            }
         }
         
         // استخراج محتوى upstream من الملف للتحقق
@@ -1722,18 +1709,74 @@ HTML;
                 ->where('status', 'active')
                 ->count();
             
+            // إذا كان هذا آخر سيرفر نشط، نحاول تفعيل سيرفر standby بدلاً منه
             if ($otherActiveServers === 0) {
-                return redirect()->route('sites.backends', $site)
-                    ->with('error', 'لا يمكن تعطيل آخر سيرفر نشط. يجب أن يكون هناك سيرفر نشط واحد على الأقل.');
+                // البحث عن أول سيرفر standby صحي (مرتب حسب الأولوية)
+                $standbyServer = $site->backendServers()
+                    ->where('id', '!=', $backendServer->id)
+                    ->where('status', 'standby')
+                    ->where('is_healthy', true)
+                    ->orderBy('priority')
+                    ->first();
+                
+                if ($standbyServer) {
+                    // تحويل السيرفر الحالي إلى standby
+                    $backendServer->status = 'standby';
+                    $backendServer->save();
+                    
+                    // تفعيل السيرفر Standby تلقائياً
+                    $standbyServer->status = 'active';
+                    $standbyServer->fail_count = 0;
+                    $standbyServer->save();
+                    
+                    \Log::info("Auto-activated standby server when deactivating last active", [
+                        'deactivated_server_id' => $backendServer->id,
+                        'activated_server_id' => $standbyServer->id,
+                        'activated_ip' => $standbyServer->ip,
+                        'activated_port' => $standbyServer->port,
+                    ]);
+                    
+                    $message = "تم تحويل السيرفر {$backendServer->ip}:{$backendServer->port} إلى وضع Standby";
+                    $message .= " (تم تفعيل السيرفر {$standbyServer->ip}:{$standbyServer->port} تلقائياً)";
+                } else {
+                    // لا يوجد سيرفر standby صحي متاح
+                    return redirect()->route('sites.backends', $site)
+                        ->with('error', 'لا يمكن تعطيل آخر سيرفر نشط. لا يوجد سيرفر احتياطي صحي متاح.');
+                }
+            } else {
+                // يوجد سيرفرات نشطة أخرى، يمكن تحويله إلى standby بأمان
+                $backendServer->status = 'standby';
+                $message = "تم تحويل السيرفر {$backendServer->ip}:{$backendServer->port} إلى وضع Standby";
             }
-            
-            $backendServer->status = 'standby';
-            $message = "تم تحويل السيرفر {$backendServer->ip}:{$backendServer->port} إلى وضع Standby";
         } else {
             // إذا كان standby، نحوله إلى active
+            // تحويل جميع السيرفرات النشطة الأخرى إلى standby أولاً
+            $otherActiveServers = $site->backendServers()
+                ->where('id', '!=', $backendServer->id)
+                ->where('status', 'active')
+                ->get();
+            
+            foreach ($otherActiveServers as $otherServer) {
+                $otherServer->status = 'standby';
+                $otherServer->save();
+                
+                \Log::info("Auto-switched server to standby", [
+                    'server_id' => $otherServer->id,
+                    'ip' => $otherServer->ip,
+                    'port' => $otherServer->port,
+                    'reason' => 'Another server activated',
+                ]);
+            }
+            
+            // تفعيل السيرفر المحدد
             $backendServer->status = 'active';
             $backendServer->fail_count = 0;
             $message = "تم تحويل السيرفر {$backendServer->ip}:{$backendServer->port} إلى وضع Active";
+            
+            if ($otherActiveServers->count() > 0) {
+                $switchedServers = $otherActiveServers->map(fn($s) => "{$s->ip}:{$s->port}")->implode(', ');
+                $message .= " (تم تحويل السيرفرات الأخرى تلقائياً: {$switchedServers})";
+            }
         }
         
         $backendServer->save();

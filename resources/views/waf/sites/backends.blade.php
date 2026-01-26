@@ -1,6 +1,6 @@
 @extends('layouts.waf')
 
-@section('title', 'إدارة السيرفرات الخلفية - ' . $site->name)
+@section('title', 'Backend Servers Management - ' . $site->name)
 
 @section('styles')
 <style>
@@ -61,102 +61,179 @@
     }
 
     .server-card {
-        background: var(--bg-dark);
+        background: var(--bg-card);
         border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 16px;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .server-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--border);
         transition: all 0.2s;
     }
 
     .server-card:hover {
         border-color: var(--border-light);
-        background: var(--bg-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .server-card.active::before {
+        background: var(--success);
+    }
+
+    .server-card.standby::before {
+        background: var(--warning);
+    }
+
+    .server-card.unhealthy::before {
+        background: var(--error);
     }
 
     .server-card.active {
         border-color: var(--success);
-        background: rgba(16, 185, 129, 0.05);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, var(--bg-card) 100%);
     }
 
     .server-card.standby {
         border-color: var(--warning);
-        background: rgba(245, 158, 11, 0.05);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, var(--bg-card) 100%);
     }
 
     .server-card.unhealthy {
         border-color: var(--error);
-        background: rgba(248, 113, 113, 0.05);
+        background: linear-gradient(135deg, rgba(248, 113, 113, 0.05) 0%, var(--bg-card) 100%);
     }
 
     .server-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .server-title-section {
+        flex: 1;
     }
 
     .server-title {
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 700;
         color: var(--text-primary);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .server-address {
+        font-size: 14px;
+        color: var(--text-secondary);
+        font-family: 'Courier New', monospace;
+        margin-top: 4px;
     }
 
     .server-status {
         display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 6px;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        padding: 8px 14px;
+        border-radius: 8px;
         font-size: 12px;
-        font-weight: 500;
+        font-weight: 600;
+        text-align: right;
+        min-width: 100px;
     }
 
     .server-status.active {
-        background: rgba(16, 185, 129, 0.2);
+        background: rgba(16, 185, 129, 0.15);
         color: var(--success);
+        border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
     .server-status.standby {
-        background: rgba(245, 158, 11, 0.2);
+        background: rgba(245, 158, 11, 0.15);
         color: var(--warning);
+        border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
     .server-status.unhealthy {
-        background: rgba(248, 113, 113, 0.2);
+        background: rgba(248, 113, 113, 0.15);
         color: var(--error);
+        border: 1px solid rgba(248, 113, 113, 0.3);
     }
 
     .server-info {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        margin-bottom: 16px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
+        padding: 20px;
+        background: var(--bg-dark);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+    }
+
+    @media (max-width: 768px) {
+        .server-info {
+            grid-template-columns: 1fr;
+        }
     }
 
     .info-item {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
     }
 
     .info-label {
-        font-size: 12px;
+        font-size: 11px;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 2px;
     }
 
     .info-value {
-        font-size: 14px;
+        font-size: 15px;
         color: var(--text-primary);
-        font-weight: 500;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .info-value-icon {
+        font-size: 16px;
     }
 
     .server-actions {
         display: flex;
-        gap: 8px;
+        gap: 10px;
         flex-wrap: wrap;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        margin-top: 20px;
+    }
+
+    .server-actions .btn {
+        flex: 1;
+        min-width: 140px;
+        justify-content: center;
     }
 
     .btn {
@@ -212,8 +289,21 @@
     }
 
     .btn-sm {
-        padding: 6px 12px;
-        font-size: 12px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .servers-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    @media (min-width: 1200px) {
+        .servers-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
 
     .alert {
@@ -271,26 +361,26 @@
 
 @section('content')
 <div class="page-header">
-    <h1 class="page-title">🖥️ إدارة السيرفرات الخلفية</h1>
+    <h1 class="page-title">Backend Servers Management</h1>
     <p class="page-subtitle">
-        عرض حالة السيرفرات الخلفية وإدارة Failover للموقع: <strong>{{ $site->name }}</strong> ({{ $site->server_name }})
+        View backend servers status and manage Failover for site: <strong>{{ $site->name }}</strong> ({{ $site->server_name }})
     </p>
-    <a href="{{ route('sites.index') }}" class="back-link">← العودة لقائمة المواقع</a>
+    <a href="{{ route('sites.index') }}" class="back-link">← Back to Sites List</a>
     
     <div class="page-actions">
         <form method="POST" action="{{ route('sites.backends.check', $site) }}" style="display: inline;">
             @csrf
             <button type="submit" class="btn btn-primary">
-                🔍 فحص جميع السيرفرات
+                Check All Servers
             </button>
         </form>
         
         @if($backendServers->where('status', 'active')->count() > 0 && $backendServers->where('status', 'standby')->count() > 0)
             <form method="POST" action="{{ route('sites.backends.failover', $site) }}" style="display: inline;" 
-                  onsubmit="return confirm('⚠️ هل أنت متأكد من تنفيذ Failover؟\n\nسيتم:\n- تعطيل جميع السيرفرات النشطة\n- تفعيل أول سيرفر احتياطي\n- إعادة توليد ملف Nginx');">
+                  onsubmit="return confirm('Are you sure you want to perform Failover?\n\nThe following will happen:\n- All active servers will be disabled\n- First standby server will be activated\n- Nginx configuration will be regenerated');">
                 @csrf
                 <button type="submit" class="btn btn-warning">
-                    🔄 تنفيذ Failover يدوي
+                    Perform Manual Failover
                 </button>
             </form>
         @endif
@@ -299,158 +389,145 @@
 
 @if(session('status'))
     <div class="alert">
-        ✓ {{ session('status') }}
+        {{ session('status') }}
     </div>
 @endif
 
 @if(session('error'))
     <div class="alert alert-error">
-        ⚠️ {{ session('error') }}
+        {{ session('error') }}
     </div>
 @endif
 
-{{-- إحصائيات --}}
+{{-- Statistics --}}
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-value">{{ $backendServers->count() }}</div>
-        <div class="stat-label">إجمالي السيرفرات</div>
+        <div class="stat-label">Total Servers</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color: var(--success);">{{ $backendServers->where('status', 'active')->count() }}</div>
-        <div class="stat-label">نشط (Active)</div>
+        <div class="stat-label">Active</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color: var(--warning);">{{ $backendServers->where('status', 'standby')->count() }}</div>
-        <div class="stat-label">احتياطي (Standby)</div>
+        <div class="stat-label">Standby</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color: var(--success);">{{ $backendServers->where('is_healthy', true)->count() }}</div>
-        <div class="stat-label">صحي</div>
+        <div class="stat-label">Healthy</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color: var(--error);">{{ $backendServers->where('is_healthy', false)->count() }}</div>
-        <div class="stat-label">غير صحي</div>
+        <div class="stat-label">Unhealthy</div>
     </div>
 </div>
 
-{{-- قائمة السيرفرات --}}
-<div class="card">
-    <h2 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 20px;">
-        السيرفرات الخلفية
+{{-- Servers List --}}
+<div>
+    <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.5px;">
+        Backend Servers
     </h2>
 
+    <div class="servers-grid">
     @forelse($backendServers as $server)
         <div class="server-card {{ $server->status }} {{ $server->is_healthy ? '' : 'unhealthy' }}">
             <div class="server-header">
-                <div class="server-title">
-                    {{ $server->ip }}:{{ $server->port }}
+                <div class="server-title-section">
+                    <div class="server-title">
+                        <span>Backend Server #{{ $loop->iteration }}</span>
+                    </div>
+                    <div class="server-address">
+                        {{ $server->ip }}:{{ $server->port }}
+                    </div>
                 </div>
                 <div class="server-status {{ $server->status }} {{ $server->is_healthy ? '' : 'unhealthy' }}">
                     @if($server->status === 'active')
-                        ✓ نشط
+                        <span style="font-size: 14px; font-weight: 700;">ACTIVE</span>
+                        <span style="font-size: 11px; opacity: 0.8;">Active</span>
                     @else
-                        ○ احتياطي
+                        <span style="font-size: 14px; font-weight: 700;">STANDBY</span>
+                        <span style="font-size: 11px; opacity: 0.8;">Standby</span>
                     @endif
                     @if(!$server->is_healthy)
-                        - ⚠️ غير صحي
+                        <span style="font-size: 11px; margin-top: 4px; display: block; color: var(--error);">Unhealthy</span>
                     @endif
                 </div>
             </div>
 
             <div class="server-info">
                 <div class="info-item">
-                    <div class="info-label">الحالة</div>
-                    <div class="info-value">
-                        <span style="color: {{ $server->status === 'active' ? 'var(--success)' : 'var(--warning)' }};">
-                            {{ $server->status === 'active' ? 'نشط (Active)' : 'احتياطي (Standby)' }}
-                        </span>
+                    <div class="info-label">Status</div>
+                    <div class="info-value" style="color: {{ $server->status === 'active' ? 'var(--success)' : 'var(--warning)' }};">
+                        {{ $server->status === 'active' ? 'Active' : 'Standby' }}
                     </div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">الصحة</div>
-                    <div class="info-value">
-                        <span style="color: {{ $server->is_healthy ? 'var(--success)' : 'var(--error)' }};">
-                            {{ $server->is_healthy ? '✓ صحي' : '✗ غير صحي' }}
-                        </span>
+                    <div class="info-label">Health</div>
+                    <div class="info-value" style="color: {{ $server->is_healthy ? 'var(--success)' : 'var(--error)' }};">
+                        {{ $server->is_healthy ? 'Healthy' : 'Unhealthy' }}
                     </div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">الأولوية</div>
-                    <div class="info-value">{{ $server->priority }}</div>
+                    <div class="info-label">Priority</div>
+                    <div class="info-value">
+                        {{ $server->priority }}
+                    </div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">عدد مرات الفشل</div>
+                    <div class="info-label">Fail Count</div>
                     <div class="info-value" style="color: {{ $server->fail_count > 0 ? 'var(--error)' : 'var(--text-primary)' }};">
                         {{ $server->fail_count }}
                     </div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">آخر فحص</div>
-                    <div class="info-value">
-                        {{ $server->last_health_check ? $server->last_health_check->diffForHumans() : 'لم يتم الفحص' }}
+                    <div class="info-label">Last Check</div>
+                    <div class="info-value" style="font-size: 13px;">
+                        {{ $server->last_health_check ? $server->last_health_check->diffForHumans() : 'Never' }}
                     </div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">فحص الصحة</div>
-                    <div class="info-value">
-                        {{ $server->health_check_enabled ? 'مفعل' : 'معطل' }}
+                    <div class="info-label">Health Check</div>
+                    <div class="info-value" style="color: {{ $server->health_check_enabled ? 'var(--success)' : 'var(--text-muted)' }};">
+                        {{ $server->health_check_enabled ? 'Enabled' : 'Disabled' }}
                     </div>
                 </div>
             </div>
 
             <div class="server-actions">
-                <form method="POST" action="{{ route('sites.backends.check-single', [$site, $server]) }}" style="display: inline;">
+                <form method="POST" action="{{ route('sites.backends.check-single', [$site, $server]) }}" style="flex: 1; min-width: 140px;">
                     @csrf
-                    <button type="submit" class="btn btn-secondary btn-sm">
-                        🔍 فحص الصحة
+                    <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
+                        Check Health
                     </button>
                 </form>
 
                 @if($server->status === 'active')
-                    <form method="POST" action="{{ route('sites.backends.toggle-status', [$site, $server]) }}" style="display: inline;">
+                    <form method="POST" action="{{ route('sites.backends.toggle-status', [$site, $server]) }}" style="flex: 1; min-width: 140px;">
                         @csrf
-                        <button type="submit" class="btn btn-warning btn-sm" 
-                                onclick="return confirm('هل أنت متأكد من تحويل هذا السيرفر إلى Standby?')">
-                            ○ تحويل إلى Standby
+                        <button type="submit" class="btn btn-warning btn-sm" style="width: 100%;"
+                                onclick="return confirm('Are you sure you want to switch this server to Standby?')">
+                            Switch to Standby
                         </button>
                     </form>
                 @else
-                    <form method="POST" action="{{ route('sites.backends.toggle-status', [$site, $server]) }}" style="display: inline;">
+                    <form method="POST" action="{{ route('sites.backends.toggle-status', [$site, $server]) }}" style="flex: 1; min-width: 140px;">
                         @csrf
-                        <button type="submit" class="btn btn-success btn-sm">
-                            ✓ تفعيل (Active)
+                        <button type="submit" class="btn btn-success btn-sm" style="width: 100%;">
+                            Activate (Active)
                         </button>
                     </form>
                 @endif
             </div>
         </div>
     @empty
-        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
-            <p>لا توجد سيرفرات خلفية لهذا الموقع.</p>
-            <a href="{{ route('sites.index') }}" class="btn btn-primary" style="margin-top: 16px;">
-                العودة لقائمة المواقع
+        <div class="card" style="text-align: center; padding: 60px 40px; color: var(--text-muted);">
+            <p style="font-size: 16px; margin-bottom: 20px;">No backend servers for this site.</p>
+            <a href="{{ route('sites.index') }}" class="btn btn-primary">
+                Back to Sites List
             </a>
         </div>
     @endforelse
-</div>
-
-{{-- معلومات عن Failover --}}
-<div class="card">
-    <h2 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px;">
-        ℹ️ معلومات عن Failover
-    </h2>
-    <div style="color: var(--text-secondary); font-size: 14px; line-height: 1.8;">
-        <p><strong>كيف يعمل Failover:</strong></p>
-        <ul style="margin: 12px 0; padding-left: 20px;">
-            <li>النظام يفحص صحة السيرفرات تلقائياً كل دقيقة</li>
-            <li>عند فشل سيرفر نشط 3 مرات متتالية، يتم التبديل تلقائياً إلى سيرفر احتياطي صحي</li>
-            <li>يتم إعادة توليد ملف Nginx تلقائياً بعد Failover</li>
-            <li>يمكنك فحص السيرفرات يدوياً باستخدام زر "فحص جميع السيرفرات"</li>
-        </ul>
-        <p style="margin-top: 16px;"><strong>ملاحظة:</strong> تأكد من تشغيل Laravel Scheduler على السيرفر:</p>
-        <code style="display: block; background: var(--bg-dark); padding: 12px; border-radius: 6px; margin-top: 8px;">
-            * * * * * cd /path-to-project && php artisan schedule:run >> /dev/null 2>&1
-        </code>
     </div>
 </div>
 @endsection
