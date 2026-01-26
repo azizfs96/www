@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Site;
 use App\Models\IpRule;
+use App\Models\BackendServer;
 use Illuminate\Http\Request;
 
 class SiteController extends Controller
@@ -40,14 +41,49 @@ class SiteController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name'           => 'required|string|max:255',
-            'server_name'    => 'required|string|max:255',
-            'backend_ip'     => 'required|ip',
-            'backend_port'   => 'required|integer|min:1|max:65535',
-            'ssl_cert_path'  => 'nullable|string|max:500',
-            'ssl_key_path'   => 'nullable|string|max:500',
-            'notes'          => 'nullable|string',
+        // التحقق من وجود backend_servers (النظام الجديد) أو backend_ip (النظام القديم)
+        $hasBackendServers = $request->has('backend_servers') && is_array($request->input('backend_servers')) && count($request->input('backend_servers')) > 0;
+        
+        if ($hasBackendServers) {
+            // التحقق من صحة بيانات السيرفرات الخلفية
+            $request->validate([
+                'name'           => 'required|string|max:255',
+                'server_name'    => 'required|string|max:255',
+                'backend_servers' => 'required|array|min:1',
+                'backend_servers.*.ip' => 'required|ip',
+                'backend_servers.*.port' => 'required|integer|min:1|max:65535',
+                'backend_servers.*.status' => 'required|in:active,standby',
+                'backend_servers.*.priority' => 'nullable|integer|min:1',
+                'ssl_cert_path'  => 'nullable|string|max:500',
+                'ssl_key_path'   => 'nullable|string|max:500',
+                'notes'          => 'nullable|string',
+            ]);
+
+            // التحقق من وجود سيرفر نشط واحد على الأقل
+            $activeServers = array_filter($request->input('backend_servers'), function($server) {
+                return isset($server['status']) && $server['status'] === 'active';
+            });
+
+            if (count($activeServers) === 0) {
+                return redirect()->back()
+                    ->withErrors(['backend_servers' => 'يجب تحديد سيرفر واحد على الأقل كـ Active (نشط)'])
+                    ->withInput();
+            }
+        } else {
+            // النظام القديم - استخدام backend_ip و backend_port
+            $request->validate([
+                'name'           => 'required|string|max:255',
+                'server_name'    => 'required|string|max:255',
+                'backend_ip'     => 'required|ip',
+                'backend_port'   => 'required|integer|min:1|max:65535',
+                'ssl_cert_path'  => 'nullable|string|max:500',
+                'ssl_key_path'   => 'nullable|string|max:500',
+                'notes'          => 'nullable|string',
+            ]);
+        }
+
+        $data = $request->only([
+            'name', 'server_name', 'ssl_cert_path', 'ssl_key_path', 'notes'
         ]);
 
         $data['enabled'] = true;
@@ -73,6 +109,7 @@ class SiteController extends Controller
             'ssl_enabled_raw' => $sslInput,
             'ssl_enabled_type' => gettype($sslInput),
             'ssl_enabled_parsed' => $sslEnabled,
+            'has_backend_servers' => $hasBackendServers,
             'all_inputs' => $request->all()
         ]);
         
@@ -88,6 +125,28 @@ class SiteController extends Controller
         }
         
         $data['ssl_enabled'] = $sslEnabled;
+
+        // للحفاظ على التوافق مع النظام القديم، نحفظ backend_ip و backend_port من أول سيرفر نشط
+        if ($hasBackendServers) {
+            $firstActiveServer = collect($request->input('backend_servers'))
+                ->where('status', 'active')
+                ->sortBy('priority')
+                ->first();
+            
+            if ($firstActiveServer) {
+                $data['backend_ip'] = $firstActiveServer['ip'];
+                $data['backend_port'] = $firstActiveServer['port'];
+            } else {
+                // إذا لم يكن هناك سيرفر نشط (لا يجب أن يحدث)، نستخدم الأول
+                $firstServer = $request->input('backend_servers')[0];
+                $data['backend_ip'] = $firstServer['ip'];
+                $data['backend_port'] = $firstServer['port'];
+            }
+        } else {
+            // النظام القديم
+            $data['backend_ip'] = $request->input('backend_ip');
+            $data['backend_port'] = $request->input('backend_port');
+        }
         
         \Log::info("Data before Site::create", [
             'ssl_enabled' => $data['ssl_enabled'],
@@ -95,6 +154,30 @@ class SiteController extends Controller
         ]);
 
         $site = Site::create($data);
+
+        // حفظ السيرفرات الخلفية
+        if ($hasBackendServers) {
+            foreach ($request->input('backend_servers') as $serverData) {
+                $site->backendServers()->create([
+                    'ip' => $serverData['ip'],
+                    'port' => $serverData['port'],
+                    'status' => $serverData['status'],
+                    'priority' => $serverData['priority'] ?? 1,
+                    'health_check_enabled' => true,
+                    'is_healthy' => true,
+                ]);
+            }
+        } else {
+            // النظام القديم - إنشاء سيرفر واحد افتراضي
+            $site->backendServers()->create([
+                'ip' => $data['backend_ip'],
+                'port' => $data['backend_port'],
+                'status' => 'active',
+                'priority' => 1,
+                'health_check_enabled' => true,
+                'is_healthy' => true,
+            ]);
+        }
         
         \Log::info("Site created", [
             'site_id' => $site->id,
@@ -427,9 +510,44 @@ class SiteController extends Controller
         
         $content = "";
         
-        // Upstream
+        // Upstream مع دعم High Availability
         $content .= "upstream {$backendName} {\n";
-        $content .= "    server {$site->backend_ip}:{$site->backend_port};\n";
+        
+        // الحصول على جميع السيرفرات الخلفية مرتبة حسب الأولوية
+        $backendServers = $site->backendServers()->orderBy('priority')->get();
+        
+        if ($backendServers->isEmpty()) {
+            // إذا لم تكن هناك سيرفرات خلفية، نستخدم القيم القديمة
+            $content .= "    server {$site->backend_ip}:{$site->backend_port};\n";
+        } else {
+            // إضافة السيرفرات النشطة أولاً
+            $activeServers = $backendServers->where('status', 'active')->sortBy('priority');
+            foreach ($activeServers as $server) {
+                $healthCheckParams = '';
+                if ($server->health_check_enabled) {
+                    // إعدادات health check: max_fails = عدد مرات الفشل قبل اعتبار السيرفر غير صحي
+                    // fail_timeout = الوقت بالثواني قبل إعادة المحاولة
+                    $healthCheckParams = ' max_fails=3 fail_timeout=30s';
+                }
+                $content .= "    server {$server->ip}:{$server->port}{$healthCheckParams};\n";
+            }
+            
+            // إضافة السيرفرات الاحتياطية (standby) كـ backup
+            $standbyServers = $backendServers->where('status', 'standby')->sortBy('priority');
+            foreach ($standbyServers as $server) {
+                $healthCheckParams = '';
+                if ($server->health_check_enabled) {
+                    $healthCheckParams = ' max_fails=3 fail_timeout=30s';
+                }
+                // السيرفرات الاحتياطية تُستخدم فقط عند فشل جميع السيرفرات النشطة
+                $content .= "    server {$server->ip}:{$server->port}{$healthCheckParams} backup;\n";
+            }
+        }
+        
+        // إعدادات load balancing (اختياري - يمكن تخصيصها لاحقاً)
+        // least_conn = توزيع الاتصالات على السيرفر الأقل اتصالات
+        // ip_hash = توزيع حسب IP العميل (لضمان sticky sessions)
+        $content .= "    least_conn;\n";
         $content .= "}\n\n";
 
         // Log للتحقق من حالة SSL

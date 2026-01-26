@@ -237,6 +237,112 @@
     .ssl-fields.active {
         display: block;
     }
+
+    .backend-server-card {
+        background: var(--bg-dark);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 16px;
+        position: relative;
+    }
+
+    .backend-server-card.active {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.05);
+    }
+
+    .backend-server-card.standby {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.05);
+    }
+
+    .backend-server-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .backend-server-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .backend-server-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .backend-server-status.active {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+    }
+
+    .backend-server-status.standby {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+    }
+
+    .remove-backend-btn {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background: var(--error);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+
+    .remove-backend-btn:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .status-toggle-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .status-toggle-btn {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 13px;
+        text-align: center;
+        transition: all 0.2s;
+    }
+
+    .status-toggle-btn.active {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+
+    .status-toggle-btn.standby {
+        background: #f59e0b;
+        color: white;
+        border-color: #f59e0b;
+    }
 </style>
 @endsection
 
@@ -305,49 +411,27 @@
             </div>
         </div>
 
-        {{-- السيرفر الخلفي --}}
+        {{-- السيرفرات الخلفية - High Availability --}}
         <div class="form-section">
-            <h2 class="section-title">🖥️ السيرفر الخلفي (Backend)</h2>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">
-                        IP السيرفر <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        name="backend_ip" 
-                        class="form-input" 
-                        value="{{ old('backend_ip') }}"
-                        placeholder="مثال: 72.60.134.86"
-                        required
-                    >
-                    <div class="form-help">عنوان IP للسيرفر الذي يستضيف الموقع</div>
-                    @error('backend_ip')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">
-                        المنفذ (Port) <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="number" 
-                        name="backend_port" 
-                        class="form-input" 
-                        value="{{ old('backend_port', 80) }}"
-                        placeholder="80"
-                        min="1"
-                        max="65535"
-                        required
-                    >
-                    <div class="form-help">عادة: 80 للـ HTTP أو 443 للـ HTTPS</div>
-                    @error('backend_port')
-                        <div class="error-message">{{ $message }}</div>
-                    @enderror
-                </div>
+            <h2 class="section-title">🖥️ السيرفرات الخلفية (Backend Servers) - High Availability</h2>
+            
+            <div class="form-help" style="margin-bottom: 20px; padding: 12px; background: rgba(157, 78, 221, 0.1); border-radius: 8px; border: 1px solid rgba(157, 78, 221, 0.3);">
+                <strong>ℹ️ ملاحظة:</strong> يمكنك إضافة عدة سيرفرات خلفية لضمان High Availability. 
+                حدد سيرفر واحد على الأقل كـ <strong>Active</strong> والباقي كـ <strong>Standby</strong>. 
+                عند فشل السيرفر النشط، سيتم التبديل تلقائياً إلى السيرفر الاحتياطي.
             </div>
+
+            <div id="backendServersContainer">
+                {{-- سيتم إضافة السيرفرات ديناميكياً هنا --}}
+            </div>
+
+            <button type="button" id="addBackendServer" class="btn btn-secondary" style="margin-top: 16px;">
+                + إضافة سيرفر خلفي
+            </button>
+
+            @error('backend_servers')
+                <div class="error-message" style="margin-top: 12px;">{{ $message }}</div>
+            @enderror
         </div>
 
         {{-- إعدادات SSL --}}
@@ -455,6 +539,196 @@ document.addEventListener('DOMContentLoaded', function() {
             sslHiddenInput.remove();
         }
     }
+
+    // إدارة السيرفرات الخلفية
+    let backendServerIndex = 0;
+    const container = document.getElementById('backendServersContainer');
+    const addBtn = document.getElementById('addBackendServer');
+
+    function createBackendServerCard(index, data = {}) {
+        const card = document.createElement('div');
+        card.className = `backend-server-card ${data.status || 'standby'}`;
+        card.dataset.index = index;
+
+        const status = data.status || 'standby';
+        const statusText = status === 'active' ? 'نشط (Active)' : 'احتياطي (Standby)';
+        const statusClass = status === 'active' ? 'active' : 'standby';
+
+        card.innerHTML = `
+            <button type="button" class="remove-backend-btn" onclick="removeBackendServer(${index})" title="حذف">×</button>
+            <div class="backend-server-header">
+                <div class="backend-server-title">سيرفر خلفي #${index + 1}</div>
+                <div class="backend-server-status ${statusClass}">
+                    ${status === 'active' ? '✓' : '○'} ${statusText}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">
+                        IP السيرفر <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        name="backend_servers[${index}][ip]" 
+                        class="form-input" 
+                        value="${data.ip || ''}"
+                        placeholder="مثال: 72.60.134.86"
+                        required
+                    >
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        المنفذ (Port) <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        name="backend_servers[${index}][port]" 
+                        class="form-input" 
+                        value="${data.port || 80}"
+                        placeholder="80"
+                        min="1"
+                        max="65535"
+                        required
+                    >
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">الأولوية (Priority)</label>
+                    <input 
+                        type="number" 
+                        name="backend_servers[${index}][priority]" 
+                        class="form-input" 
+                        value="${data.priority || index + 1}"
+                        placeholder="1"
+                        min="1"
+                    >
+                    <div class="form-help">كلما قل الرقم، زادت الأولوية (1 = أعلى أولوية)</div>
+                </div>
+            </div>
+            <div class="status-toggle-group">
+                <input type="hidden" name="backend_servers[${index}][status]" value="${status}" id="status_${index}">
+                <button type="button" class="status-toggle-btn ${status === 'active' ? 'active' : ''}" 
+                        onclick="setBackendStatus(${index}, 'active')">
+                    ✓ نشط (Active)
+                </button>
+                <button type="button" class="status-toggle-btn ${status === 'standby' ? 'standby' : ''}" 
+                        onclick="setBackendStatus(${index}, 'standby')">
+                    ○ احتياطي (Standby)
+                </button>
+            </div>
+        `;
+
+        return card;
+    }
+
+    function addBackendServer(data = {}) {
+        const card = createBackendServerCard(backendServerIndex, data);
+        container.appendChild(card);
+        backendServerIndex++;
+        updateRemoveButtons();
+    }
+
+    function removeBackendServer(index) {
+        const card = container.querySelector(`[data-index="${index}"]`);
+        if (card) {
+            card.remove();
+            updateRemoveButtons();
+            reindexBackendServers();
+        }
+    }
+
+    function setBackendStatus(index, status) {
+        const card = container.querySelector(`[data-index="${index}"]`);
+        if (!card) return;
+
+        const statusInput = card.querySelector(`#status_${index}`);
+        const statusBadge = card.querySelector('.backend-server-status');
+        const activeBtn = card.querySelector('.status-toggle-btn:first-child');
+        const standbyBtn = card.querySelector('.status-toggle-btn:last-child');
+
+        statusInput.value = status;
+        card.className = `backend-server-card ${status}`;
+
+        if (status === 'active') {
+            statusBadge.textContent = '✓ نشط (Active)';
+            statusBadge.className = 'backend-server-status active';
+            activeBtn.classList.add('active');
+            standbyBtn.classList.remove('standby');
+        } else {
+            statusBadge.textContent = '○ احتياطي (Standby)';
+            statusBadge.className = 'backend-server-status standby';
+            activeBtn.classList.remove('active');
+            standbyBtn.classList.add('standby');
+        }
+    }
+
+    function updateRemoveButtons() {
+        const cards = container.querySelectorAll('.backend-server-card');
+        cards.forEach(card => {
+            const removeBtn = card.querySelector('.remove-backend-btn');
+            if (cards.length <= 1) {
+                removeBtn.style.display = 'none';
+            } else {
+                removeBtn.style.display = 'flex';
+            }
+        });
+    }
+
+    function reindexBackendServers() {
+        const cards = Array.from(container.querySelectorAll('.backend-server-card'));
+        cards.forEach((card, newIndex) => {
+            const oldIndex = parseInt(card.dataset.index);
+            card.dataset.index = newIndex;
+            
+            // تحديث جميع الحقول
+            card.querySelectorAll('input, label').forEach(input => {
+                if (input.name) {
+                    input.name = input.name.replace(`[${oldIndex}]`, `[${newIndex}]`);
+                }
+                if (input.id) {
+                    input.id = input.id.replace(`_${oldIndex}`, `_${newIndex}`);
+                }
+            });
+
+            // تحديث الأزرار
+            const title = card.querySelector('.backend-server-title');
+            if (title) title.textContent = `سيرفر خلفي #${newIndex + 1}`;
+
+            const removeBtn = card.querySelector('.remove-backend-btn');
+            if (removeBtn) {
+                removeBtn.setAttribute('onclick', `removeBackendServer(${newIndex})`);
+            }
+
+            const activeBtn = card.querySelector('.status-toggle-btn:first-child');
+            const standbyBtn = card.querySelector('.status-toggle-btn:last-child');
+            if (activeBtn) activeBtn.setAttribute('onclick', `setBackendStatus(${newIndex}, 'active')`);
+            if (standbyBtn) standbyBtn.setAttribute('onclick', `setBackendStatus(${newIndex}, 'standby')`);
+        });
+    }
+
+    // جعل الدوال متاحة عالمياً
+    window.removeBackendServer = removeBackendServer;
+    window.setBackendStatus = setBackendStatus;
+
+    // إضافة سيرفر افتراضي عند التحميل
+    addBackendServer({ status: 'active', priority: 1 });
+
+    // إضافة سيرفر جديد عند الضغط على الزر
+    addBtn.addEventListener('click', function() {
+        addBackendServer({ status: 'standby', priority: backendServerIndex + 1 });
+    });
+
+    // التحقق من وجود سيرفر نشط واحد على الأقل قبل الإرسال
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const activeServers = container.querySelectorAll('.backend-server-card.active');
+        if (activeServers.length === 0) {
+            e.preventDefault();
+            alert('⚠️ يجب تحديد سيرفر واحد على الأقل كـ Active (نشط)');
+            return false;
+        }
+    });
 });
 </script>
 @endsection

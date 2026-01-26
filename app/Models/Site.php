@@ -77,6 +77,30 @@ class Site extends Model
     }
 
     /**
+     * العلاقة مع الخوادم الخلفية
+     */
+    public function backendServers(): HasMany
+    {
+        return $this->hasMany(BackendServer::class);
+    }
+
+    /**
+     * الحصول على الخوادم النشطة فقط
+     */
+    public function activeBackendServers()
+    {
+        return $this->backendServers()->where('status', 'active')->orderBy('priority');
+    }
+
+    /**
+     * الحصول على الخوادم في وضع الاستعداد
+     */
+    public function standbyBackendServers()
+    {
+        return $this->backendServers()->where('status', 'standby')->orderBy('priority');
+    }
+
+    /**
      * إنشاء سياسة افتراضية عند إنشاء موقع جديد
      */
     protected static function booted(): void
