@@ -368,6 +368,12 @@ Route::patch('/waf/sites/{site}/toggle-ssl', [SiteController::class, 'toggleSsl'
 Route::post('/waf/sites/{site}/fix-ssl', [SiteController::class, 'fixSsl'])->name('sites.fix-ssl');
 Route::post('/waf/sites/regenerate', [SiteController::class, 'regenerateAll'])->name('sites.regenerate');
 
+// إدارة Failover و Health Check
+Route::get('/waf/sites/{site}/backends', [SiteController::class, 'showBackends'])->name('sites.backends');
+Route::post('/waf/sites/{site}/backends/check', [SiteController::class, 'checkBackendHealth'])->name('sites.backends.check');
+Route::post('/waf/sites/{site}/backends/{backendServer}/toggle-status', [SiteController::class, 'toggleBackendStatus'])->name('sites.backends.toggle-status');
+Route::post('/waf/sites/{site}/backends/{backendServer}/check', [SiteController::class, 'checkSingleBackend'])->name('sites.backends.check-single');
+
 // إعدادات WAF لكل موقع (Site Policies)
 Route::get('/waf/sites/{site}/policy', [SitePolicyController::class, 'edit'])->name('sites.policy.edit');
 Route::put('/waf/sites/{site}/policy', [SitePolicyController::class, 'update'])->name('sites.policy.update');

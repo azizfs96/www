@@ -77,6 +77,18 @@
         box-shadow: 0 4px 12px rgba(157, 78, 221, 0.3);
     }
 
+    .btn-info {
+        background: #3b82f6;
+        color: white;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-info:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
     .btn-secondary {
         background: var(--bg-card);
         color: var(--text-primary);
@@ -471,6 +483,10 @@
                 <div class="site-details-label">Actions</div>
                 <div class="site-details-content">
                     <div class="site-actions">
+                        <a href="{{ route('sites.backends', $site) }}" class="btn btn-sm btn-info" 
+                           title="عرض حالة السيرفرات الخلفية وإدارة Failover">
+                            🖥️ Backend Servers
+                        </a>
                         <a href="{{ route('sites.policy.edit', $site) }}" class="btn btn-sm btn-primary">
                             ⚙️ WAF Settings
                         </a>

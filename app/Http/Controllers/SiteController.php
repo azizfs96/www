@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Site;
 use App\Models\IpRule;
 use App\Models\BackendServer;
+use App\Services\BackendHealthCheckService;
 use Illuminate\Http\Request;
 
 class SiteController extends Controller
@@ -1389,5 +1390,107 @@ HTML;
             'success' => true,
             'message' => 'تم توليد الشهادة بنجاح'
         ];
+    }
+
+    /**
+     * عرض حالة السيرفرات الخلفية للموقع
+     */
+    public function showBackends(Site $site)
+    {
+        $this->checkSiteAccess($site);
+        
+        $site->load('backendServers');
+        $backendServers = $site->backendServers()->orderBy('priority')->get();
+        
+        return view('waf.sites.backends', compact('site', 'backendServers'));
+    }
+
+    /**
+     * فحص صحة جميع السيرفرات الخلفية للموقع
+     */
+    public function checkBackendHealth(Site $site, BackendHealthCheckService $healthCheckService)
+    {
+        $this->checkSiteAccess($site);
+        
+        $servers = $site->backendServers()->where('health_check_enabled', true)->get();
+        $checked = 0;
+        $healthy = 0;
+        $unhealthy = 0;
+        
+        foreach ($servers as $server) {
+            $isHealthy = $healthCheckService->checkServer($server);
+            $checked++;
+            if ($isHealthy) {
+                $healthy++;
+            } else {
+                $unhealthy++;
+            }
+        }
+        
+        return redirect()->route('sites.backends', $site)
+            ->with('status', "تم فحص {$checked} سيرفر: {$healthy} صحي، {$unhealthy} غير صحي");
+    }
+
+    /**
+     * فحص سيرفر واحد
+     */
+    public function checkSingleBackend(Site $site, BackendServer $backendServer, BackendHealthCheckService $healthCheckService)
+    {
+        $this->checkSiteAccess($site);
+        
+        // التحقق من أن السيرفر يتبع للموقع
+        if ($backendServer->site_id !== $site->id) {
+            abort(403, 'This backend server does not belong to this site.');
+        }
+        
+        $isHealthy = $healthCheckService->checkServer($backendServer);
+        
+        $status = $isHealthy ? 'صحي' : 'غير صحي';
+        
+        return redirect()->route('sites.backends', $site)
+            ->with('status', "تم فحص السيرفر {$backendServer->ip}:{$backendServer->port} - الحالة: {$status}");
+    }
+
+    /**
+     * تبديل حالة السيرفر (Active/Standby)
+     */
+    public function toggleBackendStatus(Site $site, BackendServer $backendServer)
+    {
+        $this->checkSiteAccess($site);
+        
+        // التحقق من أن السيرفر يتبع للموقع
+        if ($backendServer->site_id !== $site->id) {
+            abort(403, 'This backend server does not belong to this site.');
+        }
+        
+        // إذا كان السيرفر نشط، نحوله إلى standby
+        if ($backendServer->status === 'active') {
+            // التحقق من وجود سيرفرات نشطة أخرى
+            $otherActiveServers = $site->backendServers()
+                ->where('id', '!=', $backendServer->id)
+                ->where('status', 'active')
+                ->count();
+            
+            if ($otherActiveServers === 0) {
+                return redirect()->route('sites.backends', $site)
+                    ->with('error', 'لا يمكن تعطيل آخر سيرفر نشط. يجب أن يكون هناك سيرفر نشط واحد على الأقل.');
+            }
+            
+            $backendServer->status = 'standby';
+            $message = "تم تحويل السيرفر {$backendServer->ip}:{$backendServer->port} إلى وضع Standby";
+        } else {
+            // إذا كان standby، نحوله إلى active
+            $backendServer->status = 'active';
+            $backendServer->fail_count = 0;
+            $message = "تم تحويل السيرفر {$backendServer->ip}:{$backendServer->port} إلى وضع Active";
+        }
+        
+        $backendServer->save();
+        
+        // إعادة توليد ملف Nginx
+        $this->generateNginxConfig($site);
+        
+        return redirect()->route('sites.backends', $site)
+            ->with('status', $message);
     }
 }
