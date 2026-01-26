@@ -176,18 +176,33 @@ class BackendHealthCheckService
         try {
             // إعادة تحميل الموقع من قاعدة البيانات لضمان الحصول على أحدث البيانات
             $site->refresh();
-            $site->load('backendServers');
             
-            // إعادة تحميل جميع السيرفرات من قاعدة البيانات
-            $site->backendServers->each->refresh();
+            // الحصول على السيرفرات من قاعدة البيانات مباشرة (بدون cache)
+            $activeServers = BackendServer::where('site_id', $site->id)
+                ->where('status', 'active')
+                ->orderBy('priority')
+                ->get();
+            
+            $standbyServers = BackendServer::where('site_id', $site->id)
+                ->where('status', 'standby')
+                ->orderBy('priority')
+                ->get();
+            
+            Log::info("Regenerating Nginx config after failover", [
+                'site_id' => $site->id,
+                'site_name' => $site->server_name,
+                'active_servers_count' => $activeServers->count(),
+                'active_servers' => $activeServers->map(fn($s) => "{$s->ip}:{$s->port}")->toArray(),
+                'standby_servers_count' => $standbyServers->count(),
+                'standby_servers' => $standbyServers->map(fn($s) => "{$s->ip}:{$s->port}")->toArray(),
+            ]);
             
             $controller = app(\App\Http\Controllers\SiteController::class);
             $controller->generateNginxConfig($site);
             
-            Log::info("Regenerated Nginx config after failover", [
+            Log::info("Nginx config regenerated successfully after failover", [
                 'site_id' => $site->id,
-                'active_servers' => $site->backendServers()->where('status', 'active')->pluck('ip', 'port')->toArray(),
-                'standby_servers' => $site->backendServers()->where('status', 'standby')->pluck('ip', 'port')->toArray(),
+                'site_name' => $site->server_name,
             ]);
         } catch (\Exception $e) {
             Log::error("Failed to regenerate Nginx config after failover", [

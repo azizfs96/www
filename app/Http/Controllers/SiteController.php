@@ -644,8 +644,27 @@ class SiteController extends Controller
             ->orderBy('priority')
             ->get();
         
+        \Log::info("Building Nginx config - All backend servers from DB", [
+            'site_id' => $site->id,
+            'site_name' => $site->server_name,
+            'total_servers' => $backendServers->count(),
+            'all_servers' => $backendServers->map(fn($s) => [
+                'id' => $s->id,
+                'ip' => $s->ip,
+                'port' => $s->port,
+                'status' => $s->status,
+                'priority' => $s->priority,
+                'is_healthy' => $s->is_healthy,
+            ])->toArray(),
+        ]);
+        
         if ($backendServers->isEmpty()) {
             // إذا لم تكن هناك سيرفرات خلفية، نستخدم القيم القديمة
+            \Log::warning("No backend servers found, using old backend_ip/backend_port", [
+                'site_id' => $site->id,
+                'backend_ip' => $site->backend_ip,
+                'backend_port' => $site->backend_port,
+            ]);
             $content .= "    server {$site->backend_ip}:{$site->backend_port};\n";
         } else {
             // إضافة السيرفرات النشطة أولاً
