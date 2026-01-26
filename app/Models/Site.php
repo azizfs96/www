@@ -18,6 +18,7 @@ class Site extends Model
         'ssl_cert_path',
         'ssl_key_path',
         'enabled',
+        'failover_mode',
         'notes',
         'tenant_id',
     ];

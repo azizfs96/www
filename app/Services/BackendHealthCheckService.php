@@ -39,9 +39,18 @@ class BackendHealthCheckService
         
         $server->save();
         
-        // إذا فشل السيرفر النشط، قم بالتبديل إلى السيرفر الاحتياطي
+        // إذا فشل السيرفر النشط، قم بالتبديل إلى السيرفر الاحتياطي (فقط إذا كان failover_mode = 'auto')
         if (!$isHealthy && $server->status === 'active' && $server->fail_count >= 3) {
-            $this->performFailover($server->site);
+            $site = $server->site;
+            if ($site->failover_mode === 'auto') {
+                $this->performFailover($site);
+            } else {
+                Log::info("Failover skipped - mode is manual", [
+                    'site_id' => $site->id,
+                    'server_id' => $server->id,
+                    'failover_mode' => $site->failover_mode,
+                ]);
+            }
         }
         
         return $isHealthy;

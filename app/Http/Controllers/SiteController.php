@@ -1789,6 +1789,26 @@ HTML;
     }
 
     /**
+     * تحديث وضع Failover (Auto/Manual)
+     */
+    public function updateFailoverMode(Site $site, Request $request)
+    {
+        $this->checkSiteAccess($site);
+        
+        $request->validate([
+            'failover_mode' => 'required|in:auto,manual',
+        ]);
+        
+        $site->failover_mode = $request->failover_mode;
+        $site->save();
+        
+        $modeText = $request->failover_mode === 'auto' ? 'Automatic' : 'Manual';
+        
+        return redirect()->route('sites.backends', $site)
+            ->with('status', "Failover mode updated to {$modeText}");
+    }
+
+    /**
      * تنفيذ Failover يدوي - التبديل من السيرفر النشط إلى الاحتياطي
      */
     public function manualFailover(Site $site, BackendHealthCheckService $healthCheckService)

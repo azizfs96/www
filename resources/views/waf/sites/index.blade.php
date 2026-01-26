@@ -155,13 +155,106 @@
         color: var(--error);
     }
 
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Search/Filter Section */
+    .search-filter-section {
+        background: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-input {
+        flex: 1;
+        min-width: 200px;
+        padding: 10px 16px;
+        background: rgba(26, 26, 26, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: rgba(26, 26, 26, 0.8);
+        box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.1);
+    }
+
+    .filter-select {
+        padding: 10px 16px;
+        background: rgba(26, 26, 26, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: rgba(26, 26, 26, 0.8);
+    }
+
     /* Site Card Design */
     .sites-container {
-        background: #1E1E1E;
+        background: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         border-radius: 12px;
-        border: 1px solid var(--border);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         display: flex;
         flex-direction: column;
         gap: 0;
@@ -170,7 +263,7 @@
     .sites-container > .site-card {
         border-radius: 0;
         border: none;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
     
     .sites-container > .site-card:last-child {
@@ -178,25 +271,23 @@
     }
 
     .site-card {
-        background: #1E1E1E;
-        border: 1px solid var(--border);
-        border-radius: 12px;
+        background: transparent;
+        border: none;
+        border-radius: 0;
         overflow: hidden;
         transition: all 0.2s ease;
         direction: ltr;
     }
 
     .site-card:hover {
-        background: var(--bg-hover);
-        border-color: var(--border-light);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        background: rgba(42, 42, 42, 0.4);
+        transform: translateX(4px);
     }
 
     .site-card-header {
-        background: #1E1E1E;
+        background: transparent;
         padding: 20px 24px;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -273,8 +364,8 @@
 
     .site-details {
         padding: 20px 24px;
-        background: var(--bg-details);
-        border-top: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
         display: grid;
         grid-template-columns: auto 1fr;
         gap: 20px;
@@ -337,9 +428,30 @@
         text-align: center;
         color: var(--text-muted);
         font-size: 14px;
-        background: #1E1E1E;
-        border: 1px solid var(--border);
-        border-radius: 12px;
+        background: transparent;
+    }
+
+    /* Loading state */
+    .btn.loading {
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .btn.loading::after {
+        content: '';
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-left: 6px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
     .info-box {
@@ -409,6 +521,41 @@
         ⚠️ {{ session('error') }}
     </div>
 @endif
+
+{{-- Statistics --}}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ $sites->count() }}</div>
+        <div class="stat-label">Total Sites</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: var(--success);">{{ $sites->where('enabled', true)->count() }}</div>
+        <div class="stat-label">Enabled</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: var(--warning);">{{ $sites->where('enabled', false)->count() }}</div>
+        <div class="stat-label">Disabled</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: var(--info);">{{ $sites->where('ssl_enabled', true)->count() }}</div>
+        <div class="stat-label">SSL Enabled</div>
+    </div>
+</div>
+
+{{-- Search and Filter --}}
+<div class="search-filter-section">
+    <input type="text" id="site-search" class="search-input" placeholder="Search by name or domain..." onkeyup="filterSites()">
+    <select id="status-filter" class="filter-select" onchange="filterSites()">
+        <option value="">All Status</option>
+        <option value="enabled">Enabled</option>
+        <option value="disabled">Disabled</option>
+    </select>
+    <select id="ssl-filter" class="filter-select" onchange="filterSites()">
+        <option value="">All SSL</option>
+        <option value="ssl">SSL Enabled</option>
+        <option value="no-ssl">No SSL</option>
+    </select>
+</div>
 
 <div class="sites-container">
     @forelse($sites as $site)
@@ -540,6 +687,53 @@
     @endforelse
 </div>
 
+@endsection
+
+@section('scripts')
+<script>
+    // Filter sites
+    function filterSites() {
+        const searchTerm = document.getElementById('site-search').value.toLowerCase();
+        const statusFilter = document.getElementById('status-filter').value;
+        const sslFilter = document.getElementById('ssl-filter').value;
+        
+        const cards = document.querySelectorAll('.site-card');
+        
+        cards.forEach(card => {
+            const name = card.querySelector('.site-name').textContent.toLowerCase();
+            const domain = card.querySelector('.site-domain').textContent.toLowerCase();
+            const isEnabled = card.querySelector('.badge-success') !== null;
+            const hasSSL = card.querySelector('.badge-info') !== null;
+            
+            const matchesSearch = name.includes(searchTerm) || domain.includes(searchTerm);
+            const matchesStatus = !statusFilter || 
+                (statusFilter === 'enabled' && isEnabled) || 
+                (statusFilter === 'disabled' && !isEnabled);
+            const matchesSSL = !sslFilter || 
+                (sslFilter === 'ssl' && hasSSL) || 
+                (sslFilter === 'no-ssl' && !hasSSL);
+            
+            if (matchesSearch && matchesStatus && matchesSSL) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Add loading state to buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.classList.add('loading');
+                }
+            });
+        });
+    });
+</script>
 @endsection
 
 

@@ -53,22 +53,28 @@
     }
 
     .card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
+        background: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
         padding: 24px;
         margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     }
 
     .server-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
+        background: rgba(30, 30, 30, 0.5);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         padding: 24px;
         margin-bottom: 20px;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     }
 
     .server-card::before {
@@ -83,9 +89,10 @@
     }
 
     .server-card:hover {
-        border-color: var(--border-light);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+        background: rgba(30, 30, 30, 0.7);
     }
 
     .server-card.active::before {
@@ -101,18 +108,39 @@
     }
 
     .server-card.active {
-        border-color: var(--success);
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, var(--bg-card) 100%);
+        border-color: rgba(16, 185, 129, 0.25);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 30, 30, 0.5) 100%);
+        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.1);
+    }
+
+    .server-card.active:hover {
+        border-color: rgba(16, 185, 129, 0.35);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(30, 30, 30, 0.65) 100%);
+        box-shadow: 0 12px 32px rgba(16, 185, 129, 0.15);
     }
 
     .server-card.standby {
-        border-color: var(--warning);
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, var(--bg-card) 100%);
+        border-color: rgba(245, 158, 11, 0.25);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(30, 30, 30, 0.5) 100%);
+        box-shadow: 0 4px 20px rgba(245, 158, 11, 0.1);
+    }
+
+    .server-card.standby:hover {
+        border-color: rgba(245, 158, 11, 0.35);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(30, 30, 30, 0.65) 100%);
+        box-shadow: 0 12px 32px rgba(245, 158, 11, 0.15);
     }
 
     .server-card.unhealthy {
-        border-color: var(--error);
-        background: linear-gradient(135deg, rgba(248, 113, 113, 0.05) 0%, var(--bg-card) 100%);
+        border-color: rgba(248, 113, 113, 0.25);
+        background: linear-gradient(135deg, rgba(248, 113, 113, 0.08) 0%, rgba(30, 30, 30, 0.5) 100%);
+        box-shadow: 0 4px 20px rgba(248, 113, 113, 0.1);
+    }
+
+    .server-card.unhealthy:hover {
+        border-color: rgba(248, 113, 113, 0.35);
+        background: linear-gradient(135deg, rgba(248, 113, 113, 0.12) 0%, rgba(30, 30, 30, 0.65) 100%);
+        box-shadow: 0 12px 32px rgba(248, 113, 113, 0.15);
     }
 
     .server-header {
@@ -121,7 +149,12 @@
         align-items: flex-start;
         margin-bottom: 20px;
         padding-bottom: 16px;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.2s;
+    }
+
+    .server-card:hover .server-header {
+        border-bottom-color: rgba(255, 255, 255, 0.12);
     }
 
     .server-title-section {
@@ -182,9 +215,17 @@
         gap: 20px;
         margin-bottom: 20px;
         padding: 20px;
-        background: var(--bg-dark);
+        background: rgba(26, 26, 26, 0.3);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         border-radius: 8px;
-        border: 1px solid var(--border);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        transition: all 0.2s;
+    }
+
+    .server-card:hover .server-info {
+        background: rgba(26, 26, 26, 0.4);
+        border-color: rgba(255, 255, 255, 0.1);
     }
 
     @media (max-width: 768px) {
@@ -226,8 +267,13 @@
         gap: 10px;
         flex-wrap: wrap;
         padding-top: 16px;
-        border-top: 1px solid var(--border);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
         margin-top: 20px;
+        transition: all 0.2s;
+    }
+
+    .server-card:hover .server-actions {
+        border-top-color: rgba(255, 255, 255, 0.12);
     }
 
     .server-actions .btn {
@@ -251,30 +297,51 @@
     }
 
     .btn-primary {
-        background: var(--primary);
-        color: white;
+        background: rgba(157, 78, 221, 0.2);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: var(--primary);
+        border: 1px solid rgba(157, 78, 221, 0.3);
+        box-shadow: 0 2px 8px rgba(157, 78, 221, 0.15);
     }
 
     .btn-primary:hover {
-        background: var(--primary-hover);
+        background: rgba(157, 78, 221, 0.3);
+        border-color: rgba(157, 78, 221, 0.4);
+        box-shadow: 0 4px 12px rgba(157, 78, 221, 0.25);
+        transform: translateY(-1px);
     }
 
     .btn-success {
-        background: var(--success);
-        color: white;
+        background: rgba(16, 185, 129, 0.2);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: var(--success);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
     }
 
     .btn-success:hover {
-        background: #059669;
+        background: rgba(16, 185, 129, 0.3);
+        border-color: rgba(16, 185, 129, 0.4);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        transform: translateY(-1px);
     }
 
     .btn-warning {
-        background: var(--warning);
-        color: white;
+        background: rgba(245, 158, 11, 0.2);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: var(--warning);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
     }
 
     .btn-warning:hover {
-        background: #d97706;
+        background: rgba(245, 158, 11, 0.3);
+        border-color: rgba(245, 158, 11, 0.4);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        transform: translateY(-1px);
     }
 
     .btn-secondary {
@@ -336,11 +403,14 @@
     }
 
     .stat-card {
-        background: var(--bg-dark);
-        border: 1px solid var(--border);
+        background: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 8px;
         padding: 16px;
         text-align: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
     .stat-value {
@@ -356,7 +426,237 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+
+    /* Progress Bar for Fail Count */
+    .fail-count-progress {
+        width: 100%;
+        height: 6px;
+        background: var(--bg-dark);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 4px;
+    }
+
+    .fail-count-bar {
+        height: 100%;
+        background: var(--error);
+        transition: width 0.3s ease;
+        border-radius: 3px;
+    }
+
+    .fail-count-bar.warning {
+        background: var(--warning);
+    }
+
+    .fail-count-bar.danger {
+        background: var(--error);
+    }
+
+    /* Health Status Indicator */
+    .health-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+        animation: pulse 2s infinite;
+    }
+
+    .health-indicator.healthy {
+        background: var(--success);
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+    }
+
+    .health-indicator.unhealthy {
+        background: var(--error);
+        box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Priority Badge */
+    .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg-dark);
+        border: 2px solid var(--primary);
+        color: var(--primary);
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    /* Auto-refresh indicator */
+    .auto-refresh-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(30, 30, 30, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 11px;
+        color: var(--text-muted);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .refresh-spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+
+    /* Loading state for buttons */
+    .btn.loading {
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .btn.loading::after {
+        content: '';
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-left: 6px;
+    }
+
+    /* Improved Failover Mode Selector */
+    .failover-mode-selector {
+        background: rgba(30, 30, 30, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .failover-mode-selector label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .failover-mode-selector select {
+        padding: 8px 12px;
+        background: var(--bg-dark);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .failover-mode-selector select:hover {
+        border-color: var(--primary);
+    }
+
+    .failover-mode-selector select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(157, 78, 221, 0.1);
+    }
+
+    .failover-mode-info {
+        font-size: 12px;
+        color: var(--text-muted);
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .failover-mode-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-left: 8px;
+    }
+
+    .failover-mode-badge.auto {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--success);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .failover-mode-badge.manual {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--warning);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    // Auto-refresh every 30 seconds
+    let refreshInterval;
+    let timeUntilRefresh = 30;
+
+    function startAutoRefresh() {
+        const indicator = document.getElementById('auto-refresh-indicator');
+        if (!indicator) return;
+
+        refreshInterval = setInterval(() => {
+            timeUntilRefresh--;
+            indicator.textContent = `Auto-refresh in ${timeUntilRefresh}s`;
+            
+            if (timeUntilRefresh <= 0) {
+                clearInterval(refreshInterval);
+                window.location.reload();
+            }
+        }, 1000);
+    }
+
+
+    // Add loading state to buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.classList.add('loading');
+                }
+            });
+        });
+
+        // Start auto-refresh
+        startAutoRefresh();
+    });
+</script>
 @endsection
 
 @section('content')
@@ -366,6 +666,28 @@
         View backend servers status and manage Failover for site: <strong>{{ $site->name }}</strong> ({{ $site->server_name }})
     </p>
     <a href="{{ route('sites.index') }}" class="back-link">← Back to Sites List</a>
+    
+    {{-- Failover Mode Selector --}}
+    <div class="failover-mode-selector">
+        <form method="POST" action="{{ route('sites.backends.failover-mode', $site) }}" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1;">
+            @csrf
+            <label>Failover Mode:</label>
+            <select name="failover_mode" onchange="this.form.submit()">
+                <option value="auto" {{ $site->failover_mode === 'auto' ? 'selected' : '' }}>Automatic</option>
+                <option value="manual" {{ $site->failover_mode === 'manual' ? 'selected' : '' }}>Manual</option>
+            </select>
+            <span class="failover-mode-badge {{ $site->failover_mode }}">
+                {{ ucfirst($site->failover_mode) }}
+            </span>
+            <span class="failover-mode-info">
+                @if($site->failover_mode === 'auto')
+                    Failover will be performed automatically when a server fails 3 times consecutively.
+                @else
+                    Failover must be performed manually. Automatic failover is disabled.
+                @endif
+            </span>
+        </form>
+    </div>
     
     <div class="page-actions">
         <form method="POST" action="{{ route('sites.backends.check', $site) }}" style="display: inline;">
@@ -465,19 +787,24 @@
                 <div class="info-item">
                     <div class="info-label">Health</div>
                     <div class="info-value" style="color: {{ $server->is_healthy ? 'var(--success)' : 'var(--error)' }};">
+                        <span class="health-indicator {{ $server->is_healthy ? 'healthy' : 'unhealthy' }}"></span>
                         {{ $server->is_healthy ? 'Healthy' : 'Unhealthy' }}
                     </div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Priority</div>
                     <div class="info-value">
-                        {{ $server->priority }}
+                        <span class="priority-badge">{{ $server->priority }}</span>
                     </div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Fail Count</div>
                     <div class="info-value" style="color: {{ $server->fail_count > 0 ? 'var(--error)' : 'var(--text-primary)' }};">
-                        {{ $server->fail_count }}
+                        {{ $server->fail_count }} / 3
+                        <div class="fail-count-progress">
+                            <div class="fail-count-bar {{ $server->fail_count >= 3 ? 'danger' : ($server->fail_count >= 2 ? 'warning' : '') }}" 
+                                 style="width: {{ min(($server->fail_count / 3) * 100, 100) }}%"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="info-item">
@@ -529,6 +856,12 @@
         </div>
     @endforelse
     </div>
+</div>
+
+{{-- Auto-refresh Indicator --}}
+<div id="auto-refresh-indicator" class="auto-refresh-indicator">
+    <div class="refresh-spinner"></div>
+    <span>Auto-refresh in 30s</span>
 </div>
 @endsection
 
