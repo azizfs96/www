@@ -1007,7 +1007,9 @@
             $status = (int) $event->status;
             $rule = $event->rule_id;
             $desc = $rule ? ($ruleDescriptions[$rule] ?? null) : null;
-            $timeAgo = $event->event_time ? $event->event_time->diffForHumans() : '';
+            // Convert to Saudi Arabia timezone
+            $eventTime = $event->event_time ? $event->event_time->setTimezone('Asia/Riyadh') : null;
+            $timeAgo = $eventTime ? $eventTime->diffForHumans() : '';
         @endphp
         
         <div class="event-item" data-event-id="{{ $event->id ?? '' }}">
@@ -1072,7 +1074,7 @@
                 
                 <div class="event-time">
                     <div class="event-duration">{{ $timeAgo }}</div>
-                    <div class="event-timestamp">{{ $event->event_time ? $event->event_time->format('Y-m-d H:i:s') : '' }}</div>
+                    <div class="event-timestamp">{{ $eventTime ? $eventTime->format('Y-m-d H:i:s') : '' }}</div>
                 </div>
             </div>
             

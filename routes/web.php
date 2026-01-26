@@ -35,7 +35,16 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/waf', function () {
     $user = auth()->user();
     
-    $today = WafEvent::whereDate('event_time', today());
+    // Use whereBetween instead of whereDate for better index usage
+    // Use Saudi Arabia timezone for display, but convert to UTC for database query
+    $startOfDay = now('Asia/Riyadh')->startOfDay();
+    $endOfDay = now('Asia/Riyadh')->endOfDay();
+    
+    // Convert to UTC for database query (data is stored in UTC)
+    $startOfDayUTC = $startOfDay->copy()->setTimezone('UTC');
+    $endOfDayUTC = $endOfDay->copy()->setTimezone('UTC');
+    
+    $today = WafEvent::whereBetween('event_time', [$startOfDayUTC, $endOfDayUTC]);
     
     // Filter events by tenant if not super admin
     if (!$user->isSuperAdmin() && $user->tenant_id) {
@@ -44,38 +53,58 @@ Route::get('/waf', function () {
         $today->whereIn('site_id', $siteIds);
     }
 
-    // Get unique hosts for dropdown (filtered by tenant)
-    $hostsQuery = WafEvent::whereNotNull('host');
-    if (!$user->isSuperAdmin() && $user->tenant_id) {
-        $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
-        // Tenant users should only see hosts for their tenant's sites
-        $hostsQuery->whereIn('site_id', $siteIds);
-    }
-    $hosts = $hostsQuery->distinct()
-        ->orderBy('host')
-        ->pluck('host')
-        ->unique()
-        ->values();
+    // Get unique hosts for dropdown (filtered by tenant) - use caching
+    $cacheKey = 'waf_hosts_' . ($user->isSuperAdmin() ? 'all' : 'tenant_' . $user->tenant_id);
+    $hosts = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($user) {
+        $hostsQuery = WafEvent::whereNotNull('host');
+        if (!$user->isSuperAdmin() && $user->tenant_id) {
+            $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
+            // Tenant users should only see hosts for their tenant's sites
+            $hostsQuery->whereIn('site_id', $siteIds);
+        }
+        return $hostsQuery->distinct()
+            ->orderBy('host')
+            ->pluck('host')
+            ->unique()
+            ->values();
+    });
+
+    // Cache statistics for 60 seconds to reduce database load
+    $statsCacheKey = 'waf_stats_' . ($user->isSuperAdmin() ? 'all' : 'tenant_' . $user->tenant_id) . '_' . now('Asia/Riyadh')->format('Y-m-d');
+    $stats = \Illuminate\Support\Facades\Cache::remember($statsCacheKey, 60, function () use ($today) {
+        $baseQuery = clone $today;
+        return [
+            'total' => $baseQuery->count(),
+            'blocked' => (clone $baseQuery)->where('status', 403)->count(),
+        ];
+    });
+
+    // Get top IPs and rules (cached for 60 seconds)
+    $topDataCacheKey = 'waf_top_data_' . ($user->isSuperAdmin() ? 'all' : 'tenant_' . $user->tenant_id) . '_' . now('Asia/Riyadh')->format('Y-m-d');
+    $topData = \Illuminate\Support\Facades\Cache::remember($topDataCacheKey, 60, function () use ($today) {
+        $baseQuery = clone $today;
+        return [
+            'topIps' => (clone $baseQuery)
+                ->selectRaw('client_ip, COUNT(*) as cnt')
+                ->groupBy('client_ip')
+                ->orderByDesc('cnt')
+                ->limit(5)
+                ->get(),
+            'topRules' => (clone $baseQuery)
+                ->selectRaw('rule_id, COUNT(*) as cnt')
+                ->whereNotNull('rule_id')
+                ->groupBy('rule_id')
+                ->orderByDesc('cnt')
+                ->limit(5)
+                ->get(),
+        ];
+    });
 
     return view('waf.dashboard', [
-        'total'   => (clone $today)->count(),
-        'blocked' => (clone $today)->where('status', 403)->count(),
-
-        'topIps'  => (clone $today)
-            ->selectRaw('client_ip, COUNT(*) as cnt')
-            ->groupBy('client_ip')
-            ->orderByDesc('cnt')
-            ->limit(5)
-            ->get(),
-
-        'topRules' => (clone $today)
-            ->selectRaw('rule_id, COUNT(*) as cnt')
-            ->whereNotNull('rule_id')
-            ->groupBy('rule_id')
-            ->orderByDesc('cnt')
-            ->limit(5)
-            ->get(),
-
+        'total'   => $stats['total'],
+        'blocked' => $stats['blocked'],
+        'topIps'  => $topData['topIps'],
+        'topRules' => $topData['topRules'],
         'hosts' => $hosts,
     ]);
 });
@@ -86,7 +115,16 @@ Route::get('/waf/api/chart-data', function (Request $request) {
     $host = $request->get('host');
     $hours = (int) $request->get('hours', 24); // Default 24 hours
     
-    $query = WafEvent::where('event_time', '>=', now()->subHours($hours));
+    // Use database aggregations instead of fetching all events
+    // Query database in UTC (where data is stored), then convert to Saudi Arabia timezone for display
+    $startTime = now('Asia/Riyadh')->subHours($hours)->startOfHour();
+    $endTime = now('Asia/Riyadh')->endOfHour();
+    
+    // Convert to UTC for database query (data is stored in UTC)
+    $startTimeUTC = $startTime->copy()->setTimezone('UTC');
+    $endTimeUTC = $endTime->copy()->setTimezone('UTC');
+    
+    $query = WafEvent::whereBetween('event_time', [$startTimeUTC, $endTimeUTC]);
     
     // Filter by tenant if not super admin
     if (!$user->isSuperAdmin() && $user->tenant_id) {
@@ -99,12 +137,62 @@ Route::get('/waf/api/chart-data', function (Request $request) {
         $query->where('host', $host);
     }
     
-    // Get all events and group them
-    $events = $query->get();
+    // Use database aggregation for better performance
+    // Group by hour and calculate counts directly in database
+    $connection = \Illuminate\Support\Facades\DB::connection();
+    $driver = $connection->getDriverName();
     
-    // Create hourly buckets
+    // Convert event_time from UTC to Saudi Arabia timezone in database query
+    if ($driver === 'sqlite') {
+        // SQLite: Convert UTC to Asia/Riyadh (UTC+3)
+        // Note: SQLite doesn't have timezone functions, so we'll handle conversion in PHP
+        $hourlyStats = $query
+            ->selectRaw('
+                datetime(event_time, "+3 hours") as hour_utc,
+                strftime("%Y-%m-%d %H:00:00", datetime(event_time, "+3 hours")) as hour,
+                strftime("%H:%M", datetime(event_time, "+3 hours")) as label,
+                SUM(CASE WHEN status = 200 THEN 1 ELSE 0 END) as allowed,
+                SUM(CASE WHEN status = 403 THEN 1 ELSE 0 END) as blocked,
+                SUM(CASE WHEN status = 404 THEN 1 ELSE 0 END) as notFound
+            ')
+            ->groupBy('hour', 'label')
+            ->orderBy('hour')
+            ->get();
+    } else {
+        // MySQL/MariaDB: Convert UTC to Asia/Riyadh (UTC+3)
+        // Try CONVERT_TZ first, fallback to DATE_ADD if timezone tables not loaded
+        try {
+            $hourlyStats = $query
+                ->selectRaw('
+                    DATE_FORMAT(CONVERT_TZ(event_time, "+00:00", "+03:00"), "%Y-%m-%d %H:00:00") as hour,
+                    DATE_FORMAT(CONVERT_TZ(event_time, "+00:00", "+03:00"), "%H:%i") as label,
+                    SUM(CASE WHEN status = 200 THEN 1 ELSE 0 END) as allowed,
+                    SUM(CASE WHEN status = 403 THEN 1 ELSE 0 END) as blocked,
+                    SUM(CASE WHEN status = 404 THEN 1 ELSE 0 END) as notFound
+                ')
+                ->groupBy('hour', 'label')
+                ->orderBy('hour')
+                ->get();
+        } catch (\Exception $e) {
+            // Fallback: Use DATE_ADD if CONVERT_TZ fails (timezone tables not loaded)
+            $hourlyStats = $query
+                ->selectRaw('
+                    DATE_FORMAT(DATE_ADD(event_time, INTERVAL 3 HOUR), "%Y-%m-%d %H:00:00") as hour,
+                    DATE_FORMAT(DATE_ADD(event_time, INTERVAL 3 HOUR), "%H:%i") as label,
+                    SUM(CASE WHEN status = 200 THEN 1 ELSE 0 END) as allowed,
+                    SUM(CASE WHEN status = 403 THEN 1 ELSE 0 END) as blocked,
+                    SUM(CASE WHEN status = 404 THEN 1 ELSE 0 END) as notFound
+                ')
+                ->groupBy('hour', 'label')
+                ->orderBy('hour')
+                ->get();
+        }
+    }
+    
+    // Create all hour buckets to ensure we have data for all hours
+    // Use Saudi Arabia timezone for display
     $buckets = [];
-    $now = now();
+    $now = now('Asia/Riyadh');
     
     for ($i = $hours - 1; $i >= 0; $i--) {
         $hour = $now->copy()->subHours($i)->startOfHour();
@@ -117,18 +205,12 @@ Route::get('/waf/api/chart-data', function (Request $request) {
         ];
     }
     
-    // Group events by hour and status
-    foreach ($events as $event) {
-        $hourKey = $event->event_time->startOfHour()->format('Y-m-d H:00:00');
-        
-        if (isset($buckets[$hourKey])) {
-            if ($event->status == 200) {
-                $buckets[$hourKey]['allowed']++;
-            } elseif ($event->status == 403) {
-                $buckets[$hourKey]['blocked']++;
-            } elseif ($event->status == 404) {
-                $buckets[$hourKey]['notFound']++;
-            }
+    // Fill buckets with actual data from database
+    foreach ($hourlyStats as $stat) {
+        if (isset($buckets[$stat->hour])) {
+            $buckets[$stat->hour]['allowed'] = (int) $stat->allowed;
+            $buckets[$stat->hour]['blocked'] = (int) $stat->blocked;
+            $buckets[$stat->hour]['notFound'] = (int) $stat->notFound;
         }
     }
     
@@ -208,14 +290,16 @@ Route::get('/waf/events', function (Request $request) {
         $query->where('client_ip', 'like', '%'.$request->ip.'%');
     }
 
-    // فلتر بالتاريخ (من)
+    // فلتر بالتاريخ (من) - use whereBetween for better index usage
     if ($request->filled('date_from')) {
-        $query->whereDate('event_time', '>=', $request->date_from);
+        $dateFrom = \Carbon\Carbon::parse($request->date_from)->startOfDay();
+        $query->where('event_time', '>=', $dateFrom);
     }
 
-    // فلتر بالتاريخ (إلى)
+    // فلتر بالتاريخ (إلى) - use whereBetween for better index usage
     if ($request->filled('date_to')) {
-        $query->whereDate('event_time', '<=', $request->date_to);
+        $dateTo = \Carbon\Carbon::parse($request->date_to)->endOfDay();
+        $query->where('event_time', '<=', $dateTo);
     }
 
     // بحث نصي
@@ -279,9 +363,21 @@ Route::get('/waf/events', function (Request $request) {
         return response()->stream($callback, 200, $headers);
     }
 
-    // Pagination
+    // Pagination - select only needed columns for better performance
     $perPage = $request->get('per_page', 25);
-    $events = $query->paginate($perPage)->withQueryString();
+    $events = $query->select([
+        'id',
+        'event_time',
+        'client_ip',
+        'host',
+        'uri',
+        'method',
+        'status',
+        'rule_id',
+        'severity',
+        'message',
+        'site_id'
+    ])->paginate($perPage)->withQueryString();
     
     // إحصائيات سريعة (باستخدام base query للفلاتر فقط)
     $statsQuery = clone $baseQuery;
@@ -292,10 +388,12 @@ Route::get('/waf/events', function (Request $request) {
         $statsQuery->where('client_ip', 'like', '%'.$request->ip.'%');
     }
     if ($request->filled('date_from')) {
-        $statsQuery->whereDate('event_time', '>=', $request->date_from);
+        $dateFrom = \Carbon\Carbon::parse($request->date_from)->startOfDay();
+        $statsQuery->where('event_time', '>=', $dateFrom);
     }
     if ($request->filled('date_to')) {
-        $statsQuery->whereDate('event_time', '<=', $request->date_to);
+        $dateTo = \Carbon\Carbon::parse($request->date_to)->endOfDay();
+        $statsQuery->where('event_time', '<=', $dateTo);
     }
     if ($request->filled('search')) {
         $search = $request->search;

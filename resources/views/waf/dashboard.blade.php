@@ -739,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div>
             <h1 class="page-title">WAF Dashboard</h1>
             <div class="page-timestamp">
-                <span>Last Updated: {{ now()->format('Y-m-d H:i:s') }}</span>
+                <span>Last Updated: {{ now('Asia/Riyadh')->format('Y-m-d H:i:s') }} (Saudi Arabia Time)</span>
             </div>
         </div>
     </div>
