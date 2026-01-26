@@ -91,9 +91,15 @@ public function handle(): int
             continue;
         }
 
-        $eventTime = isset($tx['time_stamp'])
-            ? date('Y-m-d H:i:s', strtotime($tx['time_stamp']))
-            : now();
+        // Parse event time and ensure it's stored as UTC in database
+        if (isset($tx['time_stamp'])) {
+            // Parse the timestamp (ModSecurity logs are usually in UTC)
+            $eventTime = \Carbon\Carbon::parse($tx['time_stamp'], 'UTC');
+            // Ensure it's stored as UTC (Laravel will convert to app timezone on read)
+            $eventTime = $eventTime->setTimezone('UTC');
+        } else {
+            $eventTime = now('UTC');
+        }
 
         $clientIp = $tx['client_ip'] ?? null;
         $host = $req['headers']['Host'] ?? null;

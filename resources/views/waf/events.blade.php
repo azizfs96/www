@@ -1007,8 +1007,8 @@
             $status = (int) $event->status;
             $rule = $event->rule_id;
             $desc = $rule ? ($ruleDescriptions[$rule] ?? null) : null;
-            // Convert to Saudi Arabia timezone
-            $eventTime = $event->event_time ? $event->event_time->setTimezone('Asia/Riyadh') : null;
+            // Use accessor to get event_time in Saudi Arabia timezone
+            $eventTime = $event->event_time_saudi;
             $timeAgo = $eventTime ? $eventTime->diffForHumans() : '';
         @endphp
         
