@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="ar" dir="rtl">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>WAF Gate - Advanced Web Application Firewall</title>
+    <title>WAF Gate - جدار الحماية المتقدم لتطبيقات الويب</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
         
         :root {
             --bg-primary: #0a0a0a;
@@ -32,7 +33,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Cairo', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
@@ -59,7 +60,7 @@
             height: 500px;
             background: radial-gradient(circle, rgba(134, 76, 203, 0.15) 0%, transparent 70%);
             top: -250px;
-            left: -250px;
+            right: -250px;
             animation: float 20s ease-in-out infinite;
         }
 
@@ -70,14 +71,14 @@
             height: 600px;
             background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
             bottom: -300px;
-            right: -300px;
+            left: -300px;
             animation: float 25s ease-in-out infinite reverse;
         }
 
         @keyframes float {
             0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(120deg); }
-            66% { transform: translate(-20px, 20px) rotate(240deg); }
+            33% { transform: translate(-30px, -30px) rotate(120deg); }
+            66% { transform: translate(20px, 20px) rotate(240deg); }
         }
 
         /* Header */
@@ -158,8 +159,8 @@
             content: '';
             position: absolute;
             bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 50%;
+            transform: translateX(50%);
             width: 0;
             height: 2px;
             background: var(--primary-gradient);
@@ -201,11 +202,11 @@
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
+            right: -100%;
             width: 100%;
             height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
+            transition: right 0.5s ease;
         }
 
         .btn-primary:hover {
@@ -215,7 +216,7 @@
         }
 
         .btn-primary:hover::before {
-            left: 100%;
+            right: 100%;
         }
 
         .btn-outline {
@@ -235,7 +236,7 @@
             display: flex;
             gap: 0.5rem;
             align-items: center;
-            margin-right: 1rem;
+            margin-left: 1rem;
         }
 
         .language-switcher button {
@@ -266,6 +267,7 @@
         .header-cta {
             display: flex;
             align-items: center;
+            gap: 1rem;
         }
 
         .mobile-menu-toggle {
@@ -289,8 +291,8 @@
             display: none;
             position: absolute;
             top: 100%;
-            left: 0;
             right: 0;
+            left: 0;
             background: rgba(10, 10, 10, 0.98);
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
@@ -311,6 +313,7 @@
             color: var(--text-primary) !important;
             text-decoration: none;
             transition: all 0.3s ease;
+            text-align: right;
         }
 
         .mobile-menu a:hover {
@@ -320,6 +323,8 @@
 
         .mobile-menu .btn {
             color: var(--text-primary) !important;
+            width: 100%;
+            text-align: center;
         }
 
         .mobile-menu .language-switcher {
@@ -370,14 +375,14 @@
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
+            right: -100%;
             width: 100%;
             height: 100%;
             background: linear-gradient(90deg, 
                         transparent, 
                         rgba(255, 255, 255, 0.1), 
                         transparent);
-            transition: left 0.6s ease;
+            transition: right 0.6s ease;
         }
 
         .hero-badge:hover {
@@ -391,7 +396,7 @@
         }
 
         .hero-badge:hover::before {
-            left: 100%;
+            right: 100%;
         }
 
         .hero-badge span:first-child {
@@ -484,58 +489,6 @@
             font-weight: 600;
         }
 
-        .hero-description-features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.25rem;
-            margin: 3rem auto 0;
-            max-width: 800px;
-            animation: fadeInUp 1.4s ease;
-            animation-fill-mode: both;
-        }
-
-        .hero-feature-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            padding: 1rem;
-            background: rgba(134, 76, 203, 0.05);
-            border: 1px solid rgba(134, 76, 203, 0.1);
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .hero-feature-item:hover {
-            background: rgba(134, 76, 203, 0.1);
-            border-color: rgba(134, 76, 203, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .hero-feature-icon {
-            font-size: 1.5rem;
-            flex-shrink: 0;
-            margin-top: 0.125rem;
-        }
-
-        .hero-feature-text {
-            flex: 1;
-        }
-
-        .hero-feature-text strong {
-            display: block;
-            color: var(--text-primary);
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .hero-feature-text span {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            line-height: 1.5;
-        }
-
-
         .hero-buttons {
             display: flex;
             gap: 1rem;
@@ -544,7 +497,6 @@
             animation: fadeInUp 1.2s ease;
             animation-fill-mode: both;
         }
-
 
         @keyframes fadeInUp {
             from {
@@ -557,7 +509,7 @@
             }
         }
 
-        /* Features Section - New Design */
+        /* Features Section */
         .features {
             position: relative;
             padding: 120px 2rem;
@@ -569,18 +521,6 @@
         .section-header {
             text-align: center;
             margin-bottom: 5rem;
-        }
-
-        .section-badge {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 50px;
-            color: var(--accent-blue);
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 1rem;
         }
 
         .section-title {
@@ -678,77 +618,9 @@
             transform: scale(1.02);
         }
 
-        .feature-image-placeholder {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, 
-                rgba(134, 76, 203, 0.15) 0%, 
-                rgba(59, 130, 246, 0.15) 50%,
-                rgba(134, 76, 203, 0.1) 100%);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-image-placeholder::before {
-            content: '';
-            position: absolute;
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, rgba(134, 76, 203, 0.3) 0%, transparent 70%);
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation: pulse 3s ease-in-out infinite;
-        }
-
-        .feature-image-placeholder::after {
-            content: '';
-            position: absolute;
-            width: 150px;
-            height: 150px;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
-            border-radius: 50%;
-            top: 30%;
-            right: 20%;
-            animation: pulse 2s ease-in-out infinite reverse;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 0.5;
-                transform: translate(-50%, -50%) scale(1);
-            }
-            50% {
-                opacity: 0.8;
-                transform: translate(-50%, -50%) scale(1.2);
-            }
-        }
-
-        .feature-icon-large {
-            font-size: 5rem;
-            position: relative;
-            z-index: 1;
-            filter: drop-shadow(0 4px 12px rgba(134, 76, 203, 0.3));
-        }
-
         .feature-content {
             padding: 2rem 0;
-        }
-
-        .feature-number {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            background: rgba(134, 76, 203, 0.1);
-            border: 1px solid rgba(134, 76, 203, 0.2);
-            border-radius: 50px;
-            color: var(--primary);
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
+            text-align: right;
         }
 
         .feature-content h3 {
@@ -851,7 +723,7 @@
         .contact-form {
             display: none;
             margin-top: 2rem;
-            text-align: left;
+            text-align: right;
             animation: fadeInUp 0.5s ease;
         }
 
@@ -1048,6 +920,10 @@
                 order: 2 !important;
             }
 
+            .feature-content {
+                text-align: center;
+            }
+
             .feature-image {
                 aspect-ratio: 16 / 9 !important;
                 border-radius: 20px;
@@ -1062,11 +938,6 @@
 
             .feature-image img {
                 border-radius: 20px;
-            }
-
-            .feature-content {
-                text-align: center;
-                padding: 0;
             }
 
             .feature-content h3 {
@@ -1127,11 +998,6 @@
                 padding: 0.75rem 1rem;
             }
 
-            .nav-links {
-                gap: 0.75rem;
-                font-size: 12px;
-            }
-
             .logo img {
                 height: 36px;
             }
@@ -1162,7 +1028,7 @@
         html {
             scroll-behavior: smooth;
         }
-            </style>
+    </style>
     </head>
 <body>
     <div class="bg-animation"></div>
@@ -1174,35 +1040,35 @@
                 <img src="{{ asset('images/Logo.png') }}" alt="WAF Gate">
             </div>
             <nav class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#stats">Statistics</a>
-                <a href="mailto:contact@wafgate.com">Contact</a>
+                <a href="#features">المميزات</a>
+                <a href="#stats">الإحصائيات</a>
+                <a href="mailto:contact@wafgate.com">اتصل بنا</a>
             </nav>
             <div class="header-cta">
                 <div class="language-switcher">
-                    <button id="langEn" class="active">EN</button>
-                    <button id="langAr">AR</button>
+                    <button id="langAr" class="active">AR</button>
+                    <button id="langEn">EN</button>
                 </div>
                 @auth
-                    <a href="{{ url('/waf') }}" class="btn btn-outline">Dashboard</a>
+                    <a href="{{ url('/waf') }}" class="btn btn-outline">لوحة التحكم</a>
                 @else
-                    <a href="#" class="btn btn-outline" id="showFormBtnHeader">Get Started</a>
+                    <a href="#" class="btn btn-outline" id="showFormBtnHeader">ابدأ الآن</a>
                 @endauth
             </div>
             <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
         </div>
         <div class="mobile-menu" id="mobileMenu">
             <div class="language-switcher">
-                <button id="langEnMobile" class="active">EN</button>
-                <button id="langArMobile">AR</button>
+                <button id="langArMobile" class="active">AR</button>
+                <button id="langEnMobile">EN</button>
             </div>
-            <a href="#features">Features</a>
-            <a href="#stats">Statistics</a>
-            <a href="mailto:contact@wafgate.com">Contact</a>
+            <a href="#features">المميزات</a>
+            <a href="#stats">الإحصائيات</a>
+            <a href="mailto:contact@wafgate.com">اتصل بنا</a>
             @auth
-                <a href="{{ url('/waf') }}" class="btn btn-outline" style="width: 100%; text-align: center;">Dashboard</a>
+                <a href="{{ url('/waf') }}" class="btn btn-outline" style="width: 100%; text-align: center;">لوحة التحكم</a>
             @else
-                <a href="#" class="btn btn-outline" id="showFormBtnMobile" style="width: 100%; text-align: center;">Get Started</a>
+                <a href="#" class="btn btn-outline" id="showFormBtnMobile" style="width: 100%; text-align: center;">ابدأ الآن</a>
             @endauth
         </div>
     </header>
@@ -1211,23 +1077,23 @@
     <section class="hero">
         <div class="hero-badge">
             <span>🇸🇦</span>
-            <span>Saudi Company Specialized in WAF</span>
+            <span>شركة سعودية متخصصة في WAF</span>
         </div>
         <h1>
-            Protect Your Web Applications<br>
-            with <span class="gradient-text">Advanced WAF</span>
+            احمِ تطبيقاتك على الويب<br>
+            باستخدام <span class="gradient-text">WAF المتقدم</span>
         </h1>
         <div class="hero-description">
             <p class="hero-description-intro">
-                A <span class="highlight">Saudi company</span> delivering <span class="highlight">Web Application Firewall (WAF)</span> solutions. 
-                Keep your applications safe from attacks with enterprise-grade protection.
+                شركة <span class="highlight">سعودية</span> تقدم حلول <span class="highlight">جدار الحماية لتطبيقات الويب (WAF)</span>. 
+                حافظ على تطبيقاتك آمنة من الهجمات مع حماية على مستوى المؤسسات.
             </p>
         </div>
         <div class="hero-buttons">
             @auth
-                <a href="{{ url('/waf') }}" class="btn btn-primary">Access Dashboard</a>
+                <a href="{{ url('/waf') }}" class="btn btn-primary">الوصول إلى لوحة التحكم</a>
             @else
-                <a href="#" class="btn btn-primary" id="showFormBtnHero">Get Consultation</a>
+                <a href="#" class="btn btn-primary" id="showFormBtnHero">احصل على استشارة</a>
             @endauth
         </div>
     </section>
@@ -1235,53 +1101,53 @@
     <!-- Features Section -->
     <section id="features" class="features">
         <div class="section-header">
-            <h2 class="section-title">Everything You Need to Stay Secure</h2>
+            <h2 class="section-title">كل ما تحتاجه للبقاء آمناً</h2>
             <p class="section-subtitle">
-                Comprehensive security features designed to protect your web applications from all types of threats
+                مميزات أمنية شاملة مصممة لحماية تطبيقات الويب الخاصة بك من جميع أنواع التهديدات
             </p>
         </div>
         
-        <!-- Feature 1: Image Left, Content Right -->
+        <!-- Feature 1: Image Right, Content Left -->
         <div class="feature-item feature-1">
             <div class="feature-image">
-                <img src="{{ asset('images/pictone.png') }}" alt="Real-Time Attack Protection">
+                <img src="{{ asset('images/pictone.png') }}" alt="حماية فورية من الهجمات">
             </div>
             <div class="feature-content">
-                <h3>Real-Time Attack Protection</h3>
-                <p>WAF Gate blocks common attacks such as SQL Injection, XSS, and Brute Force attempts in real time before they reach your application.</p>
+                <h3>حماية فورية من الهجمات</h3>
+                <p>WAF Gate يحجب الهجمات الشائعة مثل حقن SQL وXSS ومحاولات القوة الغاشمة في الوقت الفعلي قبل وصولها إلى تطبيقك.</p>
             </div>
         </div>
 
-        <!-- Feature 2: Image Right, Content Left -->
+        <!-- Feature 2: Image Left, Content Right -->
         <div class="feature-item feature-2">
             <div class="feature-image">
-                <img src="{{ asset('images/picttwo.png') }}" alt="Smart Country & IP Blocking">
+                <img src="{{ asset('images/picttwo.png') }}" alt="حظر ذكي حسب الدولة وعنوان IP">
             </div>
             <div class="feature-content">
-                <h3>Smart Country & IP Blocking</h3>
-                <p>Full control to allow or block traffic based on country or IP address, reducing unnecessary security risks.</p>
+                <h3>حظر ذكي حسب الدولة وعنوان IP</h3>
+                <p>تحكم كامل للسماح أو حظر حركة المرور بناءً على الدولة أو عنوان IP، مما يقلل من المخاطر الأمنية غير الضرورية.</p>
             </div>
         </div>
 
-        <!-- Feature 3: Image Left, Content Right -->
+        <!-- Feature 3: Image Right, Content Left -->
         <div class="feature-item feature-3">
             <div class="feature-image">
-                <img src="{{ asset('images/picthree.png') }}" alt="Threat Monitoring & Analysis">
+                <img src="{{ asset('images/picthree.png') }}" alt="مراقبة وتحليل التهديدات">
             </div>
             <div class="feature-content">
-                <h3>Threat Monitoring & Analysis</h3>
-                <p>A clear dashboard that displays all suspicious activities with simple explanations for each security event.</p>
+                <h3>مراقبة وتحليل التهديدات</h3>
+                <p>لوحة تحكم واضحة تعرض جميع الأنشطة المشبوهة مع تفسيرات بسيطة لكل حدث أمني.</p>
             </div>
         </div>
 
-        <!-- Feature 4: Image Right, Content Left -->
+        <!-- Feature 4: Image Left, Content Right -->
         <div class="feature-item feature-4">
             <div class="feature-image">
-                <img src="{{ asset('images/picfour.png') }}" alt="Easy Setup, No Complexity">
+                <img src="{{ asset('images/picfour.png') }}" alt="إعداد سهل بدون تعقيد">
             </div>
             <div class="feature-content">
-                <h3>Easy Setup, No Complexity</h3>
-                <p>Quick deployment with no major infrastructure changes, ideal for small and medium-sized websites.</p>
+                <h3>إعداد سهل بدون تعقيد</h3>
+                <p>نشر سريع بدون تغييرات كبيرة في البنية التحتية، مثالي للمواقع الصغيرة والمتوسطة.</p>
             </div>
         </div>
     </section>
@@ -1291,86 +1157,86 @@
         <div class="stats-content">
             <div class="stat-item">
                 <h3>99.9%</h3>
-                <p>Uptime Guarantee</p>
+                <p>ضمان وقت التشغيل</p>
             </div>
             <div class="stat-item">
                 <h3>24/7</h3>
-                <p>Real-time Monitoring</p>
+                <p>مراقبة فورية</p>
             </div>
             <div class="stat-item">
                 <h3>1000+</h3>
-                <p>Security Rules</p>
+                <p>قواعد أمنية</p>
             </div>
             <div class="stat-item">
-                <h3>Global</h3>
-                <p>GeoIP Coverage</p>
+                <h3>عالمي</h3>
+                <p>تغطية GeoIP</p>
             </div>
-                </div>
+        </div>
     </section>
 
     <!-- CTA Section -->
     <section class="cta">
         <div class="cta-card">
-            <h2>Ready to Secure Your Applications?</h2>
-            <p>Start protecting your web applications today with WAF Gate's comprehensive security solution. Get started in minutes.</p>
+            <h2>هل أنت مستعد لتأمين تطبيقاتك؟</h2>
+            <p>ابدأ في حماية تطبيقات الويب الخاصة بك اليوم مع حل الأمان الشامل من WAF Gate. ابدأ في دقائق.</p>
             <div id="ctaButtons">
                 @auth
-                    <a href="{{ url('/waf') }}" class="btn btn-primary">Access Dashboard</a>
+                    <a href="{{ url('/waf') }}" class="btn btn-primary">الوصول إلى لوحة التحكم</a>
                 @else
-                    <a href="{{ route('login') }}" class="btn btn-primary" id="showFormBtn">Get Started Now</a>
+                    <a href="#" class="btn btn-primary" id="showFormBtn">ابدأ الآن</a>
                 @endauth
             </div>
             
             <!-- Contact Form -->
             <form class="contact-form" id="contactForm">
                 <div class="form-group">
-                    <label for="name">Full Name *</label>
-                    <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+                    <label for="name">الاسم الكامل *</label>
+                    <input type="text" id="name" name="name" placeholder="أدخل اسمك الكامل" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" placeholder="your.email@example.com" required>
+                    <label for="email">عنوان البريد الإلكتروني *</label>
+                    <input type="email" id="email" name="email" placeholder="بريدك.الإلكتروني@example.com" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="phone">Phone Number</label>
+                    <label for="phone">رقم الهاتف</label>
                     <input type="tel" id="phone" name="phone" placeholder="+966 50 123 4567">
                 </div>
                 
                 <div class="form-group">
-                    <label for="message">Message</label>
-                    <textarea id="message" name="message" placeholder="Tell us about your requirements..."></textarea>
+                    <label for="message">الرسالة</label>
+                    <textarea id="message" name="message" placeholder="أخبرنا عن متطلباتك..."></textarea>
                 </div>
                 
-                <button type="submit" class="form-submit-btn">Submit Request</button>
-                <button type="button" class="form-close-btn" id="closeFormBtn">Cancel</button>
+                <button type="submit" class="form-submit-btn">إرسال الطلب</button>
+                <button type="button" class="form-close-btn" id="closeFormBtn">إلغاء</button>
             </form>
         </div>
     </section>
 
     <!-- Footer -->
     <footer class="footer">
-        <p><strong>WAF Gate</strong> - A Saudi company delivering Web Application Firewall (WAF) solutions</p>
-        <p style="margin-top: 0.5rem; opacity: 0.7;">&copy; {{ date('Y') }} WAF Gate. All rights reserved.</p>
+        <p><strong>WAF Gate</strong> - شركة سعودية تقدم حلول جدار الحماية لتطبيقات الويب (WAF)</p>
+        <p style="margin-top: 0.5rem; opacity: 0.7;">&copy; {{ date('Y') }} WAF Gate. جميع الحقوق محفوظة.</p>
     </footer>
 
     <script>
         // Language Switcher
-        const langEn = document.getElementById('langEn');
         const langAr = document.getElementById('langAr');
-        const langEnMobile = document.getElementById('langEnMobile');
+        const langEn = document.getElementById('langEn');
         const langArMobile = document.getElementById('langArMobile');
+        const langEnMobile = document.getElementById('langEnMobile');
 
-        function switchToArabic() {
-            window.location.href = '/ar';
+        function switchToEnglish() {
+            window.location.href = '/';
         }
 
-        if (langAr) {
-            langAr.addEventListener('click', switchToArabic);
+        if (langEn) {
+            langEn.addEventListener('click', switchToEnglish);
         }
-        if (langArMobile) {
-            langArMobile.addEventListener('click', switchToArabic);
+        if (langEnMobile) {
+            langEnMobile.addEventListener('click', switchToEnglish);
         }
 
         // Header scroll effect
@@ -1484,7 +1350,7 @@
                 };
                 
                 // For now, just show an alert (will be implemented later)
-                alert('Thank you for your interest! We will contact you soon at ' + formData.email);
+                alert('شكراً لاهتمامك! سنتواصل معك قريباً على ' + formData.email);
                 
                 // Reset form
                 contactForm.reset();
