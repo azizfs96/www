@@ -158,8 +158,14 @@ class SiteController extends Controller
 
         // حفظ السيرفرات الخلفية
         if ($hasBackendServers) {
+            \Log::info("Creating backend servers for site", [
+                'site_id' => $site->id,
+                'servers_count' => count($request->input('backend_servers')),
+                'servers_data' => $request->input('backend_servers'),
+            ]);
+            
             foreach ($request->input('backend_servers') as $serverData) {
-                $site->backendServers()->create([
+                $backendServer = $site->backendServers()->create([
                     'ip' => $serverData['ip'],
                     'port' => $serverData['port'],
                     'status' => $serverData['status'],
@@ -167,16 +173,35 @@ class SiteController extends Controller
                     'health_check_enabled' => true,
                     'is_healthy' => true,
                 ]);
+                
+                \Log::info("Backend server created", [
+                    'server_id' => $backendServer->id,
+                    'site_id' => $site->id,
+                    'ip' => $backendServer->ip,
+                    'port' => $backendServer->port,
+                    'status' => $backendServer->status,
+                ]);
             }
         } else {
             // النظام القديم - إنشاء سيرفر واحد افتراضي
-            $site->backendServers()->create([
+            \Log::info("Creating single backend server (old method)", [
+                'site_id' => $site->id,
+                'backend_ip' => $data['backend_ip'],
+                'backend_port' => $data['backend_port'],
+            ]);
+            
+            $backendServer = $site->backendServers()->create([
                 'ip' => $data['backend_ip'],
                 'port' => $data['backend_port'],
                 'status' => 'active',
                 'priority' => 1,
                 'health_check_enabled' => true,
                 'is_healthy' => true,
+            ]);
+            
+            \Log::info("Default backend server created", [
+                'server_id' => $backendServer->id,
+                'site_id' => $site->id,
             ]);
         }
         
@@ -660,10 +685,12 @@ class SiteController extends Controller
         
         if ($backendServers->isEmpty()) {
             // إذا لم تكن هناك سيرفرات خلفية، نستخدم القيم القديمة
-            \Log::warning("No backend servers found, using old backend_ip/backend_port", [
+            \Log::warning("No backend servers found in database, using old backend_ip/backend_port", [
                 'site_id' => $site->id,
+                'site_name' => $site->server_name,
                 'backend_ip' => $site->backend_ip,
                 'backend_port' => $site->backend_port,
+                'query_result' => BackendServer::where('site_id', $site->id)->count(),
             ]);
             $content .= "    server {$site->backend_ip}:{$site->backend_port};\n";
         } else {
