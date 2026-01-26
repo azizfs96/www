@@ -286,9 +286,35 @@ class SiteController extends Controller
         $serverName = $site->server_name;
         
         // حذف ملف Nginx
-        $configFile = "/etc/nginx/sites-enabled/{$serverName}.waf.conf";
-        if (file_exists($configFile)) {
-            @unlink($configFile);
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        
+        if (!$isWindows) {
+            $configFile = "/etc/nginx/sites-enabled/{$serverName}.waf.conf";
+            
+            // التحقق من المستخدم الحالي
+            $currentUser = posix_getpwuid(posix_geteuid());
+            $isRoot = ($currentUser['name'] === 'root' || posix_geteuid() === 0);
+            
+            if (file_exists($configFile)) {
+                if ($isRoot) {
+                    // إذا كان root، احذف مباشرة
+                    @unlink($configFile);
+                } else {
+                    // إذا لم يكن root، استخدم sudo rm
+                    shell_exec("sudo rm -f {$configFile} 2>&1");
+                }
+                
+                \Log::info("Deleted Nginx config file", [
+                    'config_file' => $configFile,
+                    'site_id' => $site->id,
+                    'file_exists_after_delete' => file_exists($configFile),
+                ]);
+            }
+        } else {
+            $configFile = storage_path("app/nginx/{$serverName}.waf.conf");
+            if (file_exists($configFile)) {
+                @unlink($configFile);
+            }
         }
 
         // حذف شهادات SSL إذا كانت موجودة
@@ -592,6 +618,13 @@ class SiteController extends Controller
                     @unlink($tempFile);
                     
                     $writeResult = file_exists($configFile) && filesize($configFile) > 0;
+                    
+                    \Log::info("File write result after sudo tee/cp", [
+                        'config_file' => $configFile,
+                        'file_exists' => file_exists($configFile),
+                        'file_size' => file_exists($configFile) ? filesize($configFile) : 0,
+                        'write_result' => $writeResult,
+                    ]);
                 } else {
                     $writeResult = false;
                     \Log::error("Failed to write temp file for Nginx config", [
@@ -609,6 +642,34 @@ class SiteController extends Controller
         $fileExists = file_exists($configFile);
         $fileContent = $fileExists ? @file_get_contents($configFile) : null;
         $fileSize = $fileExists ? filesize($configFile) : 0;
+        
+        // إذا فشلت الكتابة، حاول مرة أخرى باستخدام طريقة بديلة
+        if (!$fileExists && !$isWindows) {
+            \Log::warning("File was not created, trying alternative method", [
+                'config_file' => $configFile,
+                'site_id' => $site->id,
+            ]);
+            
+            // محاولة كتابة مباشرة في /tmp ثم نسخها
+            $tempFile = '/tmp/' . uniqid('nginx_') . '_' . basename($configFile);
+            if (@file_put_contents($tempFile, $content)) {
+                // استخدام sudo cp مباشرة
+                $copyResult = shell_exec("sudo cp {$tempFile} {$configFile} 2>&1");
+                shell_exec("sudo chmod 644 {$configFile} 2>&1");
+                shell_exec("sudo chown root:root {$configFile} 2>&1");
+                @unlink($tempFile);
+                
+                $fileExists = file_exists($configFile);
+                $fileSize = $fileExists ? filesize($configFile) : 0;
+                
+                \Log::info("Alternative write method result", [
+                    'config_file' => $configFile,
+                    'copy_result' => $copyResult,
+                    'file_exists' => $fileExists,
+                    'file_size' => $fileSize,
+                ]);
+            }
+        }
         
         // استخراج محتوى upstream من الملف للتحقق
         $upstreamInFile = null;
