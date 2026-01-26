@@ -514,7 +514,71 @@ class SiteController extends Controller
         $content = $this->buildNginxConfigContent($site);
 
         // كتابة الملف
-        $writeResult = @file_put_contents($configFile, $content);
+        if (!$isWindows) {
+            // التحقق من المستخدم الحالي
+            $currentUser = posix_getpwuid(posix_geteuid());
+            $isRoot = ($currentUser['name'] === 'root' || posix_geteuid() === 0);
+            
+            \Log::info("Writing Nginx config file", [
+                'config_file' => $configFile,
+                'site_id' => $site->id,
+                'current_user' => $currentUser['name'] ?? 'unknown',
+                'is_root' => $isRoot,
+            ]);
+            
+            // إذا كان المستخدم root، اكتب مباشرة
+            if ($isRoot) {
+                $writeResult = @file_put_contents($configFile, $content);
+                
+                if ($writeResult !== false && file_exists($configFile)) {
+                    // تعيين الصلاحيات الصحيحة
+                    @chmod($configFile, 0644);
+                    @chown($configFile, 'root');
+                }
+            } else {
+                // إذا لم يكن root، استخدم sudo tee
+                // كتابة المحتوى في ملف مؤقت أولاً
+                $tempFile = sys_get_temp_dir() . '/' . uniqid('nginx_') . '_' . basename($configFile);
+                $tempWriteResult = @file_put_contents($tempFile, $content);
+                
+                if ($tempWriteResult !== false) {
+                    // استخدام sudo tee للكتابة في الملف النهائي
+                    $teeCommand = "sudo tee {$configFile} < {$tempFile} > /dev/null 2>&1";
+                    $teeResult = shell_exec($teeCommand);
+                    
+                    // إذا فشل tee، جرب cp كبديل
+                    if (!file_exists($configFile) || filesize($configFile) === 0) {
+                        $cpCommand = "sudo cp {$tempFile} {$configFile} 2>&1";
+                        $cpResult = shell_exec($cpCommand);
+                        
+                        \Log::info("Tried sudo cp as fallback after tee", [
+                            'cp_result' => $cpResult,
+                            'file_exists_after_cp' => file_exists($configFile),
+                        ]);
+                    }
+                    
+                    // تعيين الصلاحيات الصحيحة
+                    if (file_exists($configFile)) {
+                        shell_exec("sudo chmod 644 {$configFile} 2>&1");
+                        shell_exec("sudo chown root:root {$configFile} 2>&1");
+                    }
+                    
+                    // حذف الملف المؤقت
+                    @unlink($tempFile);
+                    
+                    $writeResult = file_exists($configFile) && filesize($configFile) > 0;
+                } else {
+                    $writeResult = false;
+                    \Log::error("Failed to write temp file for Nginx config", [
+                        'temp_file' => $tempFile,
+                        'site_id' => $site->id,
+                    ]);
+                }
+            }
+        } else {
+            // على Windows، كتابة مباشرة
+            $writeResult = @file_put_contents($configFile, $content);
+        }
         
         // التحقق من أن الملف تم كتابته بنجاح
         $fileExists = file_exists($configFile);
@@ -538,37 +602,12 @@ class SiteController extends Controller
             'site_name' => $site->server_name,
             'config_file' => $configFile,
             'write_result' => $writeResult !== false,
-            'bytes_written' => $writeResult,
+            'bytes_written' => $writeResult !== false ? $writeResult : 0,
             'file_exists' => $fileExists,
             'file_size' => $fileSize,
             'upstream_in_file' => $upstreamInFile,
             'is_windows' => $isWindows,
         ]);
-        
-        // إذا فشلت الكتابة، محاولة كتابة مع sudo (فقط على Linux)
-        if ($writeResult === false && !$isWindows) {
-            \Log::warning("Failed to write Nginx config file, trying with sudo", [
-                'config_file' => $configFile,
-                'site_id' => $site->id,
-            ]);
-            
-            // محاولة كتابة الملف باستخدام sudo
-            $tempFile = sys_get_temp_dir() . '/' . basename($configFile);
-            @file_put_contents($tempFile, $content);
-            @exec("sudo cp {$tempFile} {$configFile} 2>&1");
-            @exec("sudo chmod 644 {$configFile} 2>&1");
-            @unlink($tempFile);
-            
-            // التحقق مرة أخرى
-            $fileExists = file_exists($configFile);
-            $fileContent = $fileExists ? @file_get_contents($configFile) : null;
-            
-            \Log::info("Nginx config file write retry result", [
-                'config_file' => $configFile,
-                'file_exists' => $fileExists,
-                'file_size' => $fileExists ? filesize($configFile) : 0,
-            ]);
-        }
 
         // إعادة تحميل Nginx (فقط على Linux)
         if (!$isWindows) {
