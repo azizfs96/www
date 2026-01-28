@@ -1118,39 +1118,6 @@ function showCountryTooltip(element, event) {
     }
 }
 
-// Live refresh for events list
-async function refreshEventsLive() {
-    try {
-        const container = document.getElementById('events-list');
-        if (!container) return;
-
-        // نستخدم نفس الفلاتر الحالية في رابط الصفحة
-        const params = new URLSearchParams(window.location.search);
-        const url = new URL('{{ route('waf.events.live') }}', window.location.origin);
-        url.search = params.toString();
-
-        const response = await fetch(url.toString(), {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        });
-
-        if (!response.ok) return;
-
-        const data = await response.json();
-        if (data.html) {
-            container.innerHTML = data.html;
-        }
-    } catch (e) {
-        console.error('Failed to refresh events live', e);
-    }
-}
-
-// تشغيل التحديث اللايف كل 5 ثواني
-document.addEventListener('DOMContentLoaded', function () {
-    setInterval(refreshEventsLive, 5000);
-});
-
 // Toggle event details
 function toggleEventDetails(element) {
     const eventItem = element.closest('.event-item');
@@ -1247,14 +1214,6 @@ document.addEventListener('click', function(event) {
     if (event.target === modal) {
         closeAiModal();
     }
-});
-
-// Simple live auto-refresh for events page (every 15 seconds)
-document.addEventListener('DOMContentLoaded', function () {
-    setInterval(function () {
-        // يحافظ على الفلاتر الحالية لأننا نعيد تحميل نفس الرابط
-        window.location.reload();
-    }, 15000); // 15000ms = 15 seconds
 });
 
 </script>

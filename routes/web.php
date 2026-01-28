@@ -488,6 +488,71 @@ Route::get('/waf/events', function (Request $request) {
     ]);
 });
 
+// Live events partial (for AJAX auto-refresh)
+Route::get('/waf/events/live', function (Request $request) {
+    $query = WafEvent::query()->orderByDesc('event_time');
+
+    // نفس الفلاتر الأساسية كما في صفحة الأحداث
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+    if ($request->filled('ip')) {
+        $query->where('client_ip', 'like', '%'.$request->ip.'%');
+    }
+    if ($request->filled('date_from')) {
+        $query->whereDate('event_time', '>=', $request->date_from);
+    }
+    if ($request->filled('date_to')) {
+        $query->whereDate('event_time', '<=', $request->date_to);
+    }
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('client_ip', 'like', '%'.$search.'%')
+              ->orWhere('host', 'like', '%'.$search.'%')
+              ->orWhere('uri', 'like', '%'.$search.'%')
+              ->orWhere('message', 'like', '%'.$search.'%')
+              ->orWhere('rule_id', 'like', '%'.$search.'%');
+        });
+    }
+
+    // نفس الأعمدة المستخدمة في الواجهة
+    $events = $query->select([
+        'id',
+        'event_time',
+        'client_ip',
+        'country',
+        'host',
+        'uri',
+        'method',
+        'status',
+        'rule_id',
+        'severity',
+        'message',
+        'site_id',
+    ])->limit(50)->get();
+
+    // توصيف Rule IDs لإعادة استخدامه في الـ partial
+    $ruleDescriptions = [
+        '920350' => 'Protocol enforcement · Host header as IP',
+        '942100' => 'SQL Injection detected via libinjection',
+        '942110' => 'SQL Injection attack',
+        '930100' => 'Path traversal attack',
+        '931100' => 'Remote command execution attempt',
+        '932100' => 'Remote file inclusion attempt',
+        '941100' => 'XSS Attack Detected',
+        '942200' => 'SQL Injection bypass attempt',
+        '932160' => 'Remote Code Execution attempt',
+    ];
+
+    $html = view('waf.partials.events_list', [
+        'events' => $events,
+        'ruleDescriptions' => $ruleDescriptions,
+    ])->render();
+
+    return response()->json(['html' => $html]);
+})->name('waf.events.live');
+
 // Live events endpoint (returns rendered HTML for the events list)
 Route::get('/waf/events/live', function (Request $request) {
     $user = auth()->user();
