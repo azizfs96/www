@@ -110,6 +110,48 @@ Route::get('/waf', function () {
     ]);
 });
 
+// Lightweight endpoint for live dashboard stats
+Route::get('/waf/dashboard/stats', function () {
+    $user = auth()->user();
+
+    $startOfDay = now('Asia/Riyadh')->startOfDay();
+    $endOfDay = now('Asia/Riyadh')->endOfDay();
+
+    $startOfDayUTC = $startOfDay->copy()->setTimezone('UTC');
+    $endOfDayUTC = $endOfDay->copy()->setTimezone('UTC');
+
+    $today = WafEvent::whereBetween('event_time', [$startOfDayUTC, $endOfDayUTC]);
+
+    if (!$user->isSuperAdmin() && $user->tenant_id) {
+        $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
+        $today->whereIn('site_id', $siteIds);
+    }
+
+    $baseQuery = clone $today;
+
+    $total   = $baseQuery->count();
+    $blocked = (clone $baseQuery)->where('status', 403)->count();
+
+    $topIps = (clone $baseQuery)
+        ->selectRaw('client_ip, COUNT(*) as cnt')
+        ->groupBy('client_ip')
+        ->orderByDesc('cnt')
+        ->limit(5)
+        ->get();
+
+    $topIp      = optional($topIps->first())->client_ip;
+    $topIpCount = optional($topIps->first())->cnt ?? 0;
+
+    return response()->json([
+        'total'        => $total,
+        'blocked'      => $blocked,
+        'allowed'      => max($total - $blocked, 0),
+        'top_ip'       => $topIp,
+        'top_ip_count' => $topIpCount,
+        'blocked_pct'  => $total > 0 ? round(($blocked / max($total, 1)) * 100) : 0,
+    ]);
+})->name('waf.dashboard.stats');
+
 // API route for chart data
 Route::get('/waf/api/chart-data', function (Request $request) {
     $user = auth()->user();
@@ -445,6 +487,92 @@ Route::get('/waf/events', function (Request $request) {
         ],
     ]);
 });
+
+// Live events endpoint (returns rendered HTML for the events list)
+Route::get('/waf/events/live', function (Request $request) {
+    $user = auth()->user();
+
+    $baseQuery = WafEvent::query()->orderByDesc('event_time');
+
+    // نفس فلترة التينانت مثل صفحة الأحداث الأساسية
+    if (!$user->isSuperAdmin() && $user->tenant_id) {
+        $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
+        $siteServerNames = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('server_name')->toArray();
+        $baseQuery->where(function($q) use ($siteIds, $siteServerNames) {
+            $q->whereIn('site_id', $siteIds)
+              ->orWhere(function($subQ) use ($siteServerNames) {
+                  $subQ->whereNull('site_id')
+                       ->whereIn('host', $siteServerNames);
+              });
+        });
+    }
+
+    $query = clone $baseQuery;
+
+    // نطبق نفس الفلاتر الموجودة في صفحة /waf/events (status, ip, date_from, date_to, search)
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+    if ($request->filled('ip')) {
+        $query->where('client_ip', 'like', '%'.$request->ip.'%');
+    }
+    if ($request->filled('date_from')) {
+        $dateFrom = \Carbon\Carbon::parse($request->date_from)->startOfDay();
+        $query->where('event_time', '>=', $dateFrom);
+    }
+    if ($request->filled('date_to')) {
+        $dateTo = \Carbon\Carbon::parse($request->date_to)->endOfDay();
+        $query->where('event_time', '<=', $dateTo);
+    }
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('client_ip', 'like', '%'.$search.'%')
+              ->orWhere('host', 'like', '%'.$search.'%')
+              ->orWhere('uri', 'like', '%'.$search.'%')
+              ->orWhere('message', 'like', '%'.$search.'%')
+              ->orWhere('rule_id', 'like', '%'.$search.'%');
+        });
+    }
+
+    // نكتفي بآخر 25 حدثاً لعدم الضغط على السيرفر
+    $events = $query->select([
+        'id',
+        'event_time',
+        'client_ip',
+        'country',
+        'host',
+        'uri',
+        'method',
+        'status',
+        'rule_id',
+        'severity',
+        'message',
+        'site_id'
+    ])->limit(25)->get();
+
+    // نفس توصيف الـ Rule IDs
+    $ruleDescriptions = [
+        '920350' => 'Protocol enforcement · Host header as IP',
+        '942100' => 'SQL Injection detected via libinjection',
+        '942110' => 'SQL Injection attack',
+        '930100' => 'Path traversal attack',
+        '931100' => 'Remote command execution attempt',
+        '932100' => 'Remote file inclusion attempt',
+        '941100' => 'XSS Attack Detected',
+        '942200' => 'SQL Injection bypass attempt',
+        '932160' => 'Remote Code Execution attempt',
+    ];
+
+    $html = view('waf.partials.events_list', [
+        'events' => $events,
+        'ruleDescriptions' => $ruleDescriptions,
+    ])->render();
+
+    return response()->json([
+        'html' => $html,
+    ]);
+})->name('waf.events.live');
 // Unified Firewall Routes
 Route::get('/waf/firewall', [FirewallController::class, 'index'])->name('firewall.index');
 Route::post('/waf/firewall', [FirewallController::class, 'store'])->name('firewall.store');
