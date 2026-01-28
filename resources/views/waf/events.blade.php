@@ -1294,12 +1294,14 @@ const countryNames = {
 function showCountryTooltip(element, event) {
     event.stopPropagation(); // Prevent event details toggle
     
-    const countryCode = element.getAttribute('data-country-code');
+    // بعض البيانات قد تُخزن بحروف صغيرة (sa) أو مع مسافات، لذلك نحولها إلى Uppercase ونزيل الفراغات
+    const rawCode = element.getAttribute('data-country-code') || '';
+    const countryCode = rawCode.trim().toUpperCase();
     const tooltip = element.querySelector('.country-tooltip');
     
     if (!tooltip) return;
     
-    const countryName = countryNames[countryCode] || countryCode;
+    const countryName = countryNames[countryCode] || countryCode || 'Unknown';
     
     // Close all other tooltips
     document.querySelectorAll('.country-tooltip.show').forEach(t => {
