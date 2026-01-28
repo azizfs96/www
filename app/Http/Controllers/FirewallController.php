@@ -6,7 +6,6 @@ use App\Models\IpRule;
 use App\Models\UrlRule;
 use App\Models\CountryRule;
 use App\Models\Site;
-use App\Models\WafEvent;
 use Illuminate\Http\Request;
 
 class FirewallController extends Controller
@@ -97,92 +96,10 @@ class FirewallController extends Controller
             }
         }
         $countryRules = $countryQuery->get();
-
-        /**
-         * حساب استخدام كل Rule بناءً على عدد الأحداث في جدول WafEvent
-         * الفكرة:
-         * - نبني Query أساسي للأحداث حسب الـ site_id المختار
-         * - لكل نوع Rule (IP / URL / Country) نحسب عدد الأحداث المطابقة
-         * - ثم نحسب النسبة المئوية لكل Rule من مجموع أحداث نفس النوع
-         */
-
-        // 1) Query أساسي للأحداث حسب الموقع
-        $baseEventsQuery = WafEvent::query();
-        if ($siteId === 'global') {
-            $baseEventsQuery->whereNull('site_id');
-        } elseif ($siteId !== 'all') {
-            $baseEventsQuery->where('site_id', $siteId);
-        }
-
-        // 2) حساب استخدام قواعد IP
-        $ipUsageCounts = [];
-        foreach ($ipRules as $rule) {
-            $count = (clone $baseEventsQuery)
-                ->where('client_ip', $rule->ip)
-                ->count();
-            $ipUsageCounts[$rule->id] = $count;
-        }
-
-        // 3) حساب استخدام قواعد URL
-        $urlUsageCounts = [];
-        foreach ($urlRules as $rule) {
-            $query = (clone $baseEventsQuery);
-
-            if (!empty($rule->host)) {
-                $query->where('host', $rule->host);
-            }
-
-            if (!empty($rule->path)) {
-                // نستخدم like بسيط لمطابقة الـ path
-                $query->where('uri', 'like', '%' . $rule->path . '%');
-            }
-
-            $urlUsageCounts[$rule->id] = $query->count();
-        }
-
-        // 4) حساب استخدام قواعد Country
-        $countryUsageCounts = [];
-        foreach ($countryRules as $rule) {
-            $count = (clone $baseEventsQuery)
-                ->where('country', strtoupper($rule->country_code))
-                ->count();
-            $countryUsageCounts[$rule->id] = $count;
-        }
-
-        // 5) نحسب إجمالي الأحداث لكل القواعد (كل الأنواع معاً)
-        $totalEvents = array_sum($ipUsageCounts) + array_sum($urlUsageCounts) + array_sum($countryUsageCounts);
-
-        // 6) نوزّع النسبة على كل رول من إجمالي الأحداث
-        $ipRules = $ipRules->map(function ($rule) use ($ipUsageCounts, $totalEvents) {
-            $eventsForRule = $ipUsageCounts[$rule->id] ?? 0;
-            $rule->usage_percentage = $totalEvents > 0
-                ? round(($eventsForRule / $totalEvents) * 100)
-                : 0;
-            return $rule;
-        });
-
-        $urlRules = $urlRules->map(function ($rule) use ($urlUsageCounts, $totalEvents) {
-            $eventsForRule = $urlUsageCounts[$rule->id] ?? 0;
-            $rule->usage_percentage = $totalEvents > 0
-                ? round(($eventsForRule / $totalEvents) * 100)
-                : 0;
-            return $rule;
-        });
-
-        $countryRules = $countryRules->map(function ($rule) use ($countryUsageCounts, $totalEvents) {
-            $eventsForRule = $countryUsageCounts[$rule->id] ?? 0;
-            $rule->usage_percentage = $totalEvents > 0
-                ? round(($eventsForRule / $totalEvents) * 100)
-                : 0;
-            return $rule;
-        });
-
-        // إجمالي القواعد (عدد الرولّات نفسه)
-        $totalRules = $ipRules->count() + $urlRules->count() + $countryRules->count();
         
         $selectedSite = $siteId === 'global' ? null : ($siteId === 'all' ? 'all' : Site::find($siteId));
 
-        return view('waf.firewall', compact('ipRules', 'urlRules', 'countryRules', 'sites', 'selectedSite', 'siteId', 'totalRules'));
+        return view('waf.firewall', compact('ipRules', 'urlRules', 'countryRules', 'sites', 'selectedSite', 'siteId'));
     }
 
     /**

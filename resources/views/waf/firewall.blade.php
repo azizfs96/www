@@ -92,45 +92,43 @@
         transform: translateY(-2px);
     }
 
-    /* Tabs - Professional UX Design */
+    /* Tabs */
     .rule-tabs {
         display: flex;
-        gap: 6px;
+        gap: 4px;
         margin-bottom: 28px;
-        padding: 8px;
-        background: #2A2A2A;
-        border-radius: 10px;
-        border: 2px solid #3A3A3A;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 0;
+        background: var(--bg-dark);
+        padding: 6px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
     .rule-tab {
-        flex: 1;
-        padding: 12px 20px;
+        padding: 10px 20px;
         background: transparent;
-        border: 1px solid transparent;
-        border-radius: 8px;
+        border: none;
+        border-radius: 6px;
         color: var(--text-muted);
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.25s ease;
         position: relative;
-        text-align: center;
     }
 
     .rule-tab:hover {
-        color: var(--text-secondary);
-        background: rgba(255, 255, 255, 0.05);
-        border-color: #4A4A4A;
+        color: var(--text-primary);
+        background: var(--bg-hover);
     }
 
     .rule-tab.active {
         color: var(--text-primary);
-        background: #353535;
-        border: 2px solid #555555;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-        font-weight: 700;
+        background: var(--primary-light);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
     }
 
     .rule-tab.active::before {
@@ -140,8 +138,8 @@
         top: 0;
         bottom: 0;
         width: 3px;
-        background: #FFFFFF;
-        border-radius: 8px 0 0 8px;
+        background: var(--primary);
+        border-radius: 6px 0 0 6px;
     }
 
     .tab-content {
@@ -155,9 +153,9 @@
     /* Form Styles */
     .form-row {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 16px;
-        align-items: start;
+        align-items: end;
     }
 
     @media (max-width: 768px) {
@@ -170,7 +168,6 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        min-height: 100%;
     }
 
     .form-group label {
@@ -179,9 +176,6 @@
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        min-height: 18px;
-        display: flex;
-        align-items: center;
     }
 
     .form-group input,
@@ -195,9 +189,6 @@
         padding: 12px 16px;
         transition: all 0.25s ease;
         font-weight: 400;
-        width: 100%;
-        min-height: 44px;
-        box-sizing: border-box;
     }
 
     .form-group input:hover,
@@ -212,15 +203,6 @@
         min-height: 90px;
         resize: vertical;
         font-family: inherit;
-        line-height: 1.5;
-    }
-
-    .form-group small {
-        color: var(--text-muted);
-        font-size: 11px;
-        margin-top: 4px;
-        line-height: 1.4;
-        min-height: 15px;
     }
 
     .form-group input:focus,
@@ -395,60 +377,55 @@
         font-weight: 600;
     }
 
-    /* Table Styles - Professional CRM Design */
+    /* Table Styles */
     .table-container {
-        background: #1A1A1A;
-        border-radius: 0;
-        border: 1px solid #2A2A2A;
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 2px solid var(--border);
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
         margin-bottom: 24px;
     }
 
     table {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
+        border-collapse: collapse;
         font-size: 13px;
     }
 
     thead {
-        background: #1A1A1A;
-        border-bottom: 1px solid #2A2A2A;
+        background: var(--bg-dark);
+        border-bottom: 2px solid var(--border-hover);
     }
 
     th {
-        padding: 12px 16px;
+        padding: 14px 20px;
         text-align: left;
         font-size: 11px;
-        font-weight: 600;
-        color: #9CA3AF;
+        font-weight: 700;
+        color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 1px solid #2A2A2A;
-        white-space: nowrap;
-    }
-
-    th:first-child {
-        padding-left: 20px;
-    }
-
-    th:last-child {
-        padding-right: 20px;
+        letter-spacing: 0.8px;
     }
 
     tbody tr {
-        border-bottom: 1px solid #2A2A2A;
-        transition: all 0.15s ease;
-        background: #1A1A1A;
+        border-bottom: 1px solid var(--border);
+        transition: all 0.2s ease;
+        background: transparent;
     }
 
     tbody tr:nth-child(even) {
-        background: #1E1E1E;
+        background: rgba(255, 255, 255, 0.02);
     }
 
     tbody tr:hover {
-        background: #252525;
+        background: var(--bg-hover);
+        border-left: 3px solid var(--primary);
+        transform: translateX(2px);
+    }
+
+    tbody tr:last-child {
+        border-bottom: none;
     }
 
     tbody tr:last-child {
@@ -456,109 +433,68 @@
     }
 
     td {
-        padding: 14px 16px;
+        padding: 14px 20px;
         text-align: left;
-        color: #FFFFFF;
+        color: var(--text-primary);
         font-size: 13px;
-        vertical-align: middle;
-    }
-
-    td:first-child {
-        padding-left: 20px;
-    }
-
-    td:last-child {
-        padding-right: 20px;
     }
 
     .pill {
         display: inline-flex;
         align-items: center;
-        padding: 4px 10px;
-        border-radius: 4px;
+        padding: 5px 12px;
+        border-radius: 6px;
         font-size: 11px;
         font-weight: 600;
-        border: none;
+        border: 1px solid;
         text-transform: uppercase;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.5px;
     }
 
     .pill-allow {
-        background: rgba(16, 185, 129, 0.15);
-        color: #10B981;
+        background: var(--success-light);
+        color: var(--success);
+        border-color: rgba(16, 185, 129, 0.4);
     }
 
     .pill-block {
-        background: rgba(239, 68, 68, 0.15);
-        color: #EF4444;
+        background: var(--error-light);
+        color: var(--error);
+        border-color: rgba(239, 68, 68, 0.4);
     }
 
     .badge {
         display: inline-flex;
         align-items: center;
-        padding: 4px 10px;
-        border-radius: 4px;
+        padding: 5px 12px;
+        border-radius: 6px;
         font-size: 11px;
         font-weight: 600;
-        border: none;
+        border: 1px solid;
     }
 
     .badge-info {
-        background: rgba(59, 130, 246, 0.15);
-        color: #3B82F6;
+        background: var(--info-light);
+        color: var(--info);
+        border-color: rgba(59, 130, 246, 0.4);
     }
 
     .badge-secondary {
-        background: rgba(255, 255, 255, 0.1);
-        color: #D1D5DB;
+        background: var(--bg-hover);
+        color: var(--text-secondary);
+        border-color: var(--border);
     }
 
     .badge-success {
-        background: rgba(16, 185, 129, 0.15);
-        color: #10B981;
+        background: var(--success-light);
+        color: var(--success);
+        border-color: rgba(16, 185, 129, 0.4);
     }
 
     .text-muted {
-        color: #9CA3AF;
+        color: var(--text-muted);
         font-size: 12px;
-        font-family: system-ui, -apple-system, sans-serif;
-    }
-
-    /* Usage Percentage & Bar Chart */
-    .usage-cell {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .usage-percentage {
-        font-size: 13px;
-        font-weight: 600;
-        color: #FFFFFF;
-        min-width: 40px;
-    }
-
-    .usage-bars {
-        display: flex;
-        gap: 2px;
-        align-items: flex-end;
-        height: 14px; /* أقصى ارتفاع للأعمدة */
-    }
-
-    .usage-bar {
-        width: 3px;
-        border-radius: 1px;
-        transition: height 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
-        background: rgba(16, 185, 129, 0.18);
-    }
-
-    .usage-bar.active {
-        background: #10B981;
-        opacity: 1;
-    }
-
-    .usage-bar.inactive {
-        opacity: 0.35;
+        font-family: 'Courier New', monospace;
     }
 
     .empty-state {
@@ -570,45 +506,48 @@
 
     td strong {
         font-weight: 600;
-        color: #FFFFFF;
-        font-family: system-ui, -apple-system, sans-serif;
+        color: var(--text-primary);
+        font-family: 'Courier New', monospace;
     }
 
     td code {
-        background: rgba(255, 255, 255, 0.08);
-        border: none;
-        padding: 3px 8px;
+        background: rgba(157, 78, 221, 0.1);
+        border: 1px solid rgba(157, 78, 221, 0.2);
+        padding: 4px 8px;
         border-radius: 4px;
         font-family: 'Courier New', monospace;
         font-size: 12px;
-        color: #E5E7EB;
+        color: var(--primary);
     }
 
     .rule-type-badge {
         display: inline-block;
-        padding: 3px 8px;
-        border-radius: 4px;
+        padding: 4px 10px;
+        border-radius: 6px;
         font-size: 10px;
         font-weight: 700;
         text-transform: uppercase;
-        margin-right: 8px;
+        margin-right: 10px;
         letter-spacing: 0.5px;
-        border: none;
+        border: 1px solid;
     }
 
     .rule-type-badge.ip {
-        background: rgba(59, 130, 246, 0.2);
-        color: #60A5FA;
+        background: var(--info-light);
+        color: var(--info);
+        border-color: rgba(59, 130, 246, 0.4);
     }
 
     .rule-type-badge.url {
-        background: rgba(139, 92, 246, 0.2);
-        color: #A78BFA;
+        background: var(--primary-light);
+        color: var(--primary);
+        border-color: rgba(139, 92, 246, 0.4);
     }
 
     .rule-type-badge.country {
-        background: rgba(245, 158, 11, 0.2);
-        color: #FBBF24;
+        background: var(--warning-light);
+        color: var(--warning);
+        border-color: rgba(245, 158, 11, 0.4);
     }
 </style>
 @endsection
@@ -708,9 +647,8 @@
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
-                <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-start;">
-                    <label style="visibility: hidden; height: 0; margin: 0; padding: 0;">Action</label>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px 16px; font-size: 14px; min-height: 44px; margin-top: 0;">Add IP Rule</button>
+                <div class="form-group" style="display: flex; align-items: end;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 11px 16px; font-size: 13px;">Add IP Rule</button>
                 </div>
             </div>
         </form>
@@ -768,9 +706,8 @@
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
-                <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-start;">
-                    <label style="visibility: hidden; height: 0; margin: 0; padding: 0;">Action</label>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px 16px; font-size: 14px; min-height: 44px; margin-top: 0;">Add URL Rule</button>
+                <div class="form-group" style="display: flex; align-items: end;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 11px 16px; font-size: 13px;">Add URL Rule</button>
                 </div>
             </div>
         </form>
@@ -818,9 +755,8 @@
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
-                <div class="form-group" style="display: flex; flex-direction: column; justify-content: flex-start;">
-                    <label style="visibility: hidden; height: 0; margin: 0; padding: 0;">Action</label>
-                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px 16px; font-size: 14px; min-height: 44px; margin-top: 0;">Add Country Rule</button>
+                <div class="form-group" style="display: flex; align-items: end;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 11px 16px; font-size: 13px;">Add Country Rule</button>
                 </div>
             </div>
         </form>
@@ -836,7 +772,6 @@
                 <th>Site</th>
                 <th>Details</th>
                 <th>Action</th>
-                <th>Usage</th>
                 <th>Created At</th>
                 <th>Actions</th>
             </tr>
@@ -844,12 +779,6 @@
         <tbody>
         {{-- IP Rules --}}
         @foreach ($ipRules as $rule)
-            @php
-                $usagePercent = $rule->usage_percentage ?? 0;
-                $maxBars = 10;
-                $pattern = [5, 7, 10, 13, 9, 12, 8, 11, 6, 10]; // شكل الشارت
-                $scale = max(0.15, ($usagePercent / 100));      // لا يكون صغير جداً
-            @endphp
             <tr>
                 <td><span class="rule-type-badge ip">IP</span></td>
                 <td>
@@ -867,24 +796,6 @@
                         <span class="pill pill-block">Blacklist</span>
                     @endif
                 </td>
-                <td>
-                    <div class="usage-cell">
-                        <span class="usage-percentage">{{ $usagePercent }}%</span>
-                        <div class="usage-bars">
-                            @for($i = 0; $i < $maxBars; $i++)
-                                @php
-                                    $base = $pattern[$i % count($pattern)];
-                                    $height = max(2, round($base * $scale)); // ارتفاع العمود
-                                    $isActive = $usagePercent > 0;
-                                @endphp
-                                <div
-                                    class="usage-bar {{ $isActive ? 'active' : 'inactive' }}"
-                                    style="height: {{ $height }}px;"
-                                ></div>
-                            @endfor
-                        </div>
-                    </div>
-                </td>
                 <td class="text-muted">{{ $rule->created_at->format('Y-m-d H:i:s') }}</td>
                 <td>
                     <form method="POST" action="{{ route('firewall.destroy', $rule->id) }}"
@@ -900,19 +811,15 @@
 
         {{-- URL Rules --}}
         @foreach ($urlRules as $rule)
-            @php
-                $usagePercent = $rule->usage_percentage ?? 0;
-                $maxBars = 10;
-                $pattern = [5, 7, 10, 13, 9, 12, 8, 11, 6, 10];
-                $scale = max(0.15, ($usagePercent / 100));
-            @endphp
             <tr>
                 <td><span class="rule-type-badge url">URL</span></td>
                 <td>
                     @if($rule->site_id)
                         <span class="badge badge-info">🌐 {{ $rule->site->name }}</span>
                     @elseif($rule->host)
-                        <code>{{ $rule->host }}</code>
+                        <code style="background: rgba(96, 165, 250, 0.1); border-color: rgba(96, 165, 250, 0.2); color: var(--info);">
+                            {{ $rule->host }}
+                        </code>
                     @else
                         <span class="badge badge-secondary">🌍 Global</span>
                     @endif
@@ -920,7 +827,7 @@
                 <td>
                     <div><strong>{{ $rule->name ?? '-' }}</strong></div>
                     <div style="margin-top: 4px;"><code>{{ $rule->path }}</code></div>
-                    <div style="margin-top: 4px; font-size: 11px; color: #9CA3AF;">
+                    <div style="margin-top: 4px; font-size: 11px; color: var(--text-muted);">
                         IPs: {{ $rule->allowed_ips }}
                     </div>
                 </td>
@@ -930,24 +837,6 @@
                     @else
                         <span class="badge badge-secondary">Disabled</span>
                     @endif
-                </td>
-                <td>
-                    <div class="usage-cell">
-                        <span class="usage-percentage">{{ $usagePercent }}%</span>
-                        <div class="usage-bars">
-                            @for($i = 0; $i < $maxBars; $i++)
-                                @php
-                                    $base = $pattern[$i % count($pattern)];
-                                    $height = max(2, round($base * $scale));
-                                    $isActive = $usagePercent > 0;
-                                @endphp
-                                <div
-                                    class="usage-bar {{ $isActive ? 'active' : 'inactive' }}"
-                                    style="height: {{ $height }}px;"
-                                ></div>
-                            @endfor
-                        </div>
-                    </div>
                 </td>
                 <td class="text-muted">{{ $rule->created_at->format('Y-m-d H:i:s') }}</td>
                 <td>
@@ -987,10 +876,6 @@
                     'PS' => 'Palestine', 'LOCAL' => 'Local Network',
                 ];
                 $countryName = $countryNames[strtoupper($rule->country_code)] ?? $rule->country_code;
-                $usagePercent = $rule->usage_percentage ?? 0;
-                $maxBars = 10;
-                $pattern = [5, 7, 10, 13, 9, 12, 8, 11, 6, 10];
-                $scale = max(0.15, ($usagePercent / 100));
             @endphp
             <tr>
                 <td><span class="rule-type-badge country">Country</span></td>
@@ -1003,7 +888,7 @@
                 </td>
                 <td>
                     <strong>{{ strtoupper($rule->country_code) }}</strong>
-                    <span style="color: #9CA3AF; font-size: 11px; margin-left: 8px;">{{ $countryName }}</span>
+                    <span style="color: var(--text-muted); font-size: 11px; margin-left: 8px;">{{ $countryName }}</span>
                 </td>
                 <td>
                     @if ($rule->type === 'allow')
@@ -1011,24 +896,6 @@
                     @else
                         <span class="pill pill-block">Block</span>
                     @endif
-                </td>
-                <td>
-                    <div class="usage-cell">
-                        <span class="usage-percentage">{{ $usagePercent }}%</span>
-                        <div class="usage-bars">
-                            @for($i = 0; $i < $maxBars; $i++)
-                                @php
-                                    $base = $pattern[$i % count($pattern)];
-                                    $height = max(2, round($base * $scale));
-                                    $isActive = $usagePercent > 0;
-                                @endphp
-                                <div
-                                    class="usage-bar {{ $isActive ? 'active' : 'inactive' }}"
-                                    style="height: {{ $height }}px;"
-                                ></div>
-                            @endfor
-                        </div>
-                    </div>
                 </td>
                 <td class="text-muted">{{ $rule->created_at->format('Y-m-d H:i:s') }}</td>
                 <td>

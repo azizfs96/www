@@ -48,10 +48,26 @@
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <strong class="event-ip">{{ $event->client_ip }}</strong>
                     @if($event->country)
+                        @php
+                            $countryCode = strtoupper($event->country);
+                            $flagEmoji = '';
+                            // Convert ISO country code (e.g. SA) to emoji flag 🇸🇦
+                            if (strlen($countryCode) === 2) {
+                                $flagEmoji =
+                                    mb_chr(ord($countryCode[0]) + 127397, 'UTF-8') .
+                                    mb_chr(ord($countryCode[1]) + 127397, 'UTF-8');
+                            } elseif ($countryCode === 'LOCAL') {
+                                $flagEmoji = '🏠';
+                            } elseif ($countryCode === 'PRIVATE') {
+                                $flagEmoji = '🔒';
+                            } elseif ($countryCode === 'UNKNOWN') {
+                                $flagEmoji = '❓';
+                            }
+                        @endphp
                         <span class="event-country" 
-                              data-country-code="{{ $event->country }}"
+                              data-country-code="{{ $countryCode }}"
                               onclick="showCountryTooltip(this, event)">
-                            {{ $event->country }}
+                            {{ $flagEmoji ?: $countryCode }}
                             <span class="country-tooltip" id="tooltip-{{ $event->id }}"></span>
                         </span>
                     @endif

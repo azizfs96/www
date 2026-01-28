@@ -724,63 +724,15 @@ document.addEventListener('DOMContentLoaded', function() {
             loadChartData('');
         }
     }
-
-    // Live dashboard stats refresh
-    async function refreshDashboardStats() {
-        try {
-            const response = await fetch('{{ route('waf.dashboard.stats') }}', {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            });
-            if (!response.ok) return;
-
-            const data = await response.json();
-
-            const totalEl   = document.getElementById('stat-total');
-            const blockedEl = document.getElementById('stat-blocked');
-            const blockedPctEl = document.getElementById('stat-blocked-pct');
-            const totalBadgeEl = document.getElementById('stat-total-badge');
-            const topIpEl   = document.getElementById('stat-top-ip');
-            const topIpCntEl = document.getElementById('stat-top-ip-count');
-
-            if (totalEl && typeof data.total !== 'undefined') {
-                totalEl.textContent = Number(data.total).toLocaleString();
-            }
-            if (blockedEl && typeof data.blocked !== 'undefined') {
-                blockedEl.textContent = Number(data.blocked).toLocaleString();
-            }
-            if (blockedPctEl && typeof data.blocked_pct !== 'undefined') {
-                blockedPctEl.textContent = `${data.blocked_pct}% of total`;
-            }
-            if (totalBadgeEl && typeof data.total !== 'undefined') {
-                if (data.total > 0) {
-                    totalBadgeEl.textContent = 'Active';
-                    totalBadgeEl.classList.remove('success');
-                    totalBadgeEl.classList.add('warning');
-                } else {
-                    totalBadgeEl.textContent = 'Safe';
-                    totalBadgeEl.classList.remove('warning');
-                    totalBadgeEl.classList.add('success');
-                }
-            }
-            if (topIpEl && typeof data.top_ip !== 'undefined') {
-                topIpEl.textContent = data.top_ip || 'None';
-            }
-            if (topIpCntEl && typeof data.top_ip_count !== 'undefined') {
-                topIpCntEl.textContent = `${data.top_ip_count || 0} attempts`;
-            }
-        } catch (e) {
-            console.error('Failed to refresh dashboard stats', e);
-        }
-    }
-
-    // تحديث الإحصائيات كل 10 ثواني
-    setInterval(refreshDashboardStats, 10000);
 });
 </script>
 @endsection
 
 @section('content')
-{{-- Center Logo (removed image wafgate.png as requested) --}}
+{{-- Center Logo --}}
+<div class="center-logo-container">
+    <img src="{{ asset('images/wafgate.png') }}" alt="WAF Edge">
+</div>
 
 <div class="page-header">
     <div class="page-header-top">
@@ -800,9 +752,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="flex: 1;">
                 <div class="stat-icon-wrapper">—</div>
                 <div class="stat-label">Total Events</div>
-                <div class="stat-value" id="stat-total">{{ number_format($total) }}</div>
+                <div class="stat-value">{{ number_format($total) }}</div>
                 <div>
-                    <span class="stat-badge {{ $total > 0 ? 'warning' : 'success' }}" id="stat-total-badge">
+                    <span class="stat-badge {{ $total > 0 ? 'warning' : 'success' }}">
                         {{ $total > 0 ? 'Active' : 'Safe' }}
                     </span>
                 </div>
@@ -818,9 +770,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="flex: 1;">
                 <div class="stat-icon-wrapper">▪</div>
                 <div class="stat-label">Blocked Requests</div>
-                <div class="stat-value" id="stat-blocked">{{ number_format($blocked) }}</div>
+                <div class="stat-value">{{ number_format($blocked) }}</div>
                 <div>
-                    <span class="stat-badge danger" id="stat-blocked-pct">
+                    <span class="stat-badge danger">
                         {{ $total > 0 ? round(($blocked / max($total,1)) * 100) : 0 }}% of total
                     </span>
                 </div>
@@ -836,11 +788,11 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="flex: 1;">
                 <div class="stat-icon-wrapper">▫</div>
                 <div class="stat-label">Top Attack Source</div>
-                <div class="stat-value" id="stat-top-ip" style="font-size: 18px; font-family: 'Courier New', monospace; line-height: 1.2;">
+                <div class="stat-value" style="font-size: 18px; font-family: 'Courier New', monospace; line-height: 1.2;">
                     {{ optional($topIps->first())->client_ip ?? 'None' }}
                 </div>
                 <div>
-                    <span class="stat-badge warning" id="stat-top-ip-count">
+                    <span class="stat-badge warning">
                         {{ optional($topIps->first())->cnt ?? 0 }} attempts
                     </span>
                 </div>
