@@ -1014,6 +1014,9 @@
 
 <div class="footer-note">
     Results are displayed according to the selected filters. Click on any event to show/hide details.
+    <span id="events-last-refresh" style="margin-left: 8px; color: #9CA3AF; font-size: 11px;">
+        <!-- Live refresh timestamp will appear here -->
+    </span>
 </div>
 
 <script>
@@ -1117,6 +1120,47 @@ function showCountryTooltip(element, event) {
         }, 100);
     }
 }
+
+// Live refresh for events list (AJAX, no full page reload)
+async function refreshEventsLive() {
+    try {
+        const container = document.getElementById('events-list');
+        if (!container) return;
+
+        // نستخدم نفس الفلاتر الحالية الموجودة في رابط الصفحة
+        const params = new URLSearchParams(window.location.search);
+        const url = new URL('{{ route('waf.events.live') }}', window.location.origin);
+        url.search = params.toString();
+
+        const response = await fetch(url.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.html) {
+            container.innerHTML = data.html;
+        }
+
+        // حدّث وقت آخر تحديث ليتأكد المستخدم أن التحديث يعمل
+        const tsEl = document.getElementById('events-last-refresh');
+        if (tsEl) {
+            const now = new Date();
+            tsEl.textContent = `Auto-refreshed at ${now.toLocaleTimeString()}`;
+        }
+    } catch (e) {
+        console.error('Failed to refresh events live', e);
+    }
+}
+
+// تشغيل التحديث اللايف بعد تحميل الصفحة ثم كل 5 ثواني
+document.addEventListener('DOMContentLoaded', function () {
+    refreshEventsLive();              // أول تحديث مباشر
+    setInterval(refreshEventsLive, 5000); // تحديث دوري
+});
 
 // Toggle event details
 function toggleEventDetails(element) {
