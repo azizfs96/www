@@ -1156,10 +1156,10 @@ async function refreshEventsLive() {
     }
 }
 
-// تشغيل التحديث اللايف بعد تحميل الصفحة ثم كل 5 ثواني
+// تشغيل التحديث اللايف بعد تحميل الصفحة ثم كل 60 ثانية
 document.addEventListener('DOMContentLoaded', function () {
-    refreshEventsLive();              // أول تحديث مباشر
-    setInterval(refreshEventsLive, 5000); // تحديث دوري
+    refreshEventsLive();                // أول تحديث مباشر
+    setInterval(refreshEventsLive, 60000); // تحديث دوري كل 60 ثانية
 });
 
 // Toggle event details
