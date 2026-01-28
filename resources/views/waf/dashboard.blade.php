@@ -729,10 +729,7 @@ document.addEventListener('DOMContentLoaded', function() {
 @endsection
 
 @section('content')
-{{-- Center Logo --}}
-<div class="center-logo-container">
-    <img src="{{ asset('images/wafgate.png') }}" alt="WAF Edge">
-</div>
+{{-- Center Logo (removed image wafgate.png as requested) --}}
 
 <div class="page-header">
     <div class="page-header-top">

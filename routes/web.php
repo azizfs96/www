@@ -6,6 +6,7 @@ use App\Models\WafEvent;
 use App\Http\Controllers\IpRuleController;
 use App\Http\Controllers\UrlRuleController;
 use App\Http\Controllers\CountryRuleController;
+use App\Http\Controllers\FirewallController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\SitePolicyController;
 use App\Http\Controllers\WafEventController;
@@ -443,6 +444,12 @@ Route::get('/waf/events', function (Request $request) {
         ],
     ]);
 });
+// Unified Firewall Routes
+Route::get('/waf/firewall', [FirewallController::class, 'index'])->name('firewall.index');
+Route::post('/waf/firewall', [FirewallController::class, 'store'])->name('firewall.store');
+Route::delete('/waf/firewall/{id}', [FirewallController::class, 'destroy'])->name('firewall.destroy');
+
+// Keep old routes for backward compatibility (optional - can be removed later)
 Route::get('/waf/ip-rules', [IpRuleController::class, 'index'])->name('ip-rules.index');
 Route::post('/waf/ip-rules', [IpRuleController::class, 'store'])->name('ip-rules.store');
 Route::delete('/waf/ip-rules/{ipRule}', [IpRuleController::class, 'destroy'])->name('ip-rules.destroy');

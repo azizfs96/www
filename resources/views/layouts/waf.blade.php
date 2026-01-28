@@ -422,22 +422,14 @@
                 </div>
 
                 <div class="nav-section">
-                    <div class="nav-section-title">Settings</div>
+                    <div class="nav-section-title">Firewall & Sites</div>
                     <a href="/waf/sites" class="nav-item {{ request()->is('waf/sites*') ? 'active' : '' }}">
                         <span class="nav-item-icon">▫</span>
                         <span>Sites Management</span>
                     </a>
-                    <a href="/waf/ip-rules" class="nav-item {{ request()->is('waf/ip-rules*') ? 'active' : '' }}">
-                        <span class="nav-item-icon">▫</span>
-                        <span>IP Rules</span>
-                    </a>
-                    <a href="/waf/url-rules" class="nav-item {{ request()->is('waf/url-rules*') ? 'active' : '' }}">
-                        <span class="nav-item-icon">▫</span>
-                        <span>URL Rules</span>
-                    </a>
-                    <a href="/waf/country-rules" class="nav-item {{ request()->is('waf/country-rules*') ? 'active' : '' }}">
-                        <span class="nav-item-icon">▫</span>
-                        <span>Country Rules</span>
+                    <a href="/waf/firewall" class="nav-item {{ request()->is('waf/firewall*') ? 'active' : '' }}">
+                        <span class="nav-item-icon">▣</span>
+                        <span>Firewall Rules</span>
                     </a>
                 </div>
 
