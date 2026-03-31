@@ -153,49 +153,107 @@
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
-    .event-item {
-        background: #1E1E1E;
+    /* Log table: thead/tbody share column geometry — fixes header/body misalignment */
+    .events-table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        direction: ltr;
+    }
+
+    .events-log-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        direction: ltr;
+    }
+
+    .events-log-table col.col-w-time { width: 14%; }
+    .events-log-table col.col-w-ip { width: 13%; }
+    .events-log-table col.col-w-method { width: 7%; }
+    .events-log-table col.col-w-path { width: 24%; }
+    .events-log-table col.col-w-destination { width: 16%; }
+    .events-log-table col.col-w-rule { width: 10%; }
+    .events-log-table col.col-w-status { width: 16%; }
+
+    .events-log-table thead th {
+        text-align: left;
+        padding: 12px 14px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        background: var(--bg-card);
         border-bottom: 1px solid var(--border);
-        transition: all 0.2s ease;
-        position: relative;
+        vertical-align: middle;
     }
 
-    .event-item:last-child {
-        border-bottom: none;
+    .events-log-table tbody.event-group tr.event-main-row {
+        cursor: pointer;
+        transition: background 0.2s ease;
     }
 
-    .event-item:hover {
+    .events-log-table tbody.event-group:hover tr.event-main-row {
         background: var(--bg-hover);
     }
 
-    .event-item:hover .event-icon {
-        transform: scale(1.1);
+    .events-log-table tbody.event-group tr.event-main-row td {
+        padding: 14px 14px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
     }
 
-    /* Main Event Row */
-    .event-main-row {
-        display: grid;
-        grid-template-columns: 100px 45px minmax(0, 1fr) 140px;
-        gap: 20px;
+    .td-ip-inner {
+        display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        padding: 16px 24px;
-        cursor: pointer;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .td-rule {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .td-rule.has-rule {
+        color: #EF4444;
+    }
+
+    .event-url-path {
+        direction: ltr;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    .event-url-host {
+        direction: ltr;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
     }
 
     .event-time {
         display: flex;
         flex-direction: column;
         gap: 4px;
-        min-width: 130px;
-        max-width: 140px;
-        text-align: right;
-    }
-
-    .event-duration {
-        font-size: 13px;
-        color: var(--text-secondary);
-        font-family: 'Courier New', monospace;
-        font-weight: 600;
+        min-width: 0;
+        text-align: left;
     }
 
     .event-timestamp {
@@ -270,81 +328,13 @@
     }
 
 
-    .event-info {
-        flex: 1;
-        display: grid;
-        grid-template-columns: 60px minmax(0, 1fr) auto auto 100px;
-        gap: 16px;
-        align-items: center;
-        min-width: 0;
-        overflow: hidden;
-        direction: ltr;
-        padding: 0 8px;
-    }
-
-    .event-info > * {
-        min-width: 0;
-    }
-
-    .event-host {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 200px;
-    }
-
-    .event-info strong {
-        white-space: nowrap;
-    }
-
-    .event-source {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: var(--text-primary);
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .event-source strong {
+    .event-method-text {
         font-family: 'Courier New', monospace;
-        color: var(--text-primary);
-    }
-
-    .event-host {
-        color: var(--text-secondary);
-        font-size: 13px;
-        font-weight: 400;
-    }
-
-    .event-separator {
-        color: var(--text-muted);
         font-size: 12px;
-    }
-
-    .event-target {
-        font-size: 12px;
-        color: var(--text-secondary);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-    }
-
-    .event-method-badge {
-        font-family: 'Courier New', monospace;
-        color: var(--text-primary);
-        font-size: 11px;
-        background: rgba(157, 78, 221, 0.15);
-        border: 1px solid rgba(157, 78, 221, 0.3);
-        padding: 4px 8px;
-        border-radius: 4px;
         font-weight: 600;
-        width: 50px;
-        text-align: center;
-        flex-shrink: 0;
-        display: inline-block;
+        color: var(--text-secondary);
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
     }
 
     .event-uri {
@@ -425,27 +415,8 @@
         transform: translateX(-50%) translateY(-12px);
     }
 
-    .event-value {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 14px;
-        font-weight: 700;
-        color: #EF4444;
-        font-family: 'Courier New', monospace;
-        white-space: nowrap;
-        width: 90px;
-        flex-shrink: 0;
-        justify-content: flex-start;
-    }
-
-    .event-arrow {
-        font-size: 14px;
-        color: #EF4444;
-        opacity: 0.8;
-    }
-
     .event-status {
+        display: inline-block;
         padding: 6px 12px;
         border-radius: 6px;
         font-size: 11px;
@@ -455,9 +426,8 @@
         letter-spacing: 0.5px;
         border: 1px solid;
         min-width: 80px;
-        max-width: 100px;
         text-align: center;
-        justify-self: start;
+        box-sizing: border-box;
     }
 
     .event-status.blocked {
@@ -480,16 +450,15 @@
         border-color: rgba(179, 179, 179, 0.3);
     }
 
-    /* Event Details Row (Sub-row) */
-    .event-details-row {
-        padding: 16px 24px 20px 24px;
-        background: var(--bg-details);
-        border-top: 1px solid var(--border);
+    .event-details-inner {
         display: grid;
         grid-template-columns: auto 1fr;
         gap: 20px;
         align-items: start;
-        padding-right: 200px;
+        padding: 16px 24px 20px 24px;
+        padding-right: min(200px, 8vw);
+        background: var(--bg-details);
+        border-top: 1px solid var(--border);
     }
 
     .event-details-label {
@@ -509,6 +478,13 @@
         font-size: 12px;
         color: var(--text-secondary);
         align-items: center;
+    }
+
+    .event-detail-actions {
+        grid-column: 1 / -1;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
     }
 
     .event-detail-item {
@@ -656,30 +632,20 @@
         color: var(--primary);
     }
 
-    /* Collapsible Details */
-    .event-details-row {
+    /* Collapsible detail row (<tr>) */
+    tr.event-details-row {
         display: none;
-        max-height: 0;
-        overflow: hidden;
-        transition: all 0.3s ease;
     }
 
-    .event-details-row.expanded {
-        display: grid;
-        max-height: 1000px;
-        padding: 16px 24px 20px 24px;
+    tr.event-details-row.expanded {
+        display: table-row;
     }
 
-    .event-item.expanded .event-main-row::after {
-        content: '▼';
-        position: absolute;
-        left: 24px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-muted);
-        font-size: 12px;
+    .event-details-cell {
+        padding: 0 !important;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
     }
-
 
     /* Search Box */
     .filter-group.search-group {
@@ -731,99 +697,21 @@
         cursor: not-allowed;
     }
 
-    /* Responsive */
     @media (max-width: 1400px) {
-        .event-details-row {
+        .event-details-inner {
             padding-right: 24px;
-        }
-    }
-
-    @media (max-width: 1200px) {
-        .event-main-row {
-            grid-template-columns: 90px 40px minmax(0, 1fr) 130px;
-            gap: 16px;
-        }
-        
-        .event-info {
-            gap: 12px;
-        }
-        
-        .event-info .event-value {
-            display: none;
         }
     }
 
     @media (max-width: 900px) {
-        .event-main-row {
-            grid-template-columns: auto minmax(0, 1fr) 90px;
-            gap: 10px;
-            padding: 14px 16px;
-        }
-        
-        .event-time {
-            min-width: 85px;
-            max-width: 90px;
-        }
-        
-        .event-icon {
-            display: none;
-        }
-        
-        .event-status {
-            font-size: 10px;
-            padding: 5px 8px;
-        }
-        
-        .event-info {
-            grid-template-columns: 50px minmax(0, 1fr) auto auto;
-            gap: 8px;
-        }
-        
-        .event-info .event-value {
-            display: none;
-        }
-        
-        .event-details-row {
+        .event-details-inner {
             grid-template-columns: 1fr;
             padding-right: 24px;
         }
-        
+
         .event-details-label {
             min-width: auto;
             margin-bottom: 8px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .event-main-row {
-            grid-template-columns: 1fr;
-            gap: 12px;
-            padding: 12px 16px;
-        }
-        
-        .event-time {
-            flex-direction: row;
-            gap: 12px;
-            align-items: center;
-            max-width: 100%;
-            justify-content: flex-start;
-        }
-        
-        .event-info {
-            grid-template-columns: 50px minmax(0, 1fr) auto;
-            gap: 8px;
-        }
-        
-        .event-info .event-value {
-            display: none;
-        }
-        
-        .event-status {
-            justify-self: start;
-        }
-        
-        .event-icon {
-            display: none;
         }
     }
 
@@ -1000,86 +888,86 @@
     </form>
 </div>
 
-{{-- Events List --}}
+{{-- Events List (semantic table: header cells share column widths with body) --}}
 <div class="events-list">
-    @forelse ($events as $event)
+    @if(isset($events) && $events->isNotEmpty())
+    <div class="events-table-scroll">
+        <table class="events-log-table">
+            <colgroup>
+                <col class="col-w-time" span="1" />
+                <col class="col-w-ip" span="1" />
+                <col class="col-w-method" span="1" />
+                <col class="col-w-path" span="1" />
+                <col class="col-w-destination" span="1" />
+                <col class="col-w-rule" span="1" />
+                <col class="col-w-status" span="1" />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th scope="col">Time</th>
+                    <th scope="col">IP</th>
+                    <th scope="col">Method</th>
+                    <th scope="col">Path</th>
+                    <th scope="col">Destination</th>
+                    <th scope="col">Rule</th>
+                    <th scope="col">Status</th>
+                </tr>
+            </thead>
+            @foreach ($events as $event)
         @php
             $status = (int) $event->status;
             $rule = $event->rule_id;
             $desc = $rule ? ($ruleDescriptions[$rule] ?? null) : null;
-            // Convert to Saudi Arabia timezone
             $eventTime = $event->event_time ? $event->event_time->setTimezone('Asia/Riyadh') : null;
-            $timeAgo = $eventTime ? $eventTime->diffForHumans() : '';
+            $methodLabel = strtoupper($event->method ?? 'GET');
         @endphp
-        
-        <div class="event-item" data-event-id="{{ $event->id ?? '' }}">
-            {{-- Main Row --}}
-            <div class="event-main-row" onclick="toggleEventDetails(this)">
-                <div class="event-status {{ $status === 403 ? 'blocked' : ($status === 200 ? 'allowed' : 'other') }}" style="min-width: fit-content;">
-                    @if ($status === 403)
-                        Blocked
-                    @elseif ($status === 200)
-                        Allowed
-                    @else
-                        {{ $status }}
-                    @endif
-                </div>
-                
-                <div class="event-icon status-{{ $status }}">
-                    @if ($status === 403)
-                        <span class="no-symbol"></span>
-                    @elseif ($status === 200)
-                        <span style="display: inline-block; width: 14px; height: 14px; background: #4ADE80; border-radius: 50%;"></span>
-                    @elseif ($status === 404)
-                        <span style="color: #B3B3B3; font-size: 14px; font-weight: bold;">ℹ</span>
-                    @else
-                        <span style="color: #9D4EDD; font-size: 14px; font-weight: bold;">●</span>
-                    @endif
-                </div>
-                
-                <div class="event-info">
-                    <span class="event-method-badge">{{ $event->method ?? 'GET' }}</span>
-                    @if ($event->uri)
-                        <span class="event-uri">{{ $event->uri }}</span>
-                    @else
-                        <span></span>
-                    @endif
-                    @if ($event->host)
-                        <span class="event-host">{{ Str::limit($event->host, 30) }}</span>
-                    @else
-                        <span></span>
-                    @endif
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <strong class="event-ip">{{ $event->client_ip }}</strong>
-                        @if($event->country)
-                            <span class="event-country" 
-                                  data-country-code="{{ $event->country }}"
-                                  onclick="showCountryTooltip(this, event)">
-                                {{ $event->country }}
-                                <span class="country-tooltip" id="tooltip-{{ $event->id }}"></span>
-                            </span>
-                        @endif
-                    </div>
-                    @if ($rule || $status === 403)
-                        <div class="event-value">
-                            {{ $rule ?: 'WAF' }}
-                            <span class="event-arrow">→</span>
+            <tbody class="event-group" data-event-id="{{ $event->id ?? '' }}">
+                <tr class="event-main-row" onclick="toggleEventDetails(this)">
+                    <td class="td-time">
+                        <div class="event-time">
+                            <div class="event-timestamp">{{ $eventTime ? $eventTime->format('Y-m-d H:i:s') : '' }}</div>
                         </div>
-                    @else
-                        <div class="event-value" style="visibility: hidden;">
-                            &nbsp;
+                    </td>
+                    <td class="td-ip">
+                        <div class="td-ip-inner">
+                            <strong class="event-ip">{{ $event->client_ip }}</strong>
+                            @if($event->country)
+                                <span class="event-country"
+                                      data-country-code="{{ $event->country }}"
+                                      onclick="showCountryTooltip(this, event)">
+                                    {{ $event->country }}
+                                    <span class="country-tooltip" id="tooltip-{{ $event->id }}"></span>
+                                </span>
+                            @endif
                         </div>
-                    @endif
-                </div>
-                
-                <div class="event-time">
-                    <div class="event-duration">{{ $timeAgo }}</div>
-                    <div class="event-timestamp">{{ $eventTime ? $eventTime->format('Y-m-d H:i:s') : '' }}</div>
-                </div>
-            </div>
-            
-            {{-- Details Row (Sub-row) --}}
-            <div class="event-details-row" id="details-{{ $event->id ?? '' }}">
+                    </td>
+                    <td class="td-method">
+                        <span class="event-method-text">{{ $methodLabel }}</span>
+                    </td>
+                    <td class="td-path">
+                        <span class="event-url-path" title="{{ ($event->uri !== null && $event->uri !== '') ? $event->uri : '/' }}">{{ $event->uri !== null && $event->uri !== '' ? $event->uri : '/' }}</span>
+                    </td>
+                    <td class="td-destination">
+                        <span class="event-url-host" title="{{ $event->host ?? '' }}">{{ $event->host ? Str::limit($event->host, 64) : '—' }}</span>
+                    </td>
+                    <td class="td-rule {{ $rule ? 'has-rule' : '' }}" title="{{ $rule ? (string) $rule : '' }}">
+                        {{ $rule ?: '—' }}
+                    </td>
+                    <td class="td-status">
+                        <span class="event-status {{ $status === 403 ? 'blocked' : ($status === 200 ? 'allowed' : 'other') }}">
+                            @if ($status === 403)
+                                Blocked
+                            @elseif ($status === 200)
+                                Allowed
+                            @else
+                                {{ $status }}
+                            @endif
+                        </span>
+                    </td>
+                </tr>
+                <tr class="event-details-row" id="details-{{ $event->id ?? '' }}">
+                    <td colspan="7" class="event-details-cell">
+                        <div class="event-details-inner">
                 <div class="event-details-label">Attack Details</div>
                 <div class="event-details-content">
                     @if ($desc)
@@ -1199,8 +1087,8 @@
                 </div>
                 
                 {{-- AI Analysis Button --}}
-                <div class="event-detail-actions" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-                    <button onclick="analyzeEvent({{ $event->id }})" class="btn-ai-analyze" title="تحليل بواسطة AI">
+                <div class="event-detail-actions">
+                    <button type="button" onclick="event.stopPropagation(); analyzeEvent({{ $event->id }})" class="btn-ai-analyze" title="تحليل بواسطة AI">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                             <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -1208,13 +1096,18 @@
                         AI Analysis
                     </button>
                 </div>
-            </div>
-        </div>
-    @empty
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+            @endforeach
+        </table>
+    </div>
+    @else
         <div class="empty-state">
             No events found matching the current filters.
         </div>
-    @endforelse
+    @endif
 </div>
 
 {{-- Pagination --}}
@@ -1328,23 +1221,24 @@ function showCountryTooltip(element, event) {
     }
 }
 
-// Toggle event details
+// Toggle event details (each log entry is <tbody class="event-group">)
 function toggleEventDetails(element) {
-    const eventItem = element.closest('.event-item');
-    const detailsRow = eventItem.querySelector('.event-details-row');
-    
+    const tbody = element.closest('tbody.event-group');
+    if (!tbody) return;
+    const detailsRow = tbody.querySelector('tr.event-details-row');
+    if (!detailsRow) return;
+
     if (detailsRow.classList.contains('expanded')) {
         detailsRow.classList.remove('expanded');
-        eventItem.classList.remove('expanded');
+        tbody.classList.remove('expanded');
     } else {
-        // Close all other expanded items
-        document.querySelectorAll('.event-item.expanded').forEach(item => {
-            item.classList.remove('expanded');
-            item.querySelector('.event-details-row').classList.remove('expanded');
+        document.querySelectorAll('tbody.event-group.expanded').forEach(tb => {
+            tb.classList.remove('expanded');
+            const dr = tb.querySelector('tr.event-details-row');
+            if (dr) dr.classList.remove('expanded');
         });
-        
         detailsRow.classList.add('expanded');
-        eventItem.classList.add('expanded');
+        tbody.classList.add('expanded');
     }
 }
 

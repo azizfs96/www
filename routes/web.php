@@ -370,7 +370,6 @@ Route::get('/waf/events', function (Request $request) {
         'id',
         'event_time',
         'client_ip',
-        'country',
         'host',
         'uri',
         'method',

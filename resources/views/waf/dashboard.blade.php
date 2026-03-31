@@ -55,21 +55,6 @@
         text-align: center;
     }
 
-    .center-logo-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        margin: 10px 0 40px 0;
-        padding: 20px 0;
-    }
-
-    .center-logo-container img {
-        max-height: 160px;
-        width: auto;
-        object-fit: contain;
-    }
-
     .page-timestamp {
         display: inline-flex;
         align-items: center;
@@ -729,11 +714,6 @@ document.addEventListener('DOMContentLoaded', function() {
 @endsection
 
 @section('content')
-{{-- Center Logo --}}
-<div class="center-logo-container">
-    <img src="{{ asset('images/wafgate.png') }}" alt="WAF Edge">
-</div>
-
 <div class="page-header">
     <div class="page-header-top">
         <div>
