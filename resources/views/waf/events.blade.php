@@ -203,6 +203,11 @@
         border-bottom: 1px solid var(--border);
         text-align: left;
     }
+    
+    /* Clear separator line between each event group */
+    .events-log-table tbody.event-group + tbody.event-group tr.event-main-row td {
+        border-top: 1px solid rgba(255, 255, 255, 0.14);
+    }
 
     .td-ip-inner {
         display: flex;

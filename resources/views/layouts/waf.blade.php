@@ -162,9 +162,9 @@
         .content-wrapper .site-card,
         .content-wrapper .rule-card {
             background: #0e0e0e !important;
-            border: 1px solid rgba(255, 255, 255, 0.42) !important;
-            outline: 1px solid rgba(255, 255, 255, 0.35) !important;
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
+            border: 1px solid rgba(255, 255, 255, 0.26) !important;
+            outline: none !important;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
         }
     </style>
 </head>
