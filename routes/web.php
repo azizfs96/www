@@ -152,9 +152,9 @@ Route::get('/waf/api/chart-data', function (Request $request) {
                 datetime(event_time, "+3 hours") as hour_utc,
                 strftime("%Y-%m-%d %H:00:00", datetime(event_time, "+3 hours")) as hour,
                 strftime("%H:%M", datetime(event_time, "+3 hours")) as label,
-                SUM(CASE WHEN status = 200 THEN 1 ELSE 0 END) as allowed,
-                SUM(CASE WHEN status = 403 THEN 1 ELSE 0 END) as blocked,
-                SUM(CASE WHEN status = 404 THEN 1 ELSE 0 END) as notFound
+                SUM(CASE WHEN CAST(status AS INTEGER) = 200 THEN 1 ELSE 0 END) as allowed,
+                SUM(CASE WHEN CAST(status AS INTEGER) = 403 THEN 1 ELSE 0 END) as blocked,
+                SUM(CASE WHEN CAST(status AS INTEGER) = 404 THEN 1 ELSE 0 END) as notFound
             ')
             ->groupBy('hour', 'label')
             ->orderBy('hour')
@@ -167,9 +167,9 @@ Route::get('/waf/api/chart-data', function (Request $request) {
                 ->selectRaw('
                     DATE_FORMAT(CONVERT_TZ(event_time, "+00:00", "+03:00"), "%Y-%m-%d %H:00:00") as hour,
                     DATE_FORMAT(CONVERT_TZ(event_time, "+00:00", "+03:00"), "%H:%i") as label,
-                    SUM(CASE WHEN status = 200 THEN 1 ELSE 0 END) as allowed,
-                    SUM(CASE WHEN status = 403 THEN 1 ELSE 0 END) as blocked,
-                    SUM(CASE WHEN status = 404 THEN 1 ELSE 0 END) as notFound
+                    SUM(CASE WHEN CAST(status AS UNSIGNED) = 200 THEN 1 ELSE 0 END) as allowed,
+                    SUM(CASE WHEN CAST(status AS UNSIGNED) = 403 THEN 1 ELSE 0 END) as blocked,
+                    SUM(CASE WHEN CAST(status AS UNSIGNED) = 404 THEN 1 ELSE 0 END) as notFound
                 ')
                 ->groupBy('hour', 'label')
                 ->orderBy('hour')
@@ -180,9 +180,9 @@ Route::get('/waf/api/chart-data', function (Request $request) {
                 ->selectRaw('
                     DATE_FORMAT(DATE_ADD(event_time, INTERVAL 3 HOUR), "%Y-%m-%d %H:00:00") as hour,
                     DATE_FORMAT(DATE_ADD(event_time, INTERVAL 3 HOUR), "%H:%i") as label,
-                    SUM(CASE WHEN status = 200 THEN 1 ELSE 0 END) as allowed,
-                    SUM(CASE WHEN status = 403 THEN 1 ELSE 0 END) as blocked,
-                    SUM(CASE WHEN status = 404 THEN 1 ELSE 0 END) as notFound
+                    SUM(CASE WHEN CAST(status AS UNSIGNED) = 200 THEN 1 ELSE 0 END) as allowed,
+                    SUM(CASE WHEN CAST(status AS UNSIGNED) = 403 THEN 1 ELSE 0 END) as blocked,
+                    SUM(CASE WHEN CAST(status AS UNSIGNED) = 404 THEN 1 ELSE 0 END) as notFound
                 ')
                 ->groupBy('hour', 'label')
                 ->orderBy('hour')

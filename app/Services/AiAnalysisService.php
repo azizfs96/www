@@ -25,7 +25,7 @@ class AiAnalysisService
         if (!$this->apiKey) {
             return [
                 'success' => false,
-                'error' => 'OpenAI API key not configured. Please add OPENAI_API_KEY to .env file.',
+                'error' => 'WAF Gate AI not enabled yet',
             ];
         }
 
@@ -135,7 +135,7 @@ class AiAnalysisService
         if (!$this->apiKey) {
             return [
                 'success' => false,
-                'error' => 'OpenAI API key not configured.',
+                'error' => 'WAF Gate AI not enabled yet',
             ];
         }
 
