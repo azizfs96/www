@@ -11,6 +11,8 @@
         --bg-hover: #2A2A2A;
         --border: #333333;
         --border-light: #404040;
+        --card-border: rgba(240, 233, 233, 0.42);
+        --card-border-strong: rgba(226, 226, 226, 0.62);
         --text-primary: #E5E5E5;
         --text-secondary: #B3B3B3;
         --text-muted: #808080;
@@ -86,7 +88,9 @@
 
     .stat-card {
         background: #1E1E1E;
-        border: 1px solid var(--border);
+        border: 1px solid var(--card-border) !important;
+        outline: 1px solid rgba(255, 255, 255, 0.35) !important;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
         border-radius: 12px;
         padding: 24px;
         position: relative;
@@ -94,7 +98,7 @@
     }
 
     .stat-card:hover {
-        border-color: var(--border-light);
+        border-color: var(--card-border-strong);
         background: var(--bg-hover);
     }
 
@@ -191,14 +195,16 @@
     /* Panels */
     .panel {
         background: #1E1E1E;
-        border: 1px solid var(--border);
+        border: 1px solid var(--card-border) !important;
+        outline: 1px solid rgba(255, 255, 255, 0.35) !important;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
         border-radius: 12px;
         overflow: hidden;
         transition: all 0.2s ease;
     }
 
     .panel:hover {
-        border-color: var(--border-light);
+        border-color: var(--card-border-strong);
     }
 
     .panel-header {
@@ -372,7 +378,9 @@
     /* Chart Panel */
     .chart-panel {
         background: #1E1E1E;
-        border: 1px solid var(--border);
+        border: 1px solid var(--card-border) !important;
+        outline: 1px solid rgba(255, 255, 255, 0.35) !important;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
         border-radius: 12px;
         padding: 24px;
         margin-bottom: 40px;

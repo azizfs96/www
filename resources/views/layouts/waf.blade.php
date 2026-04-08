@@ -6,513 +6,312 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'WAF Dashboard')</title>
     <style>
-        /* Force Dark Background with Dots Pattern */
-        html { 
-            background: #1A1A1A !important; 
-            background-color: #1A1A1A !important;
-        }
-        
-        
-        body { 
-            background: #1A1A1A !important; 
-            background-color: #1A1A1A !important;
-        }
-        * { box-sizing: border-box; }
-        
         :root {
-            --bg: #1A1A1A;
-            --bg-soft: #1E1E1E;
-            --card: #1E1E1E;
-            --sidebar-bg: #1A1A1A;
-            --sidebar-active: rgba(157, 78, 221, 0.15);
-            --primary: #9D4EDD;
-            --primary-soft: #B06FE8;
-            --primary-dark: #7C2DD8;
-            --danger: #F87171;
-            --warning: #FBBF24;
-            --success: #4ADE80;
-            --text: #E5E5E5;
-            --text-muted: #B3B3B3;
-            --text-tertiary: #808080;
-            --border: #333333;
-            --sidebar-width: 260px;
+            --app-bg: #000000;
+            --content-text: #e5e7eb;
+            --sidebar-bg: #000000;
+            --sidebar-panel: #000000;
+            --sidebar-border: rgba(255, 255, 255, 0.10);
+            --sidebar-text: #edf2ff;
+            --sidebar-muted: #b2b9cc;
+            --sidebar-hover: rgba(255, 255, 255, 0.06);
+            --sidebar-active-bg: #4b5265;
+            --sidebar-active-text: #f8faff;
+            --sidebar-active-icon: #f8faff;
+            --badge-red: #dc3545;
+            --sidebar-width: 256px;
+            --sidebar-collapsed-width: 72px;
+            --item-height: 36px;
+            --radius-sm: 8px;
+            --z-sidebar: 1000;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
-
-        html {
-            background: #050810 !important;
-        }
-        
-        html, body {
-            background: #1A1A1A !important;
-            background-color: #1A1A1A !important;
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        
-        .app-container {
-            background: #1A1A1A !important;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .main-content {
-            background: transparent !important;
-            background-color: transparent !important;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .content-wrapper {
-            background: transparent !important;
-            background-color: transparent !important;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .sidebar {
-            background: #1A1A1A !important;
-            border-right-color: #333333 !important;
-            position: relative;
-            z-index: 1;
-        }
-
-        .dots-pattern {
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif; }
+        html, body { min-height: 100vh; background: var(--app-bg); color: var(--content-text); overflow-x: hidden; }
+        .app-container { display: flex; min-height: 100vh; width: 100%; position: relative; background: #000000; isolation: isolate; }
+        .app-container::before {
+            content: "";
             position: fixed;
-            top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: #1A1A1A;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-        
-        .dots-pattern::before {
-            content: '';
-            position: absolute;
             top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='2' fill='rgba(255,255,255,0.15)'/%3E%3C/svg%3E");
-            background-size: 24px 24px;
-            background-position: 0 0;
-            background-repeat: repeat;
-        }
-        
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Sidebar */
-        .sidebar {
             width: var(--sidebar-width);
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border);
-            position: fixed;
-            left: 0;
-            top: 0;
             height: 100vh;
-            overflow-y: auto;
-            z-index: 1000;
-            transition: transform 0.3s ease;
-            display: flex;
-            flex-direction: column;
+            background: #000000;
+            z-index: calc(var(--z-sidebar) - 1);
+            pointer-events: none;
         }
 
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
+        .gcs-sidebar {
+            width: var(--sidebar-width); min-width: var(--sidebar-width); background: #000000;
+            border: 1px solid var(--sidebar-border); border-left: none; border-radius: 0 14px 14px 0;
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+            height: 100vh; position: fixed; left: 0; top: 0;
+            z-index: var(--z-sidebar); display: flex; flex-direction: column; transition: width .18s ease, min-width .18s ease, transform .2s ease;
+            overflow: hidden;
+            isolation: isolate;
         }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: var(--sidebar-bg);
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 3px;
-        }
-
-        .sidebar-header {
-            padding: 0;
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
-            background: var(--sidebar-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 80px;
-        }
-
-        .sidebar-logo {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            padding: 0;
-        }
-
-        .sidebar-logo img {
-            max-height: 100%;
-            width: auto;
-            object-fit: contain;
-            display: block;
-        }
-
-        .sidebar-logo-text {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.5px;
-        }
-
-        .sidebar-subtitle {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 500;
-        }
-
-        .sidebar-nav {
-            padding: 24px 12px;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .nav-section {
-            margin-bottom: 32px;
-        }
-
-        .nav-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .nav-section-title {
-            font-size: 10px;
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            padding: 0 16px;
-            margin-bottom: 12px;
-            font-weight: 600;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: var(--text-muted);
-            font-size: 13px;
-            transition: all 0.2s ease;
-            margin-bottom: 4px;
-            position: relative;
-        }
-
-        .nav-item:hover {
-            background: var(--bg-soft);
-            color: var(--text);
-        }
-
-        .nav-item.active {
-            background: var(--bg-soft);
-            color: var(--text);
-            font-weight: 500;
-        }
-
-        .nav-item.active::before {
-            content: '';
+        .gcs-sidebar::before {
+            content: "";
             position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 3px;
-            height: 20px;
-            background: var(--primary);
-            border-radius: 0 2px 2px 0;
-        }
-        
-        .nav-item.active .nav-item-icon {
-            color: var(--primary);
-        }
-        
-        .nav-item:hover .nav-item-icon {
-            color: var(--text);
-        }
-
-        .nav-item-icon {
+            top: -1px;
+            right: -1px;
             width: 18px;
             height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            color: var(--text-muted);
-            transition: color 0.2s ease;
-            font-weight: normal;
-            flex-shrink: 0;
+            background: #000000;
+            border-bottom-left-radius: 14px;
+            pointer-events: none;
+            z-index: 2;
         }
-
-        .nav-item-badge {
-            margin-left: auto;
-            background: var(--danger);
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-weight: 600;
+        .gcs-sidebar::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 0 14px 14px 0;
+            box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05);
+            pointer-events: none;
         }
+        .gcs-sidebar.is-collapsed { width: var(--sidebar-collapsed-width); min-width: var(--sidebar-collapsed-width); }
+        .gcs-sidebar__top { padding: 10px 12px 8px; }
+        .gcs-top-row { height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .gcs-brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: var(--sidebar-text); }
+        .gcs-brand__icon { width: 18px; height: 18px; color: #8be38f; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .gcs-brand__label { font-size: 15px; line-height: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .gcs-star-btn, .gcs-collapse-btn { width: 28px; height: 28px; border: none; background: transparent; border-radius: var(--radius-sm); color: var(--sidebar-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+        .gcs-star-btn:hover, .gcs-collapse-btn:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
 
-        /* Main Content */
+        .gcs-sidebar__quick { padding: 0 12px 10px; }
+        .gcs-quick-search { height: 36px; border: 1px solid transparent; border-radius: 8px; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--sidebar-muted); font-size: 13px; line-height: 20px; background: rgba(255,255,255,.08); }
+
+        .gcs-sidebar__nav { flex: 1; overflow: auto; padding: 4px 10px 8px; }
+        .gcs-section { margin-bottom: 8px; }
+        .gcs-section__title { font-size: 12px; line-height: 16px; color: #c6ccdc; padding: 4px 10px; }
+        .gcs-group { margin-bottom: 2px; }
+        .gcs-group__toggle { width: 100%; height: var(--item-height); border: none; border-radius: var(--radius-sm); background: transparent; color: var(--sidebar-text); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 14px; line-height: 20px; font-weight: 500; cursor: pointer; }
+        .gcs-group__toggle:hover { background: var(--sidebar-hover); }
+        .gcs-group__chevron { color: var(--sidebar-muted); display: inline-flex; align-items: center; justify-content: center; transition: transform .18s ease; }
+        .gcs-group.is-open .gcs-group__chevron { transform: rotate(180deg); }
+        .gcs-group__submenu { max-height: 0; overflow: hidden; transition: max-height .2s ease; padding-left: 0; }
+        .gcs-group.is-open .gcs-group__submenu { max-height: 260px; }
+
+        .gcs-item { height: var(--item-height); display: flex; align-items: center; gap: 12px; padding: 0 10px; border-radius: var(--radius-sm); color: var(--sidebar-text); text-decoration: none; font-size: 14px; line-height: 20px; font-weight: 400; white-space: nowrap; position: relative; transition: background-color .16s ease, color .16s ease; margin-bottom: 2px; }
+        .gcs-item:hover { background: var(--sidebar-hover); }
+        .gcs-item.is-active { background: var(--sidebar-active-bg); color: var(--sidebar-active-text); font-weight: 500; }
+        .gcs-item__icon { width: 18px; height: 18px; color: var(--sidebar-muted); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .gcs-item.is-active .gcs-item__icon { color: var(--sidebar-active-icon); }
+        .gcs-item__label, .gcs-group__title, .gcs-brand__label, .gcs-quick-search__label { transition: opacity .12s ease; }
+
+        .gcs-sidebar__footer { border-top: 1px solid rgba(255, 255, 255, 0.08); padding: 8px 10px; }
+        .gcs-item--footer { color: var(--sidebar-muted); }
+        .gcs-footer-user { padding: 8px 10px 10px; color: var(--sidebar-muted); font-size: 12px; line-height: 16px; }
+        .gcs-footer-user strong { display: block; color: var(--sidebar-text); font-size: 13px; line-height: 18px; margin-bottom: 2px; font-weight: 500; }
+        .gcs-divider { height: 1px; background: rgba(255, 255, 255, 0.08); margin: 8px 0; }
+
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
             min-height: 100vh;
+            transition: margin-left .18s ease;
+            background: #000000 !important;
+            background-color: #000000 !important;
         }
-
+        .app-container.is-sidebar-collapsed .main-content { margin-left: var(--sidebar-collapsed-width); }
         .content-wrapper {
-            padding: 32px 40px;
+            padding: 24px 32px;
             max-width: 1600px;
             margin: 0 auto;
+            color: var(--content-text);
+            background: #000000 !important;
+            background-color: #000000 !important;
         }
+        .gcs-inline-tools { margin-bottom: 12px; }
+
+        .gcs-sidebar.is-collapsed .gcs-brand__label, .gcs-sidebar.is-collapsed .gcs-group__title, .gcs-sidebar.is-collapsed .gcs-item__label, .gcs-sidebar.is-collapsed .gcs-section__title, .gcs-sidebar.is-collapsed .gcs-quick-search__label, .gcs-sidebar.is-collapsed .gcs-star-btn, .gcs-sidebar.is-collapsed .gcs-footer-user { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+        .gcs-sidebar.is-collapsed .gcs-group__toggle, .gcs-sidebar.is-collapsed .gcs-item { justify-content: center; padding: 0; gap: 0; }
+        .gcs-sidebar.is-collapsed .gcs-group__chevron { display: none; }
+        .gcs-sidebar.is-collapsed .gcs-group__submenu { display: none; }
+        .gcs-sidebar.is-collapsed .gcs-quick-search { justify-content: center; padding: 0; }
+        .gcs-sidebar.is-collapsed [data-tooltip] { position: relative; }
+        .gcs-sidebar.is-collapsed [data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); background: #1f2937; color: #fff; border-radius: 4px; padding: 4px 8px; font-size: 12px; line-height: 16px; white-space: nowrap; z-index: 1200; pointer-events: none; }
+
+        .badge-red { margin-left: auto; min-width: 20px; height: 18px; border-radius: 999px; background: var(--badge-red); color: #fff; font-size: 11px; line-height: 18px; text-align: center; padding: 0 6px; font-weight: 600; }
+
+        .mobile-menu-btn { display: none; position: fixed; top: 20px; left: 20px; z-index: 1001; background: #fff; border: 1px solid #d9dde5; border-radius: 8px; padding: 10px; color: #374151; cursor: pointer; font-size: 20px; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); z-index: 999; }
+        .sidebar-overlay.open { display: block; }
 
         @media (max-width: 1024px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-
-            .content-wrapper {
-                padding: 16px;
-            }
-
-            .mobile-menu-btn {
-                display: block !important;
-            }
+            .gcs-sidebar { transform: translateX(-100%); }
+            .gcs-sidebar.open { transform: translateX(0); }
+            .main-content, .app-container.is-sidebar-collapsed .main-content { margin-left: 0; }
+            .content-wrapper { padding: 16px; }
+            .mobile-menu-btn { display: block; }
         }
 
-        /* Mobile Menu Button */
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1001;
-            background: var(--sidebar-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            color: var(--text);
-            cursor: pointer;
-            font-size: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: all 0.2s ease;
-        }
-
-        .mobile-menu-btn:hover {
-            background: var(--sidebar-active);
-            transform: scale(1.05);
-        }
-
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 999;
-        }
-
-        .sidebar-overlay.open {
-            display: block;
-        }
-
-        @media (max-width: 1024px) {
-            .sidebar-overlay.open {
-                display: block;
-            }
-        }
-
-        /* Status Badge */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(157, 78, 221, 0.15);
-            color: var(--primary-soft);
-            border: 1px solid rgba(157, 78, 221, 0.3);
-            border-radius: 12px;
-            padding: 6px 14px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .status-badge-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
-            background: var(--primary);
-            box-shadow: 0 0 8px rgba(157, 78, 221, 0.6);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        /* Content Styles */
         @yield('styles')
+    </style>
+    <style>
+        /* Global white-ish card borders across all WAF pages */
+        .content-wrapper .stat-card,
+        .content-wrapper .panel,
+        .content-wrapper .chart-panel,
+        .content-wrapper .card,
+        .content-wrapper .events-list,
+        .content-wrapper .filters-container,
+        .content-wrapper .table-container,
+        .content-wrapper .form-container,
+        .content-wrapper .site-card,
+        .content-wrapper .rule-card {
+            background: #0e0e0e !important;
+            border: 1px solid rgba(255, 255, 255, 0.42) !important;
+            outline: 1px solid rgba(255, 255, 255, 0.35) !important;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
+        }
     </style>
 </head>
 <body>
-    <div class="dots-pattern"></div>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <img src="{{ asset('images/Logo.png') }}" alt="WAF Gate Logo">
+@php
+    $icons = [
+        'leaf' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 5c-6 0-10 4-10 10 6 0 10-4 10-10z"></path><path d="M9 15c0-3 2-6 5-8"></path></svg>',
+        'home' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg>',
+        'task' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 12l2 2 6-6"></path></svg>',
+        'activity' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l2-4 4 8 2-4h6"></path></svg>',
+        'users' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2"></circle><path d="M3 19c1.4-3 4-5 6-5s4.6 2 6 5"></path></svg>',
+        'bell' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1112 0v5l2 2H4l2-2V9z"></path><path d="M10 19a2 2 0 004 0"></path></svg>',
+        'settings' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 0 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h0a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v0a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.4 1z"></path></svg>',
+        'info' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>',
+        'chevron' => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 10l4 4 4-4"></path></svg>',
+        'logout' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg>',
+        'search' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>',
+        'sun' => '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>',
+        'moon' => '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"></path></svg>',
+    ];
+
+    $menuGroups = [
+        [
+            'id' => 'waf',
+            'title' => 'WAF',
+            'items' => [
+                ['label' => 'Dashboard', 'href' => '/waf', 'icon' => $icons['home'], 'active' => request()->is('waf')],
+                ['label' => 'Event Log', 'href' => '/waf/events', 'icon' => $icons['task'], 'active' => request()->is('waf/events*')],
+                ['label' => 'Firewall Rules', 'href' => '/waf/firewall', 'icon' => $icons['activity'], 'active' => request()->is('waf/firewall*')],
+            ],
+        ],
+        [
+            'id' => 'sites',
+            'title' => 'Sites',
+            'items' => [
+                ['label' => 'Site Management', 'href' => '/waf/sites', 'icon' => $icons['users'], 'active' => request()->is('waf/sites*')],
+            ],
+        ],
+    ];
+@endphp
+
+<div class="app-container" id="appContainer">
+    <x-sidebar :collapsed="false">
+        <x-slot:top>
+            <div class="gcs-top-row">
+                <div class="gcs-brand" data-tooltip="WAF Console" title="WAF Console">
+                    <span class="gcs-brand__icon" aria-hidden="true">{!! $icons['leaf'] !!}</span>
+                    <span class="gcs-brand__label">WAF Console</span>
                 </div>
+                <button type="button" class="gcs-star-btn" aria-label="Favorite" title="Favorite">●</button>
             </div>
+        </x-slot:top>
 
-            <nav class="sidebar-nav">
-                <div class="nav-section">
-                    <div class="nav-section-title">Main</div>
-                    <a href="/waf" class="nav-item {{ request()->is('waf') && !request()->is('waf/events') && !request()->is('waf/ip-rules') ? 'active' : '' }}">
-                        <span class="nav-item-icon">—</span>
-                        <span>Dashboard</span>
-                    </a>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Events & Attacks</div>
-                    <a href="/waf/events" class="nav-item {{ request()->is('waf/events*') ? 'active' : '' }}">
-                        <span class="nav-item-icon">▪</span>
-                        <span>Event Log</span>
-                    </a>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Firewall & Sites</div>
-                    <a href="/waf/sites" class="nav-item {{ request()->is('waf/sites*') ? 'active' : '' }}">
-                        <span class="nav-item-icon">▫</span>
-                        <span>Sites Management</span>
-                    </a>
-                    <a href="/waf/firewall" class="nav-item {{ request()->is('waf/firewall*') ? 'active' : '' }}">
-                        <span class="nav-item-icon">▣</span>
-                        <span>Firewall Rules</span>
-                    </a>
-                </div>
-
-                @auth
-                    @if(auth()->user()->isSuperAdmin())
-                        <div class="nav-section">
-                            <div class="nav-section-title">Administration</div>
-                            <a href="/tenants" class="nav-item {{ request()->is('tenants*') ? 'active' : '' }}">
-                                <span class="nav-item-icon">⚙</span>
-                                <span>Tenants Management</span>
-                            </a>
-                        </div>
-                    @endif
-
-                    <div class="nav-section">
-                        <div class="nav-section-title">Account</div>
-                        <div style="background: var(--bg-soft); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px;">
-                            <div style="font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px;">
-                                {{ auth()->user()->name }}
-                            </div>
-                            <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
-                                {{ auth()->user()->isSuperAdmin() ? 'Super Admin' : (auth()->user()->isTenantAdmin() ? 'Tenant Admin' : 'User') }}
-                            </div>
-                        </div>
-                        <form method="POST" action="{{ route('logout') }}" style="display: inline; width: 100%;">
-                            @csrf
-                            <button type="submit" class="nav-item" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; color: var(--text-muted); padding: 12px 16px;">
-                                <span class="nav-item-icon">🚪</span>
-                                <span>Logout</span>
-                            </button>
-                        </form>
-                    </div>
-                @endauth
-            </nav>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-            <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-            <div class="content-wrapper">
-                @yield('content')
+        <x-slot:quick>
+            <div class="gcs-quick-search" data-tooltip="Search" title="Search">
+                <span class="gcs-item__icon" aria-hidden="true">{!! $icons['search'] !!}</span>
+                <span class="gcs-quick-search__label">Search...</span>
             </div>
+        </x-slot:quick>
+
+        @foreach($menuGroups as $group)
+            @php $groupActive = collect($group['items'])->contains(fn($item) => $item['active']); @endphp
+            <x-sidebar.group :title="$group['title']" :group-id="$group['id']" :open="$groupActive" :active="$groupActive">
+                @foreach($group['items'] as $item)
+                    <x-sidebar.item :href="$item['href']" :label="$item['label']" :icon="$item['icon']" :active="$item['active']" />
+                @endforeach
+            </x-sidebar.group>
+        @endforeach
+
+        <div class="gcs-divider"></div>
+
+        @auth
+            @if(auth()->user()->isSuperAdmin())
+                <x-sidebar.section title="Administration">
+                    <x-sidebar.item href="/tenants" label="Tenants Management" :icon="$icons['settings']" :active="request()->is('tenants*')" />
+                </x-sidebar.section>
+            @endif
+        @endauth
+
+        <x-slot:footer>
+            @auth
+                <div class="gcs-footer-user" data-tooltip="{{ auth()->user()->name }}" title="{{ auth()->user()->name }}">
+                    <strong>{{ auth()->user()->name }}</strong>
+                    {{ auth()->user()->isSuperAdmin() ? 'Super Admin' : (auth()->user()->isTenantAdmin() ? 'Tenant Admin' : 'User') }}
+                </div>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <x-sidebar.footer-item :icon="$icons['logout']" label="Logout" :is-button="true" type="submit" />
+                </form>
+            @endauth
+        </x-slot:footer>
+    </x-sidebar>
+
+    <div class="main-content">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <div class="content-wrapper">
+            <div class="gcs-inline-tools">
+                <button type="button" class="gcs-collapse-btn" id="sidebarCollapseBtn" aria-label="Toggle sidebar" title="Toggle sidebar">
+                    {!! $icons['chevron'] !!}
+                </button>
+            </div>
+            @yield('content')
         </div>
     </div>
+</div>
 
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
+<script>
+    const sidebar = document.getElementById('gcsSidebar');
+    const appContainer = document.getElementById('appContainer');
+    const collapseBtn = document.getElementById('sidebarCollapseBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function toggleSidebar() {
+        if (window.innerWidth <= 1024) {
             sidebar.classList.toggle('open');
             overlay.classList.toggle('open');
+            return;
         }
+        const collapsed = sidebar.classList.toggle('is-collapsed');
+        appContainer.classList.toggle('is-sidebar-collapsed', collapsed);
+    }
 
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            const menuBtn = document.querySelector('.mobile-menu-btn');
-            
-            if (window.innerWidth <= 1024) {
-                if (!sidebar.contains(event.target) && 
-                    !menuBtn.contains(event.target) && 
-                    sidebar.classList.contains('open')) {
-                    toggleSidebar();
-                }
-            }
-        });
-        
-        // Create dots pattern dynamically
-        document.addEventListener('DOMContentLoaded', function() {
-            const dotsPattern = document.querySelector('.dots-pattern');
-            if (dotsPattern) {
-                // Force the pattern to be visible
-                dotsPattern.style.display = 'block';
-                dotsPattern.style.visibility = 'visible';
-                dotsPattern.style.opacity = '1';
-            }
-        });
-    </script>
+    if (collapseBtn) collapseBtn.addEventListener('click', toggleSidebar);
 
-    @yield('scripts')
+    document.querySelectorAll('[data-group-toggle]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const parentGroup = button.closest('.gcs-group');
+            if (!parentGroup) return;
+            document.querySelectorAll('.gcs-group.is-open').forEach((group) => {
+                if (group !== parentGroup) group.classList.remove('is-open');
+            });
+            parentGroup.classList.toggle('is-open');
+        });
+    });
+
+    document.addEventListener('click', function (event) {
+        if (window.innerWidth > 1024) return;
+        const menuBtn = document.querySelector('.mobile-menu-btn');
+        if (!sidebar.contains(event.target) && !menuBtn.contains(event.target) && sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+        }
+    });
+</script>
+
+@yield('scripts')
 </body>
 </html>

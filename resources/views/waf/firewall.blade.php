@@ -4,44 +4,46 @@
 
 @section('styles')
 <style>
-    /* Enhanced Dark Design - Firewall Page */
+    /* Radical redesign - Firewall UX */
     :root {
-        --bg-dark: #1E1E1E;
-        --bg-card: #252525;
-        --bg-hover: #2D2D2D;
-        --bg-active: #353535;
-        --border: #404040;
-        --border-light: #4A4A4A;
-        --border-hover: #555555;
-        --text-primary: #FFFFFF;
-        --text-secondary: #E5E5E5;
-        --text-muted: #B0B0B0;
-        --primary: #8B5CF6;
-        --primary-hover: #A78BFA;
-        --primary-light: rgba(139, 92, 246, 0.2);
-        --success: #10B981;
-        --success-light: rgba(16, 185, 129, 0.2);
-        --error: #EF4444;
-        --error-light: rgba(239, 68, 68, 0.2);
-        --warning: #F59E0B;
-        --warning-light: rgba(245, 158, 11, 0.2);
-        --info: #3B82F6;
-        --info-light: rgba(59, 130, 246, 0.2);
+        --bg-dark: #0f1220;
+        --bg-card: #151a2d;
+        --bg-hover: #1b2138;
+        --bg-active: #232c49;
+        --border: #2b3557;
+        --border-light: #3a4772;
+        --border-hover: #546292;
+        --text-primary: #f5f7ff;
+        --text-secondary: #d9def0;
+        --text-muted: #98a3c7;
+        --primary: #7c8bff;
+        --primary-hover: #9aa6ff;
+        --primary-light: rgba(124, 139, 255, 0.2);
+        --success: #38d39f;
+        --success-light: rgba(56, 211, 159, 0.2);
+        --error: #ff6b8a;
+        --error-light: rgba(255, 107, 138, 0.18);
+        --warning: #ffc857;
+        --warning-light: rgba(255, 200, 87, 0.2);
+        --info: #58a6ff;
+        --info-light: rgba(88, 166, 255, 0.2);
     }
 
     .page-header {
-        margin-bottom: 32px;
+        margin-bottom: 24px;
         direction: ltr;
         text-align: left;
+        padding: 8px 2px 14px;
+        border-bottom: 1px solid var(--border);
     }
 
     .page-header h1 {
-        font-size: 32px;
-        font-weight: 700;
+        font-size: 28px;
+        font-weight: 800;
         color: var(--text-primary);
-        margin-bottom: 12px;
-        letter-spacing: -0.5px;
-        background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+        margin-bottom: 8px;
+        letter-spacing: -0.3px;
+        background: linear-gradient(135deg, #f7f9ff 0%, #aeb8ff 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -78,11 +80,11 @@
 
     .card {
         background: var(--bg-card);
-        border-radius: 12px;
+        border-radius: 16px;
         border: 1px solid var(--border);
-        padding: 28px;
+        padding: 20px;
         margin-bottom: 24px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 18px 36px rgba(2, 6, 23, 0.4);
         transition: all 0.3s ease;
     }
 
@@ -95,25 +97,36 @@
     /* Tabs */
     .rule-tabs {
         display: flex;
-        gap: 4px;
-        margin-bottom: 28px;
-        border-bottom: 2px solid var(--border);
-        padding-bottom: 0;
-        background: var(--bg-dark);
-        padding: 6px;
-        border-radius: 8px;
+        gap: 6px;
+        margin-bottom: 0;
+        background: #10172a;
+        padding: 8px;
+        border-radius: 12px;
         border: 1px solid var(--border);
-        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .rule-tabs::before {
+        content: 'Rule Type';
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+        margin: 0 10px 0 4px;
+        display: inline-flex;
+        align-items: center;
     }
 
     .rule-tab {
-        padding: 10px 20px;
+        padding: 10px 16px;
         background: transparent;
         border: none;
-        border-radius: 6px;
+        border-radius: 10px;
         color: var(--text-muted);
-        font-size: 13px;
-        font-weight: 600;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         cursor: pointer;
         transition: all 0.25s ease;
         position: relative;
@@ -125,21 +138,10 @@
     }
 
     .rule-tab.active {
-        color: var(--text-primary);
-        background: var(--primary-light);
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
-    }
-
-    .rule-tab.active::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 3px;
-        background: var(--primary);
-        border-radius: 6px 0 0 6px;
+        color: #ffffff;
+        background: linear-gradient(135deg, rgba(124, 139, 255, 0.32), rgba(88, 166, 255, 0.22));
+        border: 1px solid rgba(124, 139, 255, 0.45);
+        box-shadow: 0 6px 18px rgba(124, 139, 255, 0.25);
     }
 
     .tab-content {
@@ -153,8 +155,8 @@
     /* Form Styles */
     .form-row {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
         align-items: end;
     }
 
@@ -181,12 +183,12 @@
     .form-group input,
     .form-group select,
     .form-group textarea {
-        background: var(--bg-dark);
-        border-radius: 8px;
+        background: #0f1526;
+        border-radius: 10px;
         border: 1px solid var(--border);
         color: var(--text-primary);
         font-size: 14px;
-        padding: 12px 16px;
+        padding: 11px 14px;
         transition: all 0.25s ease;
         font-weight: 400;
     }
@@ -236,10 +238,10 @@
     }
 
     .btn-primary {
-        background: var(--primary);
+        background: linear-gradient(135deg, #7c8bff 0%, #58a6ff 100%);
         color: white;
-        border: 1px solid var(--primary);
-        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        border: 1px solid rgba(124, 139, 255, 0.6);
+        box-shadow: 0 10px 22px rgba(88, 166, 255, 0.28);
         font-weight: 600;
     }
 
@@ -310,10 +312,10 @@
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
+        border-radius: 14px;
         padding: 16px;
         text-align: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 8px 22px rgba(2, 6, 23, 0.35);
         transition: all 0.2s;
     }
 
@@ -337,53 +339,110 @@
         letter-spacing: 0.5px;
     }
 
-    /* Site Tabs */
-    .site-tabs {
-        margin-bottom: 28px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid var(--border);
-        background: rgba(255, 255, 255, 0.03);
-        padding: 16px;
-        border-radius: 8px;
-        margin-left: -28px;
-        margin-right: -28px;
-        margin-top: -28px;
-        margin-bottom: 24px;
+    /* Create Rule - clean structure */
+    .rule-builder {
+        display: grid;
+        gap: 16px;
+    }
+    .fw-main-layout {
+        display: grid;
+        grid-template-columns: minmax(340px, 1.05fr) minmax(280px, .95fr);
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 1180px) {
+        .fw-main-layout {
+            grid-template-columns: 1fr;
+        }
     }
 
-    .site-tabs label {
-        display: block;
-        font-size: 11px;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 700;
-        margin-bottom: 14px;
+    .builder-header {
         display: flex;
         align-items: center;
-        gap: 8px;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
     }
 
-    .site-tabs label::before {
-        content: '📍';
-        font-size: 14px;
+    .builder-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .builder-subtitle {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        line-height: 1.5;
+    }
+
+    .builder-step-title {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 10px;
+    }
+
+    .site-tabs {
+        padding: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 10px;
     }
 
     .site-tabs .btn {
         font-size: 12px;
-        padding: 8px 16px;
+        padding: 8px 14px;
         border-radius: 6px;
         transition: all 0.2s ease;
         font-weight: 600;
     }
 
+    .rule-tabs {
+        margin-bottom: 0;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 10px;
+        padding: 6px;
+    }
+
+    .rule-tabs::before {
+        content: none;
+    }
+
+    .tab-content {
+        margin-top: 10px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+    }
+
+    .form-actions {
+        display: flex;
+        align-items: end;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 11px 16px;
+        font-size: 13px;
+    }
+
     /* Table Styles */
     .table-container {
         background: var(--bg-card);
-        border-radius: 12px;
-        border: 2px solid var(--border);
+        border-radius: 16px;
+        border: 1px solid var(--border);
         overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 16px 32px rgba(2, 6, 23, 0.4);
         margin-bottom: 24px;
     }
 
@@ -394,8 +453,8 @@
     }
 
     thead {
-        background: var(--bg-dark);
-        border-bottom: 2px solid var(--border-hover);
+        background: #10172a;
+        border-bottom: 1px solid var(--border-hover);
     }
 
     th {
@@ -421,7 +480,6 @@
     tbody tr:hover {
         background: var(--bg-hover);
         border-left: 3px solid var(--primary);
-        transform: translateX(2px);
     }
 
     tbody tr:last-child {
@@ -553,10 +611,18 @@
 @endsection
 
 @section('content')
+@php
+    $ipCount = $ipRules->count();
+    $urlCount = $urlRules->count();
+    $countryCount = $countryRules->count();
+    $totalRules = $ipCount + $urlCount + $countryCount;
+    $currentScope = $siteId === 'all' ? 'All Sites' : ($siteId === 'global' ? 'Global' : ($sites->firstWhere('id', (int) $siteId)->name ?? 'Selected Site'));
+@endphp
+
 <div class="page-header">
     <h1>Firewall Rules</h1>
     <p class="page-subtitle">
-        Manage all security rules: IP Rules, URL Rules, and Country Rules in one place. Select the rule type when creating a new rule.
+        Build and manage firewall policy from one control center.
     </p>
 </div>
 
@@ -574,196 +640,125 @@
     </div>
 @endif
 
-{{-- Site Filter Tabs --}}
-<div class="card">
-    <div class="site-tabs">
-        <label>Filter by Site</label>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-            @if(auth()->user()->isSuperAdmin())
-                <a href="{{ route('firewall.index', ['site_id' => 'global']) }}" 
-                   class="btn {{ $siteId === 'global' ? 'btn-primary' : 'btn-secondary' }}">
-                    Global Rules
-                </a>
-            @endif
-            <a href="{{ route('firewall.index', ['site_id' => 'all']) }}" 
-               class="btn {{ $siteId === 'all' ? 'btn-primary' : 'btn-secondary' }}">
-                All Rules
-            </a>
-            @foreach($sites as $s)
-                <a href="{{ route('firewall.index', ['site_id' => $s->id]) }}" 
-                   class="btn {{ $siteId == $s->id ? 'btn-primary' : 'btn-secondary' }}">
-                    {{ $s->name }}
-                </a>
-            @endforeach
+<div class="fw-main-layout">
+    <div class="card" style="margin-bottom:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+            <div>
+                <h2 style="font-size:18px; font-weight:800; margin:0; color:var(--text-primary);">Rule Composer</h2>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Create and apply security rules quickly.</div>
+            </div>
+            <span class="badge badge-info" style="font-size:11px;">Scope: {{ $currentScope }}</span>
+        </div>
+
+        <div style="display:grid; gap:12px;">
+            <div style="padding:12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02);">
+                <div class="builder-step-title" style="margin-bottom:8px;">Scope</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                    @if(auth()->user()->isSuperAdmin())
+                        <a href="{{ route('firewall.index', ['site_id' => 'global']) }}" class="btn {{ $siteId === 'global' ? 'btn-primary' : 'btn-secondary' }}">Global</a>
+                    @endif
+                    <a href="{{ route('firewall.index', ['site_id' => 'all']) }}" class="btn {{ $siteId === 'all' ? 'btn-primary' : 'btn-secondary' }}">All Sites</a>
+                    @foreach($sites as $s)
+                        <a href="{{ route('firewall.index', ['site_id' => $s->id]) }}" class="btn {{ $siteId == $s->id ? 'btn-primary' : 'btn-secondary' }}">{{ $s->name }}</a>
+                    @endforeach
+                </div>
+            </div>
+
+            <div style="padding:12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.02);">
+                <div class="builder-step-title" style="margin-bottom:8px;">Rule Type</div>
+                <div class="rule-tabs">
+                    <button type="button" class="rule-tab active" onclick="switchTab('ip', this)">IP</button>
+                    <button type="button" class="rule-tab" onclick="switchTab('url', this)">URL</button>
+                    <button type="button" class="rule-tab" onclick="switchTab('country', this)">Country</button>
+                </div>
+            </div>
+
+            <div id="tab-ip" class="tab-content active">
+                <form method="POST" action="{{ route('firewall.store') }}" id="ip-form">
+                    @csrf
+                    <input type="hidden" name="rule_type" value="ip">
+                    <input type="hidden" name="site_id" value="{{ $siteId !== 'global' && $siteId !== 'all' ? $siteId : '' }}">
+                    <div class="form-row">
+                        @if($siteId === 'global' || $siteId === 'all')
+                        <div class="form-group">
+                            <label>Site</label>
+                            <select name="site_id">
+                                @if(auth()->user()->isSuperAdmin())<option value="">Global (All Sites)</option>@endif
+                                @foreach($sites as $site)<option value="{{ $site->id }}">{{ $site->name }} ({{ $site->server_name }})</option>@endforeach
+                            </select>
+                        </div>
+                        @endif
+                        <div class="form-group"><label>IP Address</label><input type="text" name="ip" placeholder="e.g., 137.59.230.231" required></div>
+                        <div class="form-group"><label>Action</label><select name="type" required><option value="allow">Allow</option><option value="block">Block</option></select></div>
+                        <div class="form-group form-actions"><button type="submit" class="btn btn-primary">Add IP Rule</button></div>
+                    </div>
+                </form>
+            </div>
+
+            <div id="tab-url" class="tab-content">
+                <form method="POST" action="{{ route('firewall.store') }}" id="url-form">
+                    @csrf
+                    <input type="hidden" name="rule_type" value="url">
+                    <input type="hidden" name="site_id" value="{{ $siteId !== 'global' && $siteId !== 'all' ? $siteId : '' }}">
+                    <div class="form-row">
+                        @if($siteId === 'global' || $siteId === 'all')
+                        <div class="form-group">
+                            <label>Site</label>
+                            <select name="site_id">
+                                @if(auth()->user()->isSuperAdmin())<option value="">Global (All Sites)</option>@endif
+                                @foreach($sites as $site)<option value="{{ $site->id }}">{{ $site->name }} ({{ $site->server_name }})</option>@endforeach
+                            </select>
+                        </div>
+                        @endif
+                        <div class="form-group"><label>Name</label><input type="text" name="name" placeholder="Rule name"></div>
+                        <div class="form-group"><label>Host</label><input type="text" name="host" placeholder="e.g., rabbitclean.sa"></div>
+                        <div class="form-group"><label>Path</label><input type="text" name="path" placeholder="/admin" required></div>
+                        <div class="form-group"><label>Allowed IPs</label><textarea name="allowed_ips" placeholder="192.168.1.1, 10.0.0.1" required></textarea></div>
+                        <div class="form-group form-actions"><button type="submit" class="btn btn-primary">Add URL Rule</button></div>
+                    </div>
+                </form>
+            </div>
+
+            <div id="tab-country" class="tab-content">
+                <form method="POST" action="{{ route('firewall.store') }}" id="country-form">
+                    @csrf
+                    <input type="hidden" name="rule_type" value="country">
+                    <input type="hidden" name="site_id" value="{{ $siteId !== 'global' && $siteId !== 'all' ? $siteId : '' }}">
+                    <div class="form-row">
+                        @if($siteId === 'global' || $siteId === 'all')
+                        <div class="form-group">
+                            <label>Site</label>
+                            <select name="site_id">
+                                @if(auth()->user()->isSuperAdmin())<option value="">Global (All Sites)</option>@endif
+                                @foreach($sites as $site)<option value="{{ $site->id }}">{{ $site->name }} ({{ $site->server_name }})</option>@endforeach
+                            </select>
+                        </div>
+                        @endif
+                        <div class="form-group"><label>Country Code</label><input type="text" name="country_code" placeholder="SA" maxlength="2" required style="text-transform:uppercase;"></div>
+                        <div class="form-group"><label>Action</label><select name="type" required><option value="block">Block</option><option value="allow">Allow</option></select></div>
+                        <div class="form-group form-actions"><button type="submit" class="btn btn-primary">Add Country Rule</button></div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    {{-- Rule Type Tabs --}}
-    <div class="rule-tabs">
-        <button type="button" class="rule-tab active" onclick="switchTab('ip')">IP Rules</button>
-        <button type="button" class="rule-tab" onclick="switchTab('url')">URL Rules</button>
-        <button type="button" class="rule-tab" onclick="switchTab('country')">Country Rules</button>
-    </div>
-
-    {{-- IP Rules Form --}}
-    <div id="tab-ip" class="tab-content active">
-        <form method="POST" action="{{ route('firewall.store') }}" id="ip-form">
-            @csrf
-            <input type="hidden" name="rule_type" value="ip">
-            <input type="hidden" name="site_id" value="{{ $siteId !== 'global' && $siteId !== 'all' ? $siteId : '' }}">
-            <div class="form-row">
-                @if($siteId === 'global' || $siteId === 'all')
-                <div class="form-group">
-                    <label>Site (Domain)</label>
-                    <select name="site_id">
-                        @if(auth()->user()->isSuperAdmin())
-                            <option value="">Global (All Sites)</option>
-                        @endif
-                        @foreach($sites as $site)
-                            <option value="{{ $site->id }}">{{ $site->name }} ({{ $site->server_name }})</option>
-                        @endforeach
-                    </select>
-                    <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px;">Select a specific site or leave it global</small>
-                    @error('site_id')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                @endif
-
-                <div class="form-group">
-                    <label>IP Address</label>
-                    <input type="text" name="ip" placeholder="e.g., 137.59.230.231" required>
-                    @error('ip')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label>Type</label>
-                    <select name="type" required>
-                        <option value="allow">Whitelist (Allow)</option>
-                        <option value="block">Blacklist (Block)</option>
-                    </select>
-                    @error('type')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group" style="display: flex; align-items: end;">
-                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 11px 16px; font-size: 13px;">Add IP Rule</button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    {{-- URL Rules Form --}}
-    <div id="tab-url" class="tab-content">
-        <form method="POST" action="{{ route('firewall.store') }}" id="url-form">
-            @csrf
-            <input type="hidden" name="rule_type" value="url">
-            <input type="hidden" name="site_id" value="{{ $siteId !== 'global' && $siteId !== 'all' ? $siteId : '' }}">
-            <div class="form-row">
-                @if($siteId === 'global' || $siteId === 'all')
-                <div class="form-group">
-                    <label>Site (Optional)</label>
-                    <select name="site_id">
-                        @if(auth()->user()->isSuperAdmin())
-                            <option value="">Global (All Sites)</option>
-                        @endif
-                        @foreach($sites as $site)
-                            <option value="{{ $site->id }}">{{ $site->name }} ({{ $site->server_name }})</option>
-                        @endforeach
-                    </select>
-                    @error('site_id')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                @endif
-
-                <div class="form-group">
-                    <label>Name (Optional)</label>
-                    <input type="text" name="name" placeholder="e.g., Admin Panel Access">
-                    @error('name')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label>Host (Optional)</label>
-                    <input type="text" name="host" placeholder="e.g., rabbitclean.sa">
-                    @error('host')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label>Path</label>
-                    <input type="text" name="path" placeholder="e.g., /admin" required>
-                    @error('path')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label>Allowed IPs</label>
-                    <textarea name="allowed_ips" placeholder="e.g., 192.168.1.1, 10.0.0.1" required></textarea>
-                    @error('allowed_ips')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group" style="display: flex; align-items: end;">
-                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 11px 16px; font-size: 13px;">Add URL Rule</button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    {{-- Country Rules Form --}}
-    <div id="tab-country" class="tab-content">
-        <form method="POST" action="{{ route('firewall.store') }}" id="country-form">
-            @csrf
-            <input type="hidden" name="rule_type" value="country">
-            <input type="hidden" name="site_id" value="{{ $siteId !== 'global' && $siteId !== 'all' ? $siteId : '' }}">
-            <div class="form-row">
-                @if($siteId === 'global' || $siteId === 'all')
-                <div class="form-group">
-                    <label>Site (Optional)</label>
-                    <select name="site_id">
-                        @if(auth()->user()->isSuperAdmin())
-                            <option value="">Global (All Sites)</option>
-                        @endif
-                        @foreach($sites as $site)
-                            <option value="{{ $site->id }}">{{ $site->name }} ({{ $site->server_name }})</option>
-                        @endforeach
-                    </select>
-                    @error('site_id')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                @endif
-
-                <div class="form-group">
-                    <label>Country Code</label>
-                    <input type="text" name="country_code" placeholder="e.g., SA, US, CN" maxlength="2" required style="text-transform: uppercase;">
-                    <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px;">Enter 2-letter country code (ISO 3166-1 alpha-2)</small>
-                    @error('country_code')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label>Type</label>
-                    <select name="type" required>
-                        <option value="block">Block (Deny)</option>
-                        <option value="allow">Allow (Whitelist)</option>
-                    </select>
-                    @error('type')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="form-group" style="display: flex; align-items: end;">
-                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 11px 16px; font-size: 13px;">Add Country Rule</button>
-                </div>
-            </div>
-        </form>
+    <div class="card" style="margin-bottom:0;">
+        <h2 style="font-size:16px; font-weight:800; margin:0 0 14px; color:var(--text-primary);">Policy Snapshot</h2>
+        <div class="stats-grid" style="grid-template-columns:1fr 1fr; margin-bottom:0;">
+            <div class="stat-card"><div class="stat-value">{{ $totalRules }}</div><div class="stat-label">Total</div></div>
+            <div class="stat-card"><div class="stat-value">{{ $ipCount }}</div><div class="stat-label">IP</div></div>
+            <div class="stat-card"><div class="stat-value">{{ $urlCount }}</div><div class="stat-label">URL</div></div>
+            <div class="stat-card"><div class="stat-value">{{ $countryCount }}</div><div class="stat-label">Country</div></div>
+        </div>
     </div>
 </div>
 
 {{-- All Rules Table --}}
+<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
+    <h2 style="font-size:16px; color:var(--text-primary); font-weight:700; margin:0;">Rules List</h2>
+    <span style="font-size:12px; color:var(--text-muted);">Showing {{ $totalRules }} rule(s)</span>
+</div>
 <div class="table-container">
     <table>
         <thead>
@@ -924,7 +919,7 @@
 
 @section('scripts')
 <script>
-    function switchTab(tabName) {
+    function switchTab(tabName, clickedButton = null) {
         // Hide all tabs
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.remove('active');
@@ -935,7 +930,9 @@
 
         // Show selected tab
         document.getElementById('tab-' + tabName).classList.add('active');
-        event.target.classList.add('active');
+        if (clickedButton) {
+            clickedButton.classList.add('active');
+        }
     }
 
     // Add loading state to forms
