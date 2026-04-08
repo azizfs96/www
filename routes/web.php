@@ -259,6 +259,49 @@ Route::get('/waf/api/chart-data', function (Request $request) {
     ]);
 });
 
+// SOC as a Service UI
+Route::get('/waf/soc', function () {
+    $kpis = config('soc_demo.kpis', []);
+    $timeline = config('soc_demo.timeline', []);
+    return view('waf.soc.dashboard', compact('kpis', 'timeline'));
+});
+
+Route::get('/waf/soc/alerts', function () {
+    $alerts = config('soc_demo.alerts', []);
+    return view('waf.soc.alerts', compact('alerts'));
+});
+
+Route::get('/waf/soc/incidents', function () {
+    $incidents = config('soc_demo.incidents', []);
+    return view('waf.soc.incidents', compact('incidents'));
+});
+
+Route::get('/waf/soc/attack-analysis', function () {
+    $analysis = config('soc_demo.attack_analysis', []);
+    return view('waf.soc.attack-analysis', compact('analysis'));
+});
+
+Route::get('/waf/soc/assets', function () {
+    $assets = config('soc_demo.assets', []);
+    return view('waf.soc.assets', compact('assets'));
+});
+
+Route::get('/waf/soc/api/overview', function () {
+    return response()->json([
+        'kpis' => config('soc_demo.kpis', []),
+        'timeline' => config('soc_demo.timeline', []),
+        'alerts' => config('soc_demo.alerts', []),
+        'incidents' => config('soc_demo.incidents', []),
+        'attack_analysis' => config('soc_demo.attack_analysis', []),
+        'assets' => config('soc_demo.assets', []),
+        'meta' => [
+            'mode' => 'live',
+            'source' => 'internal',
+            'generated_at' => now()->toIso8601String(),
+        ],
+    ]);
+});
+
 Route::get('/waf/events', function (Request $request) {
     $user = auth()->user();
     

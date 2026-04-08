@@ -83,6 +83,35 @@
         min-width: 160px;
         transition: all 0.2s;
     }
+    
+    .filter-group select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image:
+            linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+            linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+        background-position:
+            calc(100% - 18px) calc(50% - 2px),
+            calc(100% - 12px) calc(50% - 2px);
+        background-size: 6px 6px, 6px 6px;
+        background-repeat: no-repeat;
+        padding-right: 34px;
+        color-scheme: dark;
+    }
+    
+    .filter-group select option {
+        background: #101010;
+        color: #f1f1f1;
+    }
+    
+    .filter-group select option:checked,
+    .filter-group select option:hover,
+    .filter-group select option:focus,
+    .filter-group select option:active {
+        background: #9D4EDD !important;
+        color: #ffffff;
+    }
 
     .filter-group input:focus,
     .filter-group select:focus {

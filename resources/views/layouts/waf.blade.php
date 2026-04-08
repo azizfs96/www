@@ -75,6 +75,7 @@
         .gcs-top-row { height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .gcs-brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: var(--sidebar-text); }
         .gcs-brand__icon { width: 18px; height: 18px; color: #8be38f; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .gcs-brand__logo { height: 55px; width: auto; max-width: 273px; display: block; object-fit: contain; }
         .gcs-brand__label { font-size: 15px; line-height: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .gcs-star-btn, .gcs-collapse-btn { width: 28px; height: 28px; border: none; background: transparent; border-radius: var(--radius-sm); color: var(--sidebar-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
         .gcs-star-btn:hover, .gcs-collapse-btn:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
@@ -175,6 +176,7 @@
         'home' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10l9-7 9 7"></path><path d="M5 10v10h14V10"></path></svg>',
         'task' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 12l2 2 6-6"></path></svg>',
         'activity' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h4l2-4 4 8 2-4h6"></path></svg>',
+        'shield' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4.6-2.8 7.7-7 9-4.2-1.3-7-4.4-7-9V6l7-3z"></path></svg>',
         'users' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2"></circle><path d="M3 19c1.4-3 4-5 6-5s4.6 2 6 5"></path></svg>',
         'bell' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9a6 6 0 1112 0v5l2 2H4l2-2V9z"></path><path d="M10 19a2 2 0 004 0"></path></svg>',
         'settings' => '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 0 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h0a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v0a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.4 1z"></path></svg>',
@@ -197,6 +199,17 @@
             ],
         ],
         [
+            'id' => 'soc',
+            'title' => 'Security Center (SOC)',
+            'items' => [
+                ['label' => 'Dashboard', 'href' => '/waf/soc', 'icon' => $icons['home'], 'active' => request()->is('waf/soc')],
+                ['label' => 'Alerts', 'href' => '/waf/soc/alerts', 'icon' => $icons['bell'], 'active' => request()->is('waf/soc/alerts*')],
+                ['label' => 'Incidents', 'href' => '/waf/soc/incidents', 'icon' => $icons['task'], 'active' => request()->is('waf/soc/incidents*')],
+                ['label' => 'Attack Analysis', 'href' => '/waf/soc/attack-analysis', 'icon' => $icons['activity'], 'active' => request()->is('waf/soc/attack-analysis*')],
+                ['label' => 'Assets', 'href' => '/waf/soc/assets', 'icon' => $icons['shield'], 'active' => request()->is('waf/soc/assets*')],
+            ],
+        ],
+        [
             'id' => 'sites',
             'title' => 'Sites',
             'items' => [
@@ -210,9 +223,8 @@
     <x-sidebar :collapsed="false">
         <x-slot:top>
             <div class="gcs-top-row">
-                <div class="gcs-brand" data-tooltip="WAF Console" title="WAF Console">
-                    <span class="gcs-brand__icon" aria-hidden="true">{!! $icons['leaf'] !!}</span>
-                    <span class="gcs-brand__label">WAF Console</span>
+                <div class="gcs-brand" data-tooltip="WAF Gate" title="WAF Gate">
+                    <img src="{{ asset('images/Logo.png') }}" alt="WAF Gate Logo" class="gcs-brand__logo">
                 </div>
                 <button type="button" class="gcs-star-btn" aria-label="Favorite" title="Favorite">●</button>
             </div>
