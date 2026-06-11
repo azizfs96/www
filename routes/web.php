@@ -101,12 +101,26 @@ Route::get('/waf', function () {
         ];
     });
 
+    // Attack origins grouped by country (for the live threat map) - cached 60s
+    $originsCacheKey = 'waf_attack_origins_' . ($user->isSuperAdmin() ? 'all' : 'tenant_' . $user->tenant_id) . '_' . now('Asia/Riyadh')->format('Y-m-d');
+    $attackOrigins = \Illuminate\Support\Facades\Cache::remember($originsCacheKey, 60, function () use ($today) {
+        return (clone $today)
+            ->selectRaw('UPPER(country) as country, COUNT(*) as cnt')
+            ->whereNotNull('country')
+            ->where('country', '!=', '')
+            ->groupBy('country')
+            ->orderByDesc('cnt')
+            ->limit(40)
+            ->get();
+    });
+
     return view('waf.dashboard', [
         'total'   => $stats['total'],
         'blocked' => $stats['blocked'],
         'topIps'  => $topData['topIps'],
         'topRules' => $topData['topRules'],
         'hosts' => $hosts,
+        'attackOrigins' => $attackOrigins,
     ]);
 });
 

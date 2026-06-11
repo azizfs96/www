@@ -148,6 +148,93 @@
             .mobile-menu-btn { display: block; }
         }
 
+        /* ===== Platform Topbar ===== */
+        .gcs-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            height: 58px;
+            padding: 0 24px;
+            background: rgba(0, 0, 0, 0.72);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .gcs-topbar__toggle {
+            width: 34px; height: 34px; flex: 0 0 auto;
+            display: inline-flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px;
+            background: transparent; color: var(--sidebar-muted); cursor: pointer;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+        .gcs-topbar__toggle:hover { background: rgba(255,255,255,.06); color: #fff; border-color: rgba(255,255,255,.22); }
+
+        .gcs-topbar__search {
+            position: relative; flex: 1; max-width: 440px;
+        }
+        .gcs-topbar__search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--sidebar-muted); pointer-events: none; }
+        .gcs-topbar__search input {
+            width: 100%; height: 38px; padding: 0 12px 0 38px;
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);
+            border-radius: 9px; color: #edf2ff; font-size: 13px; transition: all .15s;
+        }
+        .gcs-topbar__search input::placeholder { color: #6b7280; }
+        .gcs-topbar__search input:focus { outline: none; background: rgba(255,255,255,.07); border-color: rgba(157,78,221,.55); box-shadow: 0 0 0 3px rgba(157,78,221,.15); }
+
+        .gcs-topbar__right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+        .gcs-env-badge {
+            display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px;
+            border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: rgba(255,255,255,.04);
+            color: #d1d5db; font-size: 12px; font-weight: 600; white-space: nowrap;
+        }
+        .gcs-env-badge .dot { width: 7px; height: 7px; border-radius: 999px; background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,.7); }
+
+        .gcs-market-btn {
+            display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px;
+            border: 1px solid rgba(157,78,221,.4); border-radius: 8px;
+            background: rgba(157,78,221,.12); color: #d8b4fe;
+            font-size: 12px; font-weight: 600; white-space: nowrap; text-decoration: none;
+            transition: all .15s;
+        }
+        .gcs-market-btn:hover { background: rgba(157,78,221,.22); border-color: rgba(157,78,221,.6); color: #ede9fe; }
+        .gcs-market-btn svg { flex: 0 0 auto; }
+
+        .gcs-topbar__icon-btn {
+            position: relative; width: 36px; height: 36px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border: none; background: transparent; border-radius: 8px;
+            color: var(--sidebar-muted); cursor: pointer; transition: background .15s, color .15s;
+        }
+        .gcs-topbar__icon-btn:hover { background: rgba(255,255,255,.06); color: #fff; }
+        .gcs-topbar__icon-btn .ping { position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; border-radius: 999px; background: #ef4444; box-shadow: 0 0 0 2px #000; }
+        .gcs-topbar__icon-btn .ping::after { content: ""; position: absolute; inset: 0; border-radius: 999px; background: #ef4444; animation: gcsPing 1.6s cubic-bezier(0,0,.2,1) infinite; }
+        @keyframes gcsPing { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+
+        .gcs-topbar__divider { width: 1px; height: 24px; background: rgba(255,255,255,.12); }
+
+        .gcs-topbar__user { display: inline-flex; align-items: center; gap: 10px; padding: 4px 6px; border-radius: 9px; text-decoration: none; transition: background .15s; }
+        .gcs-topbar__user:hover { background: rgba(255,255,255,.06); }
+        .gcs-topbar__avatar {
+            width: 32px; height: 32px; flex: 0 0 auto; border-radius: 999px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+        }
+        .gcs-topbar__user-meta { line-height: 1.2; }
+        .gcs-topbar__user-name { font-size: 12.5px; font-weight: 600; color: #edf2ff; }
+        .gcs-topbar__user-role { font-size: 11px; color: var(--sidebar-muted); }
+        .gcs-logout-btn { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,.12); background: transparent; border-radius: 8px; color: var(--sidebar-muted); cursor: pointer; transition: all .15s; }
+        .gcs-logout-btn:hover { color: #fca5a5; border-color: rgba(248,113,113,.4); background: rgba(248,113,113,.1); }
+
+        @media (max-width: 768px) {
+            .gcs-topbar { padding: 0 14px; gap: 10px; }
+            .gcs-topbar__search { max-width: none; }
+            .gcs-env-badge, .gcs-topbar__user-meta { display: none; }
+        }
+
         @yield('styles')
     </style>
     <style>
@@ -274,12 +361,54 @@
         <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-        <div class="content-wrapper">
-            <div class="gcs-inline-tools">
-                <button type="button" class="gcs-collapse-btn" id="sidebarCollapseBtn" aria-label="Toggle sidebar" title="Toggle sidebar">
-                    {!! $icons['chevron'] !!}
-                </button>
+        {{-- Platform Topbar --}}
+        <header class="gcs-topbar">
+            <button type="button" class="gcs-topbar__toggle" id="sidebarCollapseBtn" aria-label="Toggle sidebar" title="Toggle sidebar">
+                {!! $icons['chevron'] !!}
+            </button>
+
+            <div class="gcs-topbar__search">
+                {!! $icons['search'] !!}
+                <input type="text" placeholder="Search domains, rules, IPs…" aria-label="Search">
             </div>
+
+            <div class="gcs-topbar__right">
+                <span class="gcs-env-badge"><span class="dot"></span> Production</span>
+
+                <a href="#" class="gcs-market-btn" title="Marketplace">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"></path><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"></path><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"></path></svg>
+                    Marketplace
+                </a>
+
+                <button type="button" class="gcs-topbar__icon-btn" aria-label="Notifications" title="Notifications">
+                    {!! $icons['bell'] !!}
+                    <span class="ping"></span>
+                </button>
+
+                <span class="gcs-topbar__divider"></span>
+
+                @auth
+                    @php
+                        $u = auth()->user();
+                        $initials = collect(explode(' ', trim($u->name)))->filter()->take(2)->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
+                        $roleLabel = $u->isSuperAdmin() ? 'Super Admin' : ($u->isTenantAdmin() ? 'Tenant Admin' : 'User');
+                    @endphp
+                    <div class="gcs-topbar__user">
+                        <span class="gcs-topbar__avatar">{{ $initials ?: 'U' }}</span>
+                        <span class="gcs-topbar__user-meta">
+                            <span class="gcs-topbar__user-name">{{ $u->name }}</span><br>
+                            <span class="gcs-topbar__user-role">{{ $roleLabel }}</span>
+                        </span>
+                    </div>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="gcs-logout-btn" aria-label="Logout" title="Logout">{!! $icons['logout'] !!}</button>
+                    </form>
+                @endauth
+            </div>
+        </header>
+
+        <div class="content-wrapper">
             @yield('content')
         </div>
     </div>

@@ -382,7 +382,7 @@
         outline: 1px solid rgba(255, 255, 255, 0.35) !important;
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
         border-radius: 12px;
-        padding: 24px;
+        padding: 16px 24px 24px;
         margin-bottom: 40px;
     }
 
@@ -390,7 +390,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 8px;
         flex-wrap: wrap;
         gap: 16px;
     }
@@ -503,7 +503,7 @@
 
     .chart-container {
         position: relative;
-        height: 400px;
+        height: 360px;
         width: 100%;
     }
 
@@ -511,15 +511,175 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 400px;
+        height: 360px;
         color: var(--text-muted);
         font-size: 14px;
     }
+
+    /* ===== Live Attack Origins Threat Map (stat-card sized) ===== */
+    .map-card {
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: #0b1020;
+    }
+    .map-live-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #c4b5fd;
+        background: rgba(11,16,32,.6);
+        border: 1px solid rgba(139,92,246,.3);
+        backdrop-filter: blur(4px);
+        white-space: nowrap;
+    }
+    .map-live-dot {
+        position: relative;
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #a78bfa;
+    }
+    .map-live-dot::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: #a78bfa;
+        animation: mapPing 1.8s cubic-bezier(0,0,.2,1) infinite;
+    }
+    @keyframes mapPing { 75%, 100% { transform: scale(2.6); opacity: 0; } }
+
+    .map-canvas-wrap {
+        flex: 1;
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+    }
+    #threatMapSvg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .map-geo { fill: #1b2340; stroke: #2b3766; stroke-width: 0.4; }
+    .map-marker-core { fill: #a78bfa; stroke: #f5f3ff; stroke-width: 0.7; cursor: pointer; }
+    .map-marker-label { fill: #ede9fe; font-size: 9px; font-weight: 600; paint-order: stroke; stroke: #0b1020; stroke-width: 2.5px; pointer-events: none; }
 </style>
 @endsection
 
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script>
+// ===== Live Attack Origins Threat Map =====
+(function () {
+    // Approx [lon, lat] centroid per ISO-3166 alpha-2 code
+    const CENTROIDS = {
+        US:[-98,39], SA:[45,24], GB:[-2,54], DE:[10,51], FR:[2,46], CN:[105,35], JP:[138,36],
+        IN:[79,22], BR:[-51,-10], RU:[100,60], CA:[-106,56], AU:[134,-25], IT:[12,42], ES:[-4,40],
+        NL:[5,52], SE:[15,62], NO:[8,61], DK:[10,56], FI:[26,64], PL:[19,52], KR:[128,36], MX:[-102,23],
+        AR:[-64,-34], ZA:[24,-29], EG:[30,27], AE:[54,24], TR:[35,39], ID:[120,-5], TH:[101,15],
+        VN:[106,16], PH:[122,13], MY:[102,4], SG:[104,1.3], NZ:[174,-41], IE:[-8,53], CH:[8,47],
+        AT:[14,47], BE:[4,50], PT:[-8,39], GR:[22,39], CZ:[15,50], HU:[19,47], RO:[25,46], BG:[25,43],
+        HR:[15,45], SK:[19,49], SI:[15,46], LT:[24,56], LV:[25,57], EE:[26,59], IS:[-18,65], LU:[6,50],
+        MT:[14,36], CY:[33,35], KW:[48,29], QA:[51,25], BH:[50.5,26], OM:[56,21], JO:[36,31], LB:[36,34],
+        IQ:[44,33], SY:[38,35], YE:[48,15], PK:[70,30], BD:[90,24], LK:[81,7], NP:[84,28], AF:[66,33],
+        IR:[53,32], IL:[35,31], PS:[35,32], UA:[32,49]
+    };
+    const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+    const SVG_NS = "http://www.w3.org/2000/svg";
+
+    function compact(n) {
+        if (n >= 1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'') + 'M';
+        if (n >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'') + 'k';
+        return String(n);
+    }
+    function el(name, attrs) {
+        const e = document.createElementNS(SVG_NS, name);
+        for (const k in attrs) e.setAttribute(k, attrs[k]);
+        return e;
+    }
+
+    async function initThreatMap() {
+        const card = document.getElementById('threatMapCard');
+        const svg = document.getElementById('threatMapSvg');
+        if (!card || !svg || typeof d3 === 'undefined' || typeof topojson === 'undefined') return;
+
+        let origins = [];
+        try { origins = JSON.parse(card.dataset.origins || '[]'); } catch (e) { origins = []; }
+        // Keep only origins we can place on the map
+        origins = origins
+            .map(o => ({ country: String(o.country || '').toUpperCase(), cnt: Number(o.cnt) || 0 }))
+            .filter(o => CENTROIDS[o.country]);
+
+        const max = Math.max(...origins.map(o => o.cnt), 1);
+
+        const W = 900, H = 420;
+        const projection = d3.geoEqualEarth().fitExtent([[0, 0], [W, H]], { type: "Sphere" });
+        const path = d3.geoPath(projection);
+
+        let world;
+        try {
+            world = await d3.json(GEO_URL);
+        } catch (e) {
+            return;
+        }
+        const countries = topojson.feature(world, world.objects.countries).features;
+
+        // base geographies
+        const gGeo = el('g', {});
+        countries.forEach(f => {
+            const d = path(f);
+            if (d) gGeo.appendChild(el('path', { d: d, class: 'map-geo' }));
+        });
+        svg.appendChild(gGeo);
+
+        // markers
+        const gMark = el('g', {});
+        origins.forEach((o, i) => {
+            const p = projection(CENTROIDS[o.country]);
+            if (!p) return;
+            const r = 2.5 + (o.cnt / max) * 6;
+            const g = el('g', { transform: `translate(${p[0]}, ${p[1]})`, style: 'cursor:pointer' });
+
+            // expanding radar ring
+            const ring = el('circle', { r: r, fill: 'none', stroke: '#c4b5fd', 'stroke-width': 1, opacity: 0.8 });
+            const begin = (Math.abs(CENTROIDS[o.country][0]) % 6) * 0.25 + 's';
+            const a1 = el('animate', { attributeName: 'r', values: `${r};${r*3.4}`, dur: '2.6s', begin: begin, repeatCount: 'indefinite' });
+            const a2 = el('animate', { attributeName: 'opacity', values: '0.75;0', dur: '2.6s', begin: begin, repeatCount: 'indefinite' });
+            ring.appendChild(a1); ring.appendChild(a2);
+            g.appendChild(ring);
+
+            // solid core
+            const core = el('circle', { r: r, class: 'map-marker-core' });
+            g.appendChild(core);
+
+            // hover label
+            const label = el('text', { 'text-anchor': 'middle', y: -r - 6, class: 'map-marker-label', opacity: 0 });
+            label.textContent = o.country + ' · ' + compact(o.cnt);
+            g.appendChild(label);
+
+            g.addEventListener('mouseenter', () => { label.setAttribute('opacity', 1); core.setAttribute('r', r + 1.2); });
+            g.addEventListener('mouseleave', () => { label.setAttribute('opacity', 0); core.setAttribute('r', r); });
+
+            gMark.appendChild(g);
+        });
+        svg.appendChild(gMark);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initThreatMap);
+    } else {
+        initThreatMap();
+    }
+})();
+</script>
 <script>
 let chartInstance = null;
 
@@ -574,17 +734,7 @@ function loadChartData(host = '') {
                     },
                     plugins: {
                         legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                color: '#B3B3B3',
-                                font: {
-                                    size: 12,
-                                    family: 'system-ui, sans-serif'
-                                },
-                                padding: 15,
-                                usePointStyle: true,
-                            }
+                            display: false,
                         },
                         tooltip: {
                             backgroundColor: 'rgba(30, 30, 30, 0.95)',
@@ -723,33 +873,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @section('content')
 <div class="page-header">
-    <div class="page-header-top">
-        <div>
-            <h1 class="page-title">WAF Dashboard</h1>
-            <div class="page-timestamp">
-                <span>Last Updated: {{ now('Asia/Riyadh')->format('Y-m-d H:i:s') }} (Saudi Arabia Time)</span>
-            </div>
+    <div class="page-header-top" style="align-items: center;">
+        <h1 class="page-title" style="text-align: left; margin: 0;">WAF Dashboard</h1>
+        <div class="page-timestamp">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span>Last Updated: {{ now('Asia/Riyadh')->format('Y-m-d H:i:s') }} <span style="opacity:.7;">(KSA)</span></span>
         </div>
     </div>
 </div>
 
 {{-- Statistics Cards --}}
 <div class="stats-grid">
-    <div class="stat-card total">
-        <div class="stat-card-header">
-            <div style="flex: 1;">
-                <div class="stat-icon-wrapper">—</div>
-                <div class="stat-label">Total Events</div>
-                <div class="stat-value">{{ number_format($total) }}</div>
-                <div>
-                    <span class="stat-badge {{ $total > 0 ? 'warning' : 'success' }}">
-                        {{ $total > 0 ? 'Active' : 'Safe' }}
-                    </span>
-                </div>
-            </div>
-        </div>
-        <div class="stat-description">
-            All requests analyzed and processed through ModSecurity and OWASP CRS in the last 24 hours.
+    {{-- Live Attack Origins Threat Map (replaces the old Total Events card) --}}
+    <div class="stat-card map-card" id="threatMapCard"
+         data-origins='@json($attackOrigins)'>
+        <div class="map-canvas-wrap">
+            <span class="map-live-badge"><span class="map-live-dot"></span>Live</span>
+            <svg id="threatMapSvg" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid slice"></svg>
         </div>
     </div>
 
@@ -795,33 +935,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {{-- Chart Panel --}}
 <div class="chart-panel">
     <div class="chart-header">
-        <div>
-            <div class="chart-title">Connection Statistics</div>
-            <div class="chart-subtitle">Request status codes over time (Last 24 hours)</div>
-        </div>
-        <div class="chart-controls">
-            <select id="domainSelect" class="chart-select">
-                <option value="">All Domains</option>
-                @foreach($hosts ?? [] as $host)
-                    <option value="{{ $host }}">{{ $host }}</option>
-                @endforeach
-            </select>
-            <input 
-                type="text" 
-                id="domainInput" 
-                class="chart-input" 
-                placeholder="Or enter domain manually (e.g., rabbitclean.sa)"
-                style="min-width: 300px;"
-            >
-            <button 
-                id="applyDomainBtn" 
-                class="btn btn-primary"
-                style="padding: 8px 16px; font-size: 13px;"
-            >
-                Apply
-            </button>
-        </div>
-        <div class="status-filters" style="margin-top: 16px;">
+        <div class="status-filters">
             <div class="status-filter-item allowed active" data-status="200">
                 <input type="checkbox" id="filter200" checked>
                 <label for="filter200">Allowed (200)</label>
@@ -834,6 +948,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="checkbox" id="filter404" checked>
                 <label for="filter404">Not Found (404)</label>
             </div>
+        </div>
+        <div class="chart-controls">
+            <select id="domainSelect" class="chart-select">
+                <option value="">All Domains</option>
+                @foreach($hosts ?? [] as $host)
+                    <option value="{{ $host }}">{{ $host }}</option>
+                @endforeach
+            </select>
         </div>
     </div>
     <div class="chart-container">

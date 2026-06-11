@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('ip_rules', function (Blueprint $table) {
             $table->id();
+            $table->string('ip');
+            $table->enum('type', ['allow', 'block']); // allow = whitelist, block = blacklist
             $table->timestamps();
         });
     }
@@ -25,9 +27,3 @@ return new class extends Migration
         Schema::dropIfExists('ip_rules');
     }
 };
-Schema::create('ip_rules', function (Blueprint $table) {
-    $table->id();
-    $table->string('ip');
-    $table->enum('type', ['allow', 'block']); // allow = whitelist, block = blacklist
-    $table->timestamps();
-});
