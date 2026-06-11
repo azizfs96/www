@@ -932,8 +932,8 @@ class SiteController extends Controller
             // صفحة مخصصة من المستخدم
             $pagePath = $site->policy->custom_403_page_path;
         } else {
-            // توليد صفحة افتراضية مخصصة لكل موقع
-            $pagePath = "{$pagesDir}/{$site->server_name}.html";
+            // توليد صفحة افتراضية مخصصة لكل موقع (بصيغة SSI لعرض Support ID)
+            $pagePath = "{$pagesDir}/{$site->server_name}.shtml";
             $this->generateDefault403Page($site, $pagePath);
         }
 
@@ -942,9 +942,11 @@ class SiteController extends Controller
 
         // تُعرض هذه الصفحة فقط عندما يكون مصدر الحظر ModSecurity (الكود الداخلي 462)،
         // بينما يبقى الزائر يرى حالة 403 الطبيعية. أخطاء 403 الأخرى من Nginx لا تتأثر.
+        // ssi on لعرض Support ID (معرّف الطلب من ModSecurity) داخل الصفحة بدون redirect.
         $content .= "    error_page 462 =403 @waf_blocked;\n";
         $content .= "    location @waf_blocked {\n";
         $content .= "        internal;\n";
+        $content .= "        ssi on;\n";
         $content .= "        root {$dir};\n";
         $content .= "        try_files /{$file} =403;\n";
         $content .= "    }\n\n";
@@ -955,79 +957,59 @@ class SiteController extends Controller
      */
     protected function generateDefault403Page(Site $site, string $filePath): void
     {
-        $message = $site->policy->custom_403_message 
-            ?: "Access Denied - Your request has been blocked by WAF (Web Application Firewall)";
+        $message = $site->policy->custom_403_message
+            ?: "تم حظر هذا الطلب بواسطة جدار الحماية. إذا كنت تعتقد أن هذا خطأ، زوّد مسؤول الموقع بالـ Support ID أدناه.";
+        $serverName = $site->server_name;
 
         $html = <<<HTML
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>403 Forbidden - Access Denied</title>
+    <title>تم حظر الطلب — WAFGate</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at 50% 18%, #1a1030, #000); color: #e8eaed; padding: 24px;
         }
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
-            width: 100%;
-            padding: 60px 40px;
-            text-align: center;
+        .card {
+            max-width: 540px; width: 100%; text-align: center;
+            background: rgba(255,255,255,.03); border: 1px solid rgba(168,85,247,.35);
+            border-radius: 18px; padding: 48px 36px;
+            box-shadow: 0 20px 60px rgba(124,58,237,.25);
         }
-        .icon {
-            font-size: 80px;
-            margin-bottom: 30px;
-        }
+        .shield { width: 70px; height: 70px; margin: 0 auto 22px; color: #a855f7; }
         h1 {
-            color: #333;
-            font-size: 36px;
-            margin-bottom: 20px;
-            font-weight: 700;
+            font-size: 58px; font-weight: 800; line-height: 1;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
         }
-        .message {
-            color: #666;
-            font-size: 18px;
-            line-height: 1.6;
-            margin-bottom: 40px;
+        h2 { font-size: 20px; margin: 8px 0 14px; color: #f3f4f6; }
+        p { font-size: 14px; color: #9aa0aa; line-height: 1.7; }
+        .sid {
+            margin-top: 26px; padding: 16px 14px;
+            border: 1px dashed rgba(168,85,247,.4); border-radius: 12px; background: rgba(168,85,247,.08);
         }
-        .details {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 30px;
-            font-size: 14px;
-            color: #888;
-        }
-        .site-name {
-            color: #667eea;
-            font-weight: 600;
-        }
+        .sid-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #9aa0aa; }
+        .sid-val { margin-top: 8px; font-family: ui-monospace, 'Courier New', monospace; font-size: 15px; color: #e9d5ff; font-weight: 700; word-break: break-all; }
+        .meta { margin-top: 18px; font-size: 12px; color: #6b7280; }
+        .brand { margin-top: 24px; font-size: 13px; color: #c4b5fd; font-weight: 600; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">🚫</div>
-        <h1>403 Forbidden</h1>
-        <p class="message">{$message}</p>
-        <div class="details">
-            <p>Site: <span class="site-name">{$site->server_name}</span></p>
-            <p style="margin-top: 10px;">If you believe this is an error, please contact the site administrator.</p>
+    <div class="card">
+        <svg class="shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.6-2.8 7.7-7 9-4.2-1.3-7-4.4-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+        <h1>403</h1>
+        <h2>تم حظر هذا الطلب</h2>
+        <p>{$message}</p>
+        <div class="sid">
+            <div class="sid-label">Support ID</div>
+            <div class="sid-val"><!--# echo var="waf_support_id" default="N/A" --></div>
         </div>
+        <div class="meta">Site: {$serverName}</div>
+        <div class="brand">🛡️ Protected by WAFGate</div>
     </div>
 </body>
 </html>
