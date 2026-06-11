@@ -478,7 +478,7 @@ class FirewallController extends Controller
                 $content .= "    phase:1,\\\n";
                 $content .= "    log,\\\n";
                 $content .= "    deny,\\\n";
-                $content .= "    status:403,\\\n";
+                $content .= "    status:462,\\\n";
                 $content .= "    chain,\\\n";
                 $content .= "    msg:'{$msg}'\"\n";
                 $content .= "    SecRule REQUEST_URI \"@beginsWith {$path}\" \\\n";
@@ -490,7 +490,7 @@ class FirewallController extends Controller
                 $content .= "    phase:1,\\\n";
                 $content .= "    log,\\\n";
                 $content .= "    deny,\\\n";
-                $content .= "    status:403,\\\n";
+                $content .= "    status:462,\\\n";
                 $content .= "    chain,\\\n";
                 $content .= "    msg:'{$msg}'\"\n";
                 $content .= "    SecRule REMOTE_ADDR \"!@ipMatch {$ipList}\"\n\n";
@@ -531,7 +531,7 @@ class FirewallController extends Controller
                 $content .= "    phase:1,\\\n";
                 $content .= "    log,\\\n";
                 $content .= "    deny,\\\n";
-                $content .= "    status:403,\\\n";
+                $content .= "    status:462,\\\n";
                 $content .= "    msg:'Blocked country: {$countryCode}',\\\n";
                 $content .= "    chain\"\n";
                 $content .= "    SecRule GEO:COUNTRY_CODE \"@streq {$countryCode}\"\n\n";
@@ -547,7 +547,7 @@ class FirewallController extends Controller
             $content .= "    phase:1,\\\n";
             $content .= "    log,\\\n";
             $content .= "    deny,\\\n";
-            $content .= "    status:403,\\\n";
+            $content .= "    status:462,\\\n";
             $content .= "    msg:'Country not in allowed list',\\\n";
             $content .= "    chain\"\n";
             $content .= "    SecRule GEO:COUNTRY_CODE \"!@rx ^({$allowedList})$\"\n\n";

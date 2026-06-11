@@ -849,7 +849,10 @@ class SiteController extends Controller
                 $content .= "    modsecurity on;\n";
                 $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
             }
-            
+
+            // صفحة حظر ModSecurity المخصصة (الكود 462)
+            $this->add403ErrorPage($content, $site);
+
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
@@ -889,7 +892,10 @@ class SiteController extends Controller
                 $content .= "    modsecurity on;\n";
                 $content .= "    modsecurity_rules_file {$modsecFile};\n\n";
             }
-            
+
+            // صفحة حظر ModSecurity المخصصة (الكود 462)
+            $this->add403ErrorPage($content, $site);
+
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
@@ -915,23 +921,33 @@ class SiteController extends Controller
             return;
         }
 
-        // إنشاء مجلد صفحات 403 إذا لم يكن موجوداً
+        // إنشاء مجلد صفحات الحظر إذا لم يكن موجوداً
         $pagesDir = '/etc/nginx/waf-403-pages';
         if (!is_dir($pagesDir)) {
             @mkdir($pagesDir, 0755, true);
         }
 
-        // تحديد مسار صفحة 403
+        // تحديد مسار صفحة الحظر
         if ($site->policy->custom_403_page_path && file_exists($site->policy->custom_403_page_path)) {
-            // استخدام صفحة مخصصة من المستخدم
-            $content .= "    error_page 403 =403 {$site->policy->custom_403_page_path};\n";
+            // صفحة مخصصة من المستخدم
+            $pagePath = $site->policy->custom_403_page_path;
         } else {
-            // توليد صفحة افتراضية مخصصة
-            $default403Path = "{$pagesDir}/{$site->server_name}.html";
-            $this->generateDefault403Page($site, $default403Path);
-            $content .= "    error_page 403 =403 {$default403Path};\n";
+            // توليد صفحة افتراضية مخصصة لكل موقع
+            $pagePath = "{$pagesDir}/{$site->server_name}.html";
+            $this->generateDefault403Page($site, $pagePath);
         }
-        $content .= "\n";
+
+        $dir  = dirname($pagePath);
+        $file = basename($pagePath);
+
+        // تُعرض هذه الصفحة فقط عندما يكون مصدر الحظر ModSecurity (الكود الداخلي 462)،
+        // بينما يبقى الزائر يرى حالة 403 الطبيعية. أخطاء 403 الأخرى من Nginx لا تتأثر.
+        $content .= "    error_page 462 =403 @waf_blocked;\n";
+        $content .= "    location @waf_blocked {\n";
+        $content .= "        internal;\n";
+        $content .= "        root {$dir};\n";
+        $content .= "        try_files /{$file} =403;\n";
+        $content .= "    }\n\n";
     }
 
     /**
