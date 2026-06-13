@@ -535,14 +535,15 @@
     }
     .tip-chip {
         flex-shrink: 0;
-        display: inline-flex; align-items: center;
-        padding: 2px 8px;
-        background: rgba(96, 165, 250, 0.15);
-        border: 1px solid rgba(96, 165, 250, 0.3);
-        border-radius: 4px;
-        font-size: 10px; font-weight: 600; color: #60a5fa;
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 2px 9px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 999px;
+        font-size: 11px; font-weight: 500; color: #cbd5e1;
         white-space: nowrap;
     }
+    .tip-chip .flag { font-size: 12px; line-height: 1; }
     .tip-bar {
         margin-top: 9px; height: 6px; width: 100%;
         border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden;
@@ -1051,12 +1052,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         $share = max(4, round(($ip->cnt / $maxAtt) * 100));
                         $cc = strtoupper($ip->country ?? '');
                         $countryName = $cc ? ($tipCountryNames[$cc] ?? $cc) : 'Unknown';
+                        $flag = (strlen($cc) === 2 && ctype_alpha($cc))
+                            ? mb_chr(127397 + ord($cc[0])) . mb_chr(127397 + ord($cc[1]))
+                            : '🌐';
                     @endphp
                     <div class="tip-row">
                         <div class="tip-main">
                             <div class="tip-id">
                                 <span class="tip-ip">{{ $ip->client_ip }}</span>
-                                <span class="tip-chip">{{ $countryName }}</span>
+                                <span class="tip-chip"><span class="flag">{{ $flag }}</span>{{ $countryName }}</span>
                             </div>
                             <div class="tip-bar"><span style="width: {{ $share }}%"></span></div>
                         </div>
