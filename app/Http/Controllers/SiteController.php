@@ -853,12 +853,42 @@ class SiteController extends Controller
             // صفحة حظر ModSecurity المخصصة (الكود 462)
             $this->add403ErrorPage($content, $site);
 
+            // كاش الملفات الثابتة (صور/CSS/JS/خطوط) — تخزين قوي
+            $content .= "    location ~* \\.(?:css|js|mjs|jpe?g|png|gif|ico|svg|webp|avif|woff2?|ttf|eot|mp4|webm|ogg|mp3|pdf)\$ {\n";
+            $content .= "        proxy_pass http://{$backendName};\n";
+            $content .= "        proxy_set_header Host \$host;\n";
+            $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
+            $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
+            $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n";
+            $content .= "        proxy_cache waf_cache;\n";
+            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
+            $content .= "        proxy_cache_valid 200 301 302 30d;\n";
+            $content .= "        proxy_cache_valid 404 1m;\n";
+            $content .= "        proxy_ignore_headers Cache-Control Expires Set-Cookie;\n";
+            $content .= "        proxy_hide_header Set-Cookie;\n";
+            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
+            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
+            $content .= "        expires 30d;\n";
+            $content .= "        access_log off;\n";
+            $content .= "    }\n\n";
+
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
             $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
             $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
             $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n\n";
+            $content .= "        # كاش الصفحات — آمن: يتخطّى الطلبات المخصّصة ولا يخزّن ردود Set-Cookie\n";
+            $content .= "        proxy_cache waf_cache;\n";
+            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
+            $content .= "        proxy_cache_valid 200 301 302 10m;\n";
+            $content .= "        proxy_cache_valid 404 1m;\n";
+            $content .= "        proxy_cache_bypass \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session \$arg_nocache;\n";
+            $content .= "        proxy_no_cache \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session;\n";
+            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
+            $content .= "        proxy_cache_background_update on;\n";
+            $content .= "        proxy_cache_lock on;\n";
+            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
             $content .= "        proxy_read_timeout 60s;\n";
             $content .= "        proxy_send_timeout 60s;\n";
             $content .= "    }\n\n";
@@ -896,12 +926,42 @@ class SiteController extends Controller
             // صفحة حظر ModSecurity المخصصة (الكود 462)
             $this->add403ErrorPage($content, $site);
 
+            // كاش الملفات الثابتة (صور/CSS/JS/خطوط) — تخزين قوي
+            $content .= "    location ~* \\.(?:css|js|mjs|jpe?g|png|gif|ico|svg|webp|avif|woff2?|ttf|eot|mp4|webm|ogg|mp3|pdf)\$ {\n";
+            $content .= "        proxy_pass http://{$backendName};\n";
+            $content .= "        proxy_set_header Host \$host;\n";
+            $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
+            $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
+            $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n";
+            $content .= "        proxy_cache waf_cache;\n";
+            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
+            $content .= "        proxy_cache_valid 200 301 302 30d;\n";
+            $content .= "        proxy_cache_valid 404 1m;\n";
+            $content .= "        proxy_ignore_headers Cache-Control Expires Set-Cookie;\n";
+            $content .= "        proxy_hide_header Set-Cookie;\n";
+            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
+            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
+            $content .= "        expires 30d;\n";
+            $content .= "        access_log off;\n";
+            $content .= "    }\n\n";
+
             $content .= "    location / {\n";
             $content .= "        proxy_pass http://{$backendName};\n\n";
             $content .= "        proxy_set_header Host \$host;\n";
             $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
             $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
             $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n\n";
+            $content .= "        # كاش الصفحات — آمن: يتخطّى الطلبات المخصّصة ولا يخزّن ردود Set-Cookie\n";
+            $content .= "        proxy_cache waf_cache;\n";
+            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
+            $content .= "        proxy_cache_valid 200 301 302 10m;\n";
+            $content .= "        proxy_cache_valid 404 1m;\n";
+            $content .= "        proxy_cache_bypass \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session \$arg_nocache;\n";
+            $content .= "        proxy_no_cache \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session;\n";
+            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
+            $content .= "        proxy_cache_background_update on;\n";
+            $content .= "        proxy_cache_lock on;\n";
+            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
             $content .= "        proxy_read_timeout 60s;\n";
             $content .= "        proxy_send_timeout 60s;\n";
             $content .= "    }\n\n";
@@ -932,8 +992,8 @@ class SiteController extends Controller
             // صفحة مخصصة من المستخدم
             $pagePath = $site->policy->custom_403_page_path;
         } else {
-            // توليد صفحة افتراضية مخصصة لكل موقع (بصيغة SSI لعرض Support ID)
-            $pagePath = "{$pagesDir}/{$site->server_name}.shtml";
+            // توليد صفحة افتراضية مخصصة لكل موقع
+            $pagePath = "{$pagesDir}/{$site->server_name}.html";
             $this->generateDefault403Page($site, $pagePath);
         }
 
@@ -942,13 +1002,14 @@ class SiteController extends Controller
 
         // تُعرض هذه الصفحة فقط عندما يكون مصدر الحظر ModSecurity (الكود الداخلي 462)،
         // بينما يبقى الزائر يرى حالة 403 الطبيعية. أخطاء 403 الأخرى من Nginx لا تتأثر.
-        // ssi on لعرض Support ID (معرّف الطلب من ModSecurity) داخل الصفحة بدون redirect.
+        // sub_filter يحقن Support ID فريد ($request_id) في الصفحة بدون redirect.
         $content .= "    error_page 462 =403 @waf_blocked;\n";
         $content .= "    location @waf_blocked {\n";
         $content .= "        internal;\n";
-        $content .= "        ssi on;\n";
         $content .= "        root {$dir};\n";
         $content .= "        try_files /{$file} =403;\n";
+        $content .= "        sub_filter '__SUPPORT_ID__' \$request_id;\n";
+        $content .= "        sub_filter_once off;\n";
         $content .= "    }\n\n";
     }
 
@@ -1006,7 +1067,7 @@ class SiteController extends Controller
         <p>{$message}</p>
         <div class="sid">
             <div class="sid-label">Support ID</div>
-            <div class="sid-val"><!--# echo var="waf_support_id" default="N/A" --></div>
+            <div class="sid-val">__SUPPORT_ID__</div>
         </div>
         <div class="meta">Site: {$serverName}</div>
         <div class="brand">🛡️ Protected by WAFGate</div>
@@ -1066,10 +1127,12 @@ HTML;
             $content .= "SecDataDir /tmp/\n\n";
         }
 
-        // إعدادات ModSecurity الأساسية - إجبار 403 على deny
-        $content .= "# Force 403 status code on deny\n";
-        $content .= "SecDefaultAction \"phase:1,deny,status:403\"\n";
-        $content .= "SecDefaultAction \"phase:2,deny,status:403\"\n\n";
+        // إجبار الكود 462 على deny ليلتقطه error_page ويعرض صفحة WAFGate المخصصة
+        $content .= "# Force 462 status code on deny (custom WAFGate block page)\n";
+        $content .= "SecDefaultAction \"phase:1,deny,status:462\"\n";
+        $content .= "SecDefaultAction \"phase:2,deny,status:462\"\n\n";
+        // اجعل كتلة الحظر في OWASP CRS تستخدم نفس الكود
+        $content .= "SecAction \"id:900119,phase:1,nolog,pass,t:none,setvar:tx.block_status=462\"\n\n";
         
         // إعدادات مستوى الصرامة
         $content .= "# Paranoia Level\n";
@@ -1349,7 +1412,7 @@ HTML;
                 $ip = trim($ip);
                 if ($ip && filter_var($ip, FILTER_VALIDATE_IP)) {
                     $ruleId = 710000 + crc32($ip . $site->id);
-                    $content .= "SecRule REMOTE_ADDR \"@ipMatch {$ip}\" \"id:{$ruleId},phase:1,deny,status:403,msg:'IP Blocked: {$ip}'\"\n";
+                    $content .= "SecRule REMOTE_ADDR \"@ipMatch {$ip}\" \"id:{$ruleId},phase:1,deny,status:462,msg:'IP Blocked: {$ip}'\"\n";
                 }
             }
             $content .= "\n";
@@ -1364,6 +1427,9 @@ HTML;
         $whitelistFile = "$sitesDir/{$site->server_name}-whitelist.txt";
         $blacklistFile = "$sitesDir/{$site->server_name}-blacklist.txt";
         
+        // ملاحظة: كود حظر CRS (462) يُضبط مركزياً عبر SecDefaultAction في
+        // crs-setup.conf (الطريقة الرسمية)، وليس هنا — لتجنّب كسر قاعدة 949110.
+
         // كتابة ملفات .txt (للرجوع إليها)
         @file_put_contents($whitelistFile, $siteWhitelist->implode(PHP_EOL) . PHP_EOL);
         @file_put_contents($blacklistFile, $siteBlacklist->implode(PHP_EOL) . PHP_EOL);

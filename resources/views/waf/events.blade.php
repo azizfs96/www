@@ -850,23 +850,18 @@
 
 @section('content')
 <div class="page-header">
-    <h1>WAF Event Logs</h1>
+    <h1>Blocked Requests</h1>
+    <p style="margin-top:6px;color:var(--text-secondary,#9aa0aa);font-size:13.5px;">
+        عرض الطلبات التي حجبها جدار الحماية فقط — لتقليل الضوضاء والحمل على السيرفر.
+    </p>
 </div>
 
 {{-- Statistics Cards --}}
 @if(isset($stats))
 <div class="stats-grid">
-    <div class="stat-card total">
-        <div class="stat-label">Total Events</div>
-        <div class="stat-value">{{ number_format($stats['total'] ?? 0) }}</div>
-    </div>
     <div class="stat-card blocked">
-        <div class="stat-label">Blocked (403)</div>
-        <div class="stat-value">{{ number_format($stats['blocked'] ?? 0) }}</div>
-    </div>
-    <div class="stat-card allowed">
-        <div class="stat-label">Allowed (200)</div>
-        <div class="stat-value">{{ number_format($stats['allowed'] ?? 0) }}</div>
+        <div class="stat-label">Blocked Requests</div>
+        <div class="stat-value">{{ number_format($stats['blocked'] ?? ($stats['total'] ?? 0)) }}</div>
     </div>
     <div class="stat-card ips">
         <div class="stat-label">Unique IPs</div>
@@ -882,16 +877,6 @@
             <label>Text Search</label>
             <input type="text" name="search" placeholder="Search in IP, URI, Host, or Message..."
                    value="{{ $filters['search'] ?? '' }}">
-        </div>
-
-        <div class="filter-group">
-            <label>HTTP Status</label>
-            <select name="status">
-                <option value="">All</option>
-                <option value="403" {{ ($filters['status'] ?? '') == '403' ? 'selected' : '' }}>403 (Blocked)</option>
-                <option value="200" {{ ($filters['status'] ?? '') == '200' ? 'selected' : '' }}>200 (Allowed)</option>
-                <option value="404" {{ ($filters['status'] ?? '') == '404' ? 'selected' : '' }}>404 (Not Found)</option>
-            </select>
         </div>
 
         <div class="filter-group">

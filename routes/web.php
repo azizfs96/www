@@ -318,9 +318,12 @@ Route::get('/waf/soc/api/overview', function () {
 
 Route::get('/waf/events', function (Request $request) {
     $user = auth()->user();
-    
-    $baseQuery = WafEvent::query()->orderByDesc('event_time');
-    
+
+    // عرض الطلبات المحظورة فقط (تقليل الحمل) — ModSecurity يحجب بـ 403 أو 462
+    $baseQuery = WafEvent::query()
+        ->whereIn('status', [403, 462])
+        ->orderByDesc('event_time');
+
     // Filter by tenant if not super admin
     if (!$user->isSuperAdmin() && $user->tenant_id) {
         $siteIds = \App\Models\Site::where('tenant_id', $user->tenant_id)->pluck('id');
@@ -465,9 +468,10 @@ Route::get('/waf/events', function (Request $request) {
         });
     }
     
-    $totalEvents = $statsQuery->count();
-    $blockedCount = (clone $statsQuery)->where('status', 403)->count();
-    $allowedCount = (clone $statsQuery)->where('status', 200)->count();
+    // الاستعلام الأساس مقصور على المحظور (403/462)، لذا الإجمالي = المحظور
+    $totalEvents = (clone $statsQuery)->count();
+    $blockedCount = $totalEvents;
+    $allowedCount = 0;
     $uniqueIps = $statsQuery->distinct('client_ip')->count('client_ip');
 
     // توصيف لبعض Rule IDs المعروفة (تقدر توسّعها)
