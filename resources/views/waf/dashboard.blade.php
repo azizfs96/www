@@ -998,7 +998,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="status-filter-item blocked active" data-status="403">
                 <input type="checkbox" id="filter403" checked>
-                <label for="filter403">Blocked (403)</label>
+                <label for="filter403">Blocked</label>
             </div>
             <div class="status-filter-item notfound active" data-status="404">
                 <input type="checkbox" id="filter404" checked>

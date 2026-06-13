@@ -86,6 +86,13 @@ public function handle(): int
             continue;
         }
 
+        // تخزين الطلبات المحظورة فقط (403/462) — تجاهل الطلبات السليمة وغير المحظورة
+        // لتقليل حجم قاعدة البيانات والحمل على السيرفر.
+        $status = $res['http_code'] ?? null;
+        if (! in_array((int) $status, [403, 462], true)) {
+            continue;
+        }
+
         // تخطي السجل إذا كان مستورد من قبل
         if (WafEvent::where('unique_id', $uniqueId)->exists()) {
             continue;
@@ -133,7 +140,7 @@ public function handle(): int
             'host'       => $host,
             'uri'        => $req['uri'] ?? null,
             'method'     => $req['method'] ?? null,
-            'status'     => $res['http_code'] ?? null,
+            'status'     => $status,
             'rule_id'    => $primaryDetails['ruleId'] ?? null,
             'severity'   => $primaryDetails['severity'] ?? null,
             'message'    => $primaryMessage['message'] ?? null,
