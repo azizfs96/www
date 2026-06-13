@@ -710,6 +710,8 @@ class SiteController extends Controller
         $policy = $site->policy;
         $rlEnabled = $policy && $policy->rate_limiting_enabled && (int) ($policy->requests_per_minute ?? 0) > 0;
         $rlZone = 'waf_rl_' . $site->id;
+        // الكاش اختياري: لا يُولَّد proxy_cache إلا عند تفعيله (يتطلّب منطقة waf_cache في nginx.conf)
+        $cacheEnabled = $policy && $policy->cache_enabled;
         if ($rlEnabled) {
             $rpm = (int) $policy->requests_per_minute;
             $content .= "# API Protection: rate limiting ({$rpm} req/min per client IP)\n";
@@ -868,45 +870,7 @@ class SiteController extends Controller
                 $this->addApiRateLimitLocation($content, $policy, $backendName, $rlZone);
             }
 
-            // كاش الملفات الثابتة (صور/CSS/JS/خطوط) — تخزين قوي
-            $content .= "    location ~* \\.(?:css|js|mjs|jpe?g|png|gif|ico|svg|webp|avif|woff2?|ttf|eot|mp4|webm|ogg|mp3|pdf)\$ {\n";
-            $content .= "        proxy_pass http://{$backendName};\n";
-            $content .= "        proxy_set_header Host \$host;\n";
-            $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
-            $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
-            $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n";
-            $content .= "        proxy_cache waf_cache;\n";
-            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
-            $content .= "        proxy_cache_valid 200 301 302 30d;\n";
-            $content .= "        proxy_cache_valid 404 1m;\n";
-            $content .= "        proxy_ignore_headers Cache-Control Expires Set-Cookie;\n";
-            $content .= "        proxy_hide_header Set-Cookie;\n";
-            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
-            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
-            $content .= "        expires 30d;\n";
-            $content .= "        access_log off;\n";
-            $content .= "    }\n\n";
-
-            $content .= "    location / {\n";
-            $content .= "        proxy_pass http://{$backendName};\n\n";
-            $content .= "        proxy_set_header Host \$host;\n";
-            $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
-            $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
-            $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n\n";
-            $content .= "        # كاش الصفحات — آمن: يتخطّى الطلبات المخصّصة ولا يخزّن ردود Set-Cookie\n";
-            $content .= "        proxy_cache waf_cache;\n";
-            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
-            $content .= "        proxy_cache_valid 200 301 302 10m;\n";
-            $content .= "        proxy_cache_valid 404 1m;\n";
-            $content .= "        proxy_cache_bypass \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session \$arg_nocache;\n";
-            $content .= "        proxy_no_cache \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session;\n";
-            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
-            $content .= "        proxy_cache_background_update on;\n";
-            $content .= "        proxy_cache_lock on;\n";
-            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
-            $content .= "        proxy_read_timeout 60s;\n";
-            $content .= "        proxy_send_timeout 60s;\n";
-            $content .= "    }\n\n";
+            $this->addProxyLocations($content, $backendName, $cacheEnabled);
             $content .= "    listen 443 ssl; # managed by Certbot\n";
             $content .= "    ssl_certificate {$site->ssl_cert_path}; # managed by Certbot\n";
             $content .= "    ssl_certificate_key {$site->ssl_key_path}; # managed by Certbot\n";
@@ -946,45 +910,7 @@ class SiteController extends Controller
                 $this->addApiRateLimitLocation($content, $policy, $backendName, $rlZone);
             }
 
-            // كاش الملفات الثابتة (صور/CSS/JS/خطوط) — تخزين قوي
-            $content .= "    location ~* \\.(?:css|js|mjs|jpe?g|png|gif|ico|svg|webp|avif|woff2?|ttf|eot|mp4|webm|ogg|mp3|pdf)\$ {\n";
-            $content .= "        proxy_pass http://{$backendName};\n";
-            $content .= "        proxy_set_header Host \$host;\n";
-            $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
-            $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
-            $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n";
-            $content .= "        proxy_cache waf_cache;\n";
-            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
-            $content .= "        proxy_cache_valid 200 301 302 30d;\n";
-            $content .= "        proxy_cache_valid 404 1m;\n";
-            $content .= "        proxy_ignore_headers Cache-Control Expires Set-Cookie;\n";
-            $content .= "        proxy_hide_header Set-Cookie;\n";
-            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
-            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
-            $content .= "        expires 30d;\n";
-            $content .= "        access_log off;\n";
-            $content .= "    }\n\n";
-
-            $content .= "    location / {\n";
-            $content .= "        proxy_pass http://{$backendName};\n\n";
-            $content .= "        proxy_set_header Host \$host;\n";
-            $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
-            $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
-            $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n\n";
-            $content .= "        # كاش الصفحات — آمن: يتخطّى الطلبات المخصّصة ولا يخزّن ردود Set-Cookie\n";
-            $content .= "        proxy_cache waf_cache;\n";
-            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
-            $content .= "        proxy_cache_valid 200 301 302 10m;\n";
-            $content .= "        proxy_cache_valid 404 1m;\n";
-            $content .= "        proxy_cache_bypass \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session \$arg_nocache;\n";
-            $content .= "        proxy_no_cache \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session;\n";
-            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
-            $content .= "        proxy_cache_background_update on;\n";
-            $content .= "        proxy_cache_lock on;\n";
-            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
-            $content .= "        proxy_read_timeout 60s;\n";
-            $content .= "        proxy_send_timeout 60s;\n";
-            $content .= "    }\n\n";
+            $this->addProxyLocations($content, $backendName, $cacheEnabled);
             $content .= "    listen 80;\n";
             $content .= "}\n";
         }
@@ -1030,6 +956,56 @@ class SiteController extends Controller
         $content .= "        try_files /{$file} =403;\n";
         $content .= "        sub_filter '__SUPPORT_ID__' \$request_id;\n";
         $content .= "        sub_filter_once off;\n";
+        $content .= "    }\n\n";
+    }
+
+    /**
+     * مواقع البروكسي: الموقع الرئيسي + كاش الملفات الثابتة (الكاش اختياري)
+     */
+    protected function addProxyLocations(string &$content, string $backendName, bool $cacheEnabled): void
+    {
+        // كاش الملفات الثابتة (يُولَّد فقط عند تفعيل الكاش)
+        if ($cacheEnabled) {
+            $content .= "    location ~* \\.(?:css|js|mjs|jpe?g|png|gif|ico|svg|webp|avif|woff2?|ttf|eot|mp4|webm|ogg|mp3|pdf)\$ {\n";
+            $content .= "        proxy_pass http://{$backendName};\n";
+            $content .= "        proxy_set_header Host \$host;\n";
+            $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
+            $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
+            $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n";
+            $content .= "        proxy_cache waf_cache;\n";
+            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
+            $content .= "        proxy_cache_valid 200 301 302 30d;\n";
+            $content .= "        proxy_cache_valid 404 1m;\n";
+            $content .= "        proxy_ignore_headers Cache-Control Expires Set-Cookie;\n";
+            $content .= "        proxy_hide_header Set-Cookie;\n";
+            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
+            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
+            $content .= "        expires 30d;\n";
+            $content .= "        access_log off;\n";
+            $content .= "    }\n\n";
+        }
+
+        $content .= "    location / {\n";
+        $content .= "        proxy_pass http://{$backendName};\n\n";
+        $content .= "        proxy_set_header Host \$host;\n";
+        $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
+        $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
+        $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n\n";
+        if ($cacheEnabled) {
+            $content .= "        # كاش الصفحات — آمن: يتخطّى الطلبات المخصّصة ولا يخزّن ردود Set-Cookie\n";
+            $content .= "        proxy_cache waf_cache;\n";
+            $content .= "        proxy_cache_key \"\$scheme\$request_method\$host\$request_uri\";\n";
+            $content .= "        proxy_cache_valid 200 301 302 10m;\n";
+            $content .= "        proxy_cache_valid 404 1m;\n";
+            $content .= "        proxy_cache_bypass \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session \$arg_nocache;\n";
+            $content .= "        proxy_no_cache \$http_authorization \$cookie_PHPSESSID \$cookie_laravel_session;\n";
+            $content .= "        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;\n";
+            $content .= "        proxy_cache_background_update on;\n";
+            $content .= "        proxy_cache_lock on;\n";
+            $content .= "        add_header X-Cache-Status \$upstream_cache_status always;\n";
+        }
+        $content .= "        proxy_read_timeout 60s;\n";
+        $content .= "        proxy_send_timeout 60s;\n";
         $content .= "    }\n\n";
     }
 

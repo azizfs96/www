@@ -346,6 +346,7 @@
             @if(auth()->user()->isSuperAdmin())
                 <x-sidebar.section title="Administration">
                     <x-sidebar.item href="/tenants" label="Tenants Management" :icon="$icons['settings']" :active="request()->is('tenants*')" />
+                    <x-sidebar.item href="/waf/leads" label="Consultation Requests" :icon="$icons['bell']" :active="request()->is('waf/leads*')" />
                 </x-sidebar.section>
             @endif
         @endauth

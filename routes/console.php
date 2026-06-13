@@ -13,3 +13,9 @@ Schedule::command('backend:health-check')
     ->everyMinute()
     ->withoutOverlapping()
     ->runInBackground();
+
+// استيراد سجلّات ModSecurity (أحداث الحظر) إلى قاعدة البيانات كل دقيقة
+Schedule::command('waf:import-logs')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground();

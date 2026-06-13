@@ -25,6 +25,9 @@ Route::get('/ar', function () {
     return view('welcome-ar');
 });
 
+// Public contact / consultation form submission
+Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'store'])->name('contact.store');
+
 // Authentication Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
@@ -506,6 +509,10 @@ Route::get('/waf/events', function (Request $request) {
         ],
     ]);
 });
+// Consultation / contact requests (Super Admin)
+Route::get('/waf/leads', [\App\Http\Controllers\ContactController::class, 'index'])->name('leads.index');
+Route::patch('/waf/leads/{contactRequest}/status', [\App\Http\Controllers\ContactController::class, 'updateStatus'])->name('leads.status');
+
 // API Protection — separate from WAF Settings
 Route::get('/waf/api-protection/rate-limit', [\App\Http\Controllers\ApiProtectionController::class, 'rateLimit'])->name('api.rate-limit');
 Route::put('/waf/api-protection/rate-limit/{site}', [\App\Http\Controllers\ApiProtectionController::class, 'updateRateLimit'])->name('api.rate-limit.update');

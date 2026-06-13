@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>WAF Gate - Advanced Web Application Firewall</title>
     <style>
@@ -1474,22 +1475,42 @@
         if (contactForm) {
             contactForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
-                // Get form data
+
                 const formData = {
                     name: document.getElementById('name').value,
                     email: document.getElementById('email').value,
                     phone: document.getElementById('phone').value,
                     message: document.getElementById('message').value
                 };
-                
-                // For now, just show an alert (will be implemented later)
-                alert('Thank you for your interest! We will contact you soon at ' + formData.email);
-                
-                // Reset form
-                contactForm.reset();
-                contactForm.classList.remove('active');
-                ctaButtons.style.display = 'block';
+
+                const submitBtn = contactForm.querySelector('.form-submit-btn');
+                const originalText = submitBtn ? submitBtn.textContent : '';
+                if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                fetch('/contact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': token
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(r => r.json().catch(() => ({})).then(d => ({ ok: r.ok, d })))
+                .then(({ ok, d }) => {
+                    if (ok) {
+                        alert((d && d.message) ? d.message : 'Thank you! We will contact you soon.');
+                        contactForm.reset();
+                        contactForm.classList.remove('active');
+                        ctaButtons.style.display = 'block';
+                    } else {
+                        alert('Sorry, something went wrong. Please try again.');
+                    }
+                })
+                .catch(() => alert('Sorry, something went wrong. Please try again.'))
+                .finally(() => { if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; } });
             });
         }
 
