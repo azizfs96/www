@@ -535,8 +535,13 @@
     }
     .tip-chip {
         flex-shrink: 0;
-        font-family: ui-monospace, monospace; font-size: 10px; color: #94a3b8;
-        background: rgba(255, 255, 255, 0.08); padding: 2px 6px; border-radius: 5px;
+        display: inline-flex; align-items: center;
+        padding: 2px 8px;
+        background: rgba(96, 165, 250, 0.15);
+        border: 1px solid rgba(96, 165, 250, 0.3);
+        border-radius: 4px;
+        font-size: 10px; font-weight: 600; color: #60a5fa;
+        white-space: nowrap;
     }
     .tip-bar {
         margin-top: 9px; height: 6px; width: 100%;
