@@ -53,8 +53,6 @@ class SitePolicyController extends Controller
         $validated = $request->validate([
             'paranoia_level' => 'required|integer|min:1|max:4',
             'anomaly_threshold' => 'required|string',
-            'requests_per_minute' => 'nullable|integer|min:1',
-            'burst_size' => 'nullable|integer|min:1',
             'excluded_urls' => 'nullable|string',
             'excluded_ips' => 'nullable|string',
             'log_level' => 'required|in:debug,info,warn,error',
@@ -84,8 +82,8 @@ class SitePolicyController extends Controller
         $data['block_dos_protection'] = $request->has('block_dos_protection');
         $data['block_data_leakages'] = $request->has('block_data_leakages');
         $data['block_nodejs_injection'] = $request->has('block_nodejs_injection');
-        $data['rate_limiting_enabled'] = $request->has('rate_limiting_enabled');
         $data['detailed_logging'] = $request->has('detailed_logging');
+        // ملاحظة: إعدادات Rate Limiting تُدار من قسم API Protection المستقل، لا من هنا.
 
         // Get or create policy
         $policy = $site->policy ?? $site->policy()->create([

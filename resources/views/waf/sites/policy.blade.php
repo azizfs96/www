@@ -481,35 +481,7 @@
         </div>
     </div>
 
-    {{-- Rate Limiting --}}
-    <div class="card">
-        <h2 class="section-title" style="direction: ltr; text-align: left;">⏱️ Rate Limiting</h2>
-
-        <div class="form-group">
-            <div class="checkbox-item">
-                <input type="checkbox" name="rate_limiting_enabled" id="rate_limiting_enabled" 
-                       {{ $policy->rate_limiting_enabled ? 'checked' : '' }}>
-                <label for="rate_limiting_enabled" class="checkbox-label" style="direction: ltr; text-align: left;">
-                    <strong>Enable Rate Limiting</strong>
-                </label>
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label" style="direction: ltr; text-align: left;">Requests Per Minute</label>
-                <input type="number" name="requests_per_minute" class="form-input" 
-                       value="{{ $policy->requests_per_minute }}" min="1">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" style="direction: ltr; text-align: left;">Burst Size</label>
-                <input type="number" name="burst_size" class="form-input" 
-                       value="{{ $policy->burst_size }}" min="1">
-                <div class="form-help" style="direction: ltr; text-align: left;">Additional requests allowed at once</div>
-            </div>
-        </div>
-    </div>
+    {{-- Rate Limiting moved to a dedicated "API Protection" section in the sidebar --}}
 
     {{-- Exceptions --}}
     <div class="card">

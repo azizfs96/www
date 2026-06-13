@@ -286,6 +286,13 @@
             ],
         ],
         [
+            'id' => 'api',
+            'title' => 'API Protection',
+            'items' => [
+                ['label' => 'Rate Limiting', 'href' => '/waf/api-protection/rate-limit', 'icon' => $icons['activity'], 'active' => request()->is('waf/api-protection/rate-limit*')],
+            ],
+        ],
+        [
             'id' => 'soc',
             'title' => 'Security Center (SOC)',
             'items' => [

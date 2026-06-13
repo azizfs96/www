@@ -703,9 +703,19 @@ class SiteController extends Controller
     protected function buildNginxConfigContent(Site $site): string
     {
         $backendName = str_replace('.', '_', $site->server_name) . '_backend';
-        
+
         $content = "";
-        
+
+        // API Protection — Rate Limiting zone (http context, must be before server blocks)
+        $policy = $site->policy;
+        $rlEnabled = $policy && $policy->rate_limiting_enabled && (int) ($policy->requests_per_minute ?? 0) > 0;
+        $rlZone = 'waf_rl_' . $site->id;
+        if ($rlEnabled) {
+            $rpm = (int) $policy->requests_per_minute;
+            $content .= "# API Protection: rate limiting ({$rpm} req/min per client IP)\n";
+            $content .= "limit_req_zone \$binary_remote_addr zone={$rlZone}:10m rate={$rpm}r/m;\n\n";
+        }
+
         // Upstream مع دعم High Availability
         $content .= "upstream {$backendName} {\n";
         
@@ -853,6 +863,11 @@ class SiteController extends Controller
             // صفحة حظر ModSecurity المخصصة (الكود 462)
             $this->add403ErrorPage($content, $site);
 
+            // API Protection: مسار محدود المعدّل (Rate Limiting)
+            if ($rlEnabled) {
+                $this->addApiRateLimitLocation($content, $policy, $backendName, $rlZone);
+            }
+
             // كاش الملفات الثابتة (صور/CSS/JS/خطوط) — تخزين قوي
             $content .= "    location ~* \\.(?:css|js|mjs|jpe?g|png|gif|ico|svg|webp|avif|woff2?|ttf|eot|mp4|webm|ogg|mp3|pdf)\$ {\n";
             $content .= "        proxy_pass http://{$backendName};\n";
@@ -925,6 +940,11 @@ class SiteController extends Controller
 
             // صفحة حظر ModSecurity المخصصة (الكود 462)
             $this->add403ErrorPage($content, $site);
+
+            // API Protection: مسار محدود المعدّل (Rate Limiting)
+            if ($rlEnabled) {
+                $this->addApiRateLimitLocation($content, $policy, $backendName, $rlZone);
+            }
 
             // كاش الملفات الثابتة (صور/CSS/JS/خطوط) — تخزين قوي
             $content .= "    location ~* \\.(?:css|js|mjs|jpe?g|png|gif|ico|svg|webp|avif|woff2?|ttf|eot|mp4|webm|ogg|mp3|pdf)\$ {\n";
@@ -1010,6 +1030,31 @@ class SiteController extends Controller
         $content .= "        try_files /{$file} =403;\n";
         $content .= "        sub_filter '__SUPPORT_ID__' \$request_id;\n";
         $content .= "        sub_filter_once off;\n";
+        $content .= "    }\n\n";
+    }
+
+    /**
+     * API Protection — موقع (location) محدود المعدّل لمسار الـ API
+     */
+    protected function addApiRateLimitLocation(string &$content, $policy, string $backendName, string $rlZone): void
+    {
+        $path  = trim($policy->rate_limit_path ?: '/api');
+        if ($path === '' || $path === '/') {
+            $path = '/api'; // المعدّل يُطبَّق على مسار محدّد (حماية API)
+        }
+        $burst = max(1, (int) ($policy->burst_size ?? 10));
+
+        $content .= "    # API Protection: rate-limited path\n";
+        $content .= "    location {$path} {\n";
+        $content .= "        limit_req zone={$rlZone} burst={$burst} nodelay;\n";
+        $content .= "        limit_req_status 429;\n";
+        $content .= "        proxy_pass http://{$backendName};\n";
+        $content .= "        proxy_set_header Host \$host;\n";
+        $content .= "        proxy_set_header X-Real-IP \$remote_addr;\n";
+        $content .= "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n";
+        $content .= "        proxy_set_header X-Forwarded-Proto \$scheme;\n";
+        $content .= "        proxy_read_timeout 60s;\n";
+        $content .= "        proxy_send_timeout 60s;\n";
         $content .= "    }\n\n";
     }
 

@@ -32,6 +32,7 @@ class SitePolicy extends Model
         'rate_limiting_enabled',
         'requests_per_minute',
         'burst_size',
+        'rate_limit_path',
         'excluded_urls',
         'excluded_ips',
         'detailed_logging',

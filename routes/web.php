@@ -506,6 +506,10 @@ Route::get('/waf/events', function (Request $request) {
         ],
     ]);
 });
+// API Protection — separate from WAF Settings
+Route::get('/waf/api-protection/rate-limit', [\App\Http\Controllers\ApiProtectionController::class, 'rateLimit'])->name('api.rate-limit');
+Route::put('/waf/api-protection/rate-limit/{site}', [\App\Http\Controllers\ApiProtectionController::class, 'updateRateLimit'])->name('api.rate-limit.update');
+
 // Unified Firewall Routes
 Route::get('/waf/firewall', [FirewallController::class, 'index'])->name('firewall.index');
 Route::post('/waf/firewall', [FirewallController::class, 'store'])->name('firewall.store');
