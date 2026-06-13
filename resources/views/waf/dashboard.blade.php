@@ -516,6 +516,56 @@
         font-size: 14px;
     }
 
+    /* ===== Top IP Addresses — WAF_GATE design ===== */
+    .tip-list { display: flex; flex-direction: column; }
+    .tip-row {
+        display: flex; align-items: center; gap: 16px;
+        padding: 13px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        transition: background-color 0.15s ease;
+    }
+    .tip-row:last-child { border-bottom: none; }
+    .tip-row:hover { background: rgba(255, 255, 255, 0.03); }
+    .tip-main { flex: 1; min-width: 0; }
+    .tip-id { display: flex; align-items: center; gap: 8px; }
+    .tip-ip {
+        font-family: ui-monospace, 'Courier New', monospace;
+        font-size: 13px; font-weight: 600; color: #f1f5f9;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .tip-chip {
+        flex-shrink: 0;
+        font-family: ui-monospace, monospace; font-size: 10px; color: #94a3b8;
+        background: rgba(255, 255, 255, 0.08); padding: 2px 6px; border-radius: 5px;
+    }
+    .tip-bar {
+        margin-top: 9px; height: 6px; width: 100%;
+        border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden;
+    }
+    .tip-bar > span {
+        display: block; height: 100%; border-radius: 999px;
+        background: linear-gradient(90deg, rgba(239,68,68,.55), rgba(239,68,68,.9));
+    }
+    .tip-right { text-align: right; flex-shrink: 0; min-width: 56px; }
+    .tip-count { font-size: 14px; font-weight: 700; color: #f1f5f9; line-height: 1.1; }
+    .tip-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .tip-badge {
+        flex-shrink: 0;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 11px; font-weight: 600; color: #fca5a5;
+        background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3);
+        padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+    }
+    .tip-badge .dot {
+        width: 6px; height: 6px; border-radius: 999px; background: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+    }
+    .tip-empty { padding: 40px 20px; text-align: center; color: #808080; font-size: 13px; }
+
+    @media (max-width: 480px) {
+        .tip-badge { display: none; }
+    }
+
     /* ===== Live Attack Origins Threat Map (stat-card sized) ===== */
     .map-card {
         padding: 0;
@@ -976,41 +1026,28 @@ document.addEventListener('DOMContentLoaded', function() {
             <a href="/waf/events" class="panel-action">View All →</a>
         </div>
         <div class="panel-content">
-            <table>
-                <thead>
-                    <tr>
-                        <th>IP Address</th>
-                        <th>Attempts</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
+            @php $maxAtt = ($topIps->max('cnt') ?: 1); @endphp
+            <div class="tip-list">
                 @forelse ($topIps as $ip)
-                    <tr>
-                        <td>
-                            <strong style="font-family: 'Courier New', monospace;">
-                                {{ $ip->client_ip }}
-                            </strong>
-                        </td>
-                        <td>
-                            <strong>{{ number_format($ip->cnt) }}</strong>
-                        </td>
-                        <td>
-                            <span class="badge badge-status active">
-                                <span class="status-indicator active"></span>
-                                High Activity
-                            </span>
-                        </td>
-                    </tr>
+                    @php $share = max(4, round(($ip->cnt / $maxAtt) * 100)); @endphp
+                    <div class="tip-row">
+                        <div class="tip-main">
+                            <div class="tip-id">
+                                <span class="tip-ip">{{ $ip->client_ip }}</span>
+                                <span class="tip-chip">{{ str_contains($ip->client_ip, ':') ? 'IPv6' : 'IPv4' }}</span>
+                            </div>
+                            <div class="tip-bar"><span style="width: {{ $share }}%"></span></div>
+                        </div>
+                        <div class="tip-right">
+                            <div class="tip-count">{{ number_format($ip->cnt) }}</div>
+                            <div class="tip-sub">attempts</div>
+                        </div>
+                        <span class="tip-badge"><span class="dot"></span> High Activity</span>
+                    </div>
                 @empty
-                    <tr>
-                        <td colspan="3" class="empty-state">
-                            No data available at this time
-                        </td>
-                    </tr>
+                    <div class="tip-empty">No data available at this time</div>
                 @endforelse
-                </tbody>
-            </table>
+            </div>
         </div>
     </div>
 
