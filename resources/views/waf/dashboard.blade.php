@@ -1026,15 +1026,32 @@ document.addEventListener('DOMContentLoaded', function() {
             <a href="/waf/events" class="panel-action">View All →</a>
         </div>
         <div class="panel-content">
-            @php $maxAtt = ($topIps->max('cnt') ?: 1); @endphp
+            @php
+                $maxAtt = ($topIps->max('cnt') ?: 1);
+                $tipCountryNames = [
+                    'US'=>'United States','SA'=>'Saudi Arabia','GB'=>'United Kingdom','DE'=>'Germany','FR'=>'France',
+                    'CN'=>'China','JP'=>'Japan','IN'=>'India','BR'=>'Brazil','RU'=>'Russia','CA'=>'Canada','AU'=>'Australia',
+                    'IT'=>'Italy','ES'=>'Spain','NL'=>'Netherlands','SE'=>'Sweden','NO'=>'Norway','DK'=>'Denmark','FI'=>'Finland',
+                    'PL'=>'Poland','KR'=>'South Korea','MX'=>'Mexico','AR'=>'Argentina','ZA'=>'South Africa','EG'=>'Egypt',
+                    'AE'=>'United Arab Emirates','TR'=>'Turkey','ID'=>'Indonesia','TH'=>'Thailand','VN'=>'Vietnam','PH'=>'Philippines',
+                    'MY'=>'Malaysia','SG'=>'Singapore','NZ'=>'New Zealand','IE'=>'Ireland','CH'=>'Switzerland','AT'=>'Austria',
+                    'BE'=>'Belgium','PT'=>'Portugal','GR'=>'Greece','CZ'=>'Czechia','HU'=>'Hungary','RO'=>'Romania','UA'=>'Ukraine',
+                    'KW'=>'Kuwait','QA'=>'Qatar','BH'=>'Bahrain','OM'=>'Oman','JO'=>'Jordan','LB'=>'Lebanon','IQ'=>'Iraq',
+                    'PK'=>'Pakistan','BD'=>'Bangladesh','IR'=>'Iran','IL'=>'Israel','PS'=>'Palestine','LOCAL'=>'Local Network',
+                ];
+            @endphp
             <div class="tip-list">
                 @forelse ($topIps as $ip)
-                    @php $share = max(4, round(($ip->cnt / $maxAtt) * 100)); @endphp
+                    @php
+                        $share = max(4, round(($ip->cnt / $maxAtt) * 100));
+                        $cc = strtoupper($ip->country ?? '');
+                        $countryName = $cc ? ($tipCountryNames[$cc] ?? $cc) : 'Unknown';
+                    @endphp
                     <div class="tip-row">
                         <div class="tip-main">
                             <div class="tip-id">
                                 <span class="tip-ip">{{ $ip->client_ip }}</span>
-                                <span class="tip-chip">{{ str_contains($ip->client_ip, ':') ? 'IPv6' : 'IPv4' }}</span>
+                                <span class="tip-chip">{{ $countryName }}</span>
                             </div>
                             <div class="tip-bar"><span style="width: {{ $share }}%"></span></div>
                         </div>

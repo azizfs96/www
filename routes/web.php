@@ -86,7 +86,7 @@ Route::get('/waf', function () {
         $baseQuery = clone $today;
         return [
             'topIps' => (clone $baseQuery)
-                ->selectRaw('client_ip, COUNT(*) as cnt')
+                ->selectRaw('client_ip, MAX(country) as country, COUNT(*) as cnt')
                 ->groupBy('client_ip')
                 ->orderByDesc('cnt')
                 ->limit(5)
